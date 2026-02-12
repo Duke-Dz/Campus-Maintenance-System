@@ -1,0 +1,58 @@
+# ==========================
+# Environment & Secrets
+# ==========================
+.env
+.env.local
+.env.*.local
+*.properties.local
+
+# ==========================
+# Dependencies (Frontend)
+# ==========================
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.next/
+frontend/build/
+frontend/coverage/
+
+# ==========================
+# Backend (Spring Boot)
+# ==========================
+backend/target/
+backend/.vscode/
+backend/.idea/
+backend/*.jar
+backend/*.war
+# If you use real passwords in application.properties, uncomment the next line:
+# backend/src/main/resources/application.properties
+
+# ==========================
+# C++ Optimization
+# ==========================
+cpp-optimization/build/
+cpp-optimization/bin/
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+
+# ==========================
+# Uploads & Logs
+# ==========================
+# Ignore the CONTENT of uploads, but keep the folder itself
+uploads/*
+!uploads/.gitkeep
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# ==========================
+# IDE & OS
+# ==========================
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
