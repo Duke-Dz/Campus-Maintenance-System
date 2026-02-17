@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    /* Smooth scrolling for the "Back to Top" button */
+    scroll-behavior: smooth;
+    /* Prevents layout shift when scrollbar appears */
+    margin-right: calc(100vw - 100%);
+  }
+
+  body {
+    @apply antialiased text-slate-900 bg-slate-50 transition-colors duration-300;
+    /* Force hardware acceleration for smoother rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  /* --- SMOOTH PAGE TRANSITIONS --- */
+  .animate-page-fade {
+    animation: pageFade 0.4s ease-out forwards;
+  }
+
+  @keyframes pageFade {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* --- GPU ACCELERATED ICON ANIMATIONS --- */
+  /* Replaces standard spin with a smoother, lighter version */
+  .animate-spin-slow {
+    animation: spin 8s linear infinite;
+    will-change: transform;
+  }
+
+  .animate-reverse-spin {
+    animation: reverse-spin 12s linear infinite;
+    will-change: transform;
+  }
+
+  @keyframes reverse-spin {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0deg); }
+  }
+
+  /* Smooth Floating effect for the checkmark icon */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+
+  /* Soft Pulse for the central logo element */
+  .animate-pulse-slow {
+    animation: soft-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes soft-pulse {
+    0%, 100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.1); }
+  }
+
+  /* Error shake animation */
+  .animate-shake {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+  }
+
+  @keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+  }
+
+  /* --- THEME SPECIFIC BLOBS --- */
+  .animate-blob {
+    animation: blob 7s infinite;
+    will-change: transform, filter;
+  }
+
+  @keyframes blob {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+    100% { transform: translate(0px, 0px) scale(1); }
+  }
+
+  .animation-delay-2000 { animation-delay: 2s; }
+  .animation-delay-4000 { animation-delay: 4s; }
+}
+
+/* --- BUTTON OVERRIDES FOR SNAPPIER FEEL --- */
+button {
+  @apply transition-all duration-200 active:scale-95;
+}
+
+/* Glass effect refinement */
+.backdrop-blur-3xl {
+  backdrop-filter: blur(64px);
+  -webkit-backdrop-filter: blur(64px);
+}

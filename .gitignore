@@ -1,0 +1,77 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# Backend (Java/Maven)
+backend/target/
+backend/.classpath
+backend/.project
+backend/.settings/
+backend/.vscode/
+backend/*.jar
+backend/*.log
+backend/bin/
+
+# Frontend (Node.js)
+node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env.local
+frontend/.env.*.local
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# C++ build artifacts
+cpp-optimization/build/
+cpp-optimization/cmake-build-debug/
+cpp-optimization/cmake-build-release/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Sensitive files
+*.pem
+*.key
+*.jks
+*.p12
+
+# Uploads directory (can be large)
+uploads/
+
+# Docker/Kubernetes
+.dockerignore
+
+# Testing
+coverage/
+.nyc_output/
+*.coverage
+
+# Miscellaneous
+.venv/
+venv/
+*.pyc
+__pycache__/
+.gradle/
+
