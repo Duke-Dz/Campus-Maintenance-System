@@ -1,0 +1,16 @@
+CREATE TABLE tickets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    category ENUM('WATER', 'ELECTRICITY', 'INTERNET', 'OTHER') NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    urgency ENUM('LOW', 'MEDIUM', 'HIGH', 'CRITICAL') NOT NULL,
+    status ENUM('SUBMITTED', 'APPROVED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED') NOT NULL,
+    created_by INT,
+    assigned_to INT,
+    image_path VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id),
+    FOREIGN KEY (assigned_to) REFERENCES users(id)
+);

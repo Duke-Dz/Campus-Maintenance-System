@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: campus_maintenance
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/schemas:/docker-entrypoint-initdb.d
+
+  java-backend:
+    build:
+      context: ./backend
+      dockerfile: ../devops/docker/Dockerfile-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+
+  node-frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../devops/docker/Dockerfile-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - java-backend

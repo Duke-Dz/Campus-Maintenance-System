@@ -1,1 +1,19 @@
-
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: campus-maintenance-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: campus-maintenance
+  template:
+    metadata:
+      labels:
+        app: campus-maintenance
+    spec:
+      containers:
+        - name: backend
+          image: campus-maintenance:latest
+          ports:
+            - containerPort: 8080
