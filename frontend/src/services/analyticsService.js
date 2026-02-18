@@ -1,7 +1,20 @@
-import API from "./api";
+import apiClient from "./apiClient";
 
-export const getTicketStats = async () => {
-  const res = await API.get("/analytics/stats");
-  return res.data;
+export const analyticsService = {
+  async getSummary() {
+    const { data } = await apiClient.get("/analytics/summary");
+    return data;
+  },
+  async getResolutionTime() {
+    const { data } = await apiClient.get("/analytics/resolution-time");
+    return data;
+  },
+  async getTopBuildings() {
+    const { data } = await apiClient.get("/analytics/top-buildings");
+    return data;
+  },
+  async getCrewPerformance() {
+    const { data } = await apiClient.get("/analytics/crew-performance");
+    return data;
+  },
 };
-

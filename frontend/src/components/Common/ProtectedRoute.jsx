@@ -1,26 +1,16 @@
-import { Navigate } from "react-router-dom";
-import { getToken, getRole } from "../../utils/authStorage";
-import MainLayout from "./MainLayout";
-import AdminDashboard from "../AdminDashboard/AdminDashboard";
-import MaintenanceDashboard from "../MaintenanceDashboard/MaintenanceDashboard";
-import StudentDashboard from "../StudentPortal/StudentDashboard";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
-function ProtectedRoute() {
-  const token = getToken();
-  const role = getRole();
+export const ProtectedRoute = ({ children, roles = [] }) => {
+  const { isAuthenticated, auth } = useAuth();
+  const location = useLocation();
 
-  if (!token) {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+  if (roles.length > 0 && !roles.includes(auth.role)) {
     return <Navigate to="/" replace />;
   }
 
-  const renderDashboard = () => {
-    if (role === "ADMIN") return <AdminDashboard />;
-    if (role === "MAINTENANCE") return <MaintenanceDashboard />;
-    if (role === "STUDENT") return <StudentDashboard />;
-    return null;
-  };
-
-  return <MainLayout>{renderDashboard()}</MainLayout>;
-}
-
-export default ProtectedRoute;
+  return children;
+};

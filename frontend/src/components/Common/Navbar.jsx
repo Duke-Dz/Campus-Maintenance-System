@@ -1,46 +1,51 @@
+import { LogOut, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { authService } from "../../services/authService";
-import { getRole } from "../../utils/authStorage";
-import { LogOut, UserCircle } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
+import { useTheme } from "../../context/ThemeContext";
+import { titleCase } from "../../utils/helpers";
 
-function Navbar() {
+export const Navbar = () => {
+  const { auth, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const role = getRole();
 
-  const handleLogout = () => {
-    authService.logout();
-    navigate("/");
-  };
-
-  // Helper to make roles look pretty
-  const formatRole = (r) => {
-    if (!r) return "";
-    return r.charAt(0) + r.slice(1).toLowerCase();
+  const onLogout = () => {
+    logout();
+    navigate("/login");
   };
 
   return (
-    <nav className="flex items-center gap-4">
-      {/* Role Badge */}
-      {role && (
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100/50 border border-white/50 shadow-inner">
-          <UserCircle size={16} className="text-slate-500" />
-          <span className="text-xs font-bold text-slate-600 tracking-wide uppercase">
-            {formatRole(role)}
-          </span>
+    <header className="sticky top-0 z-40 border-b border-white/60 bg-white/85 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-mint">Smart Campus Ops</p>
+          <h1 className="text-lg font-semibold text-ink dark:text-slate-100">Maintenance Control Hub</h1>
         </div>
-      )}
 
-      {/* Glass Logout Button */}
-      <button 
-        type="button" 
-        onClick={handleLogout}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
-      >
-        <span className="hidden sm:inline">Logout</span>
-        <LogOut size={18} />
-      </button>
-    </nav>
+        <div className="flex items-center gap-3">
+          <span className="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200 sm:inline-flex">
+            {titleCase(auth?.role)}
+          </span>
+          <div className="hidden text-right sm:block">
+            <p className="text-sm font-semibold text-ink dark:text-slate-100">{auth?.fullName || auth?.username}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">@{auth?.username}</p>
+          </div>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="rounded-full border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="rounded-full border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
+      </div>
+    </header>
   );
-}
-
-export default Navbar;
+};

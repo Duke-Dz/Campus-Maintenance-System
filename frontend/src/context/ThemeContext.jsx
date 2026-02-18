@@ -1,44 +1,34 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { themeStorage } from "../utils/storage";
 
-// Create context with a default value of undefined to force usage within Provider
-const ThemeContext = createContext(undefined);
+const ThemeContext = createContext(null);
 
 export const ThemeProvider = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check local storage safely on initial load
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("theme");
-      if (saved) return saved === "dark";
-      return window.matchMedia("(prefers-color-scheme: dark)").matches;
-    }
-    return false;
-  });
+  const [theme, setTheme] = useState(themeStorage.get());
 
   useEffect(() => {
     const root = document.documentElement;
-    if (isDarkMode) {
+    if (theme === "dark") {
       root.classList.add("dark");
-      localStorage.setItem("theme", "dark");
     } else {
       root.classList.remove("dark");
-      localStorage.setItem("theme", "light");
     }
-  }, [isDarkMode]);
+    themeStorage.set(theme);
+  }, [theme]);
 
-  const toggleTheme = () => setIsDarkMode((prev) => !prev);
-
-  return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
+  const value = useMemo(
+    () => ({
+      theme,
+      toggleTheme: () => setTheme((prev) => (prev === "dark" ? "light" : "dark")),
+    }),
+    [theme]
   );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useTheme = () => {
   const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
-  }
+  if (!context) throw new Error("useTheme must be used within ThemeProvider");
   return context;
 };

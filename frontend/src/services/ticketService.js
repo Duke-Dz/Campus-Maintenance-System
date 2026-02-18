@@ -1,31 +1,72 @@
-import api from "./api";
+import apiClient from "./apiClient";
 
-export const createTicket = (ticketData) => {
-  return api.post("/tickets", ticketData).then((res) => res.data);
+const buildQuery = (params = {}) => {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      search.set(key, value);
+    }
+  });
+  return search.toString();
 };
 
-export const getMyTickets = () => {
-  return api.get("/tickets/my").then((res) => res.data);
-};
+export const ticketService = {
+  async createTicket(payload, imageFile) {
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append("data", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+      formData.append("image", imageFile);
+      const { data } = await apiClient.post("/tickets", formData);
+      return data;
+    }
+    const { data } = await apiClient.post("/tickets", payload);
+    return data;
+  },
 
-export const getAllTickets = () => {
-  return api.get("/tickets").then((res) => res.data);
-};
+  async getMyTickets() {
+    const { data } = await apiClient.get("/tickets/my");
+    return data;
+  },
 
-export const getAssignedTickets = () => {
-  return api.get("/tickets/assigned").then((res) => res.data);
-};
+  async getAssignedTickets() {
+    const { data } = await apiClient.get("/tickets/assigned");
+    return data;
+  },
 
-export const updateTicketStatus = (ticketId, status) => {
-  return api.put(`/tickets/${ticketId}`, { status }).then((res) => res.data);
-};
+  async getAllTickets(filters) {
+    const query = buildQuery({
+      status: filters?.status,
+      category: filters?.category,
+      urgency: filters?.urgency,
+      assignee: filters?.assignee,
+      search: filters?.search,
+    });
+    const { data } = await apiClient.get(`/tickets${query ? `?${query}` : ""}`);
+    return data;
+  },
 
-const ticketService = {
-  createTicket,
-  getMyTickets,
-  getAllTickets,
-  getAssignedTickets,
-  updateTicketStatus,
-};
+  async getTicket(ticketId) {
+    const { data } = await apiClient.get(`/tickets/${ticketId}`);
+    return data;
+  },
 
-export default ticketService;
+  async updateStatus(ticketId, payload) {
+    const { data } = await apiClient.patch(`/tickets/${ticketId}/status`, payload);
+    return data;
+  },
+
+  async assignTicket(ticketId, payload) {
+    const { data } = await apiClient.patch(`/tickets/${ticketId}/assign`, payload);
+    return data;
+  },
+
+  async rateTicket(ticketId, payload) {
+    const { data } = await apiClient.post(`/tickets/${ticketId}/rate`, payload);
+    return data;
+  },
+
+  async getLogs(ticketId) {
+    const { data } = await apiClient.get(`/tickets/${ticketId}/logs`);
+    return data;
+  },
+};
