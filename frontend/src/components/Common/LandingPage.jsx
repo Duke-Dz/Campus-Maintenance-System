@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Zap, Shield, Clock, ArrowRight, ChevronDown, ChevronUp,
@@ -97,7 +97,7 @@ const LogoMark = ({ size = 36 }) => (
 );
 
 /* ─── FAQ Item ─── */
-const FaqItem = ({ q, a, index }) => {
+const FaqItem = ({ q, a }) => {
   const [open, setOpen] = useState(false);
   return (
     <div
@@ -143,7 +143,7 @@ const DashboardMockup = () => (
       <div style={{ display: "flex", gap: 6 }}>
         {["#ef4444", "#f59e0b", "#10b981"].map(c => <div key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />)}
       </div>
-      <div style={{ background: "#1e293b", borderRadius: 6, padding: "3px 12px", fontSize: 11, color: "#475569" }}>admin@campusfix.edu</div>
+      <div style={{ background: "#1e293b", borderRadius: 6, padding: "3px 12px", fontSize: 11, color: "#475569" }}>dashboard</div>
       <Bell size={14} color="#475569" />
     </div>
     {/* Content */}
@@ -165,9 +165,9 @@ const DashboardMockup = () => (
         {/* Stats row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
           {[
-            { label: "Total", val: "128", color: "#3b82f6" },
-            { label: "Pending", val: "24", color: "#f59e0b" },
-            { label: "Resolved", val: "104", color: "#10b981" },
+            { label: "Total", val: "—", color: "#3b82f6" },
+            { label: "Pending", val: "—", color: "#f59e0b" },
+            { label: "Resolved", val: "—", color: "#10b981" },
           ].map(s => (
             <div key={s.label} style={{ background: "#1e293b", borderRadius: 8, padding: "8px 10px" }}>
               <div style={{ fontSize: 9, color: "#475569", marginBottom: 3 }}>{s.label}</div>
@@ -175,31 +175,21 @@ const DashboardMockup = () => (
             </div>
           ))}
         </div>
-        {/* Tickets */}
-        {[
-          { title: "AC Unit Broken", status: "PENDING", color: "#f59e0b" },
-          { title: "Leaking Pipe", status: "IN PROGRESS", color: "#3b82f6" },
-          { title: "Broken Projector", status: "RESOLVED", color: "#10b981" },
-        ].map((t, i) => (
-          <div key={i} style={{
-            background: "#1e293b", borderRadius: 8, padding: "7px 10px",
-            marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center"
-          }}>
-            <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500 }}>{t.title}</div>
-            <div style={{
-              fontSize: 8, fontWeight: 700, color: t.color,
-              background: t.color + "20", borderRadius: 4, padding: "2px 6px"
-            }}>{t.status}</div>
+        {/* Empty state */}
+        <div style={{
+          background: "#1e293b", borderRadius: 8, padding: "24px 16px",
+          textAlign: "center", marginBottom: 8
+        }}>
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 500 }}>
+            Sign in to view your tickets
           </div>
-        ))}
-        {/* Mini bar chart */}
+        </div>
+        {/* Mini bar chart placeholder */}
         <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 36, marginTop: 8 }}>
-          {[60, 80, 45, 90, 70, 55, 85].map((h, i) => (
+          {[0, 0, 0, 0, 0, 0, 0].map((h, i) => (
             <div key={i} style={{
-              flex: 1, height: `${h}%`, borderRadius: 3,
-              background: i === 3
-                ? "linear-gradient(180deg,#3b82f6,#7c3aed)"
-                : "#1e293b"
+              flex: 1, height: "20%", borderRadius: 3,
+              background: "#1e293b"
             }} />
           ))}
         </div>
@@ -213,7 +203,6 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [activeSection, setActiveSection] = useState("home");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -463,8 +452,8 @@ export default function LandingPage() {
 
             <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
               {steps.map((s, i) => (
-                <>
-                  <div key={i} className="glass card-hover" style={{
+                <React.Fragment key={i}>
+                  <div className="glass card-hover" style={{
                     flex: 1, borderRadius: 20, padding: "28px 24px", textAlign: "center"
                   }}>
                     <div style={{
@@ -486,7 +475,7 @@ export default function LandingPage() {
                   {i < steps.length - 1 && (
                     <div key={`conn-${i}`} className="step-connector" style={{ minWidth: 32, maxWidth: 48, flexShrink: 0 }} />
                   )}
-                </>
+                </React.Fragment>
               ))}
             </div>
           </div>

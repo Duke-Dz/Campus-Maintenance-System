@@ -84,7 +84,7 @@ Bash
 
 cd frontend
 npm install
-npm start
+npm run dev
 📅 Project Roadmap (3 Months)
 Month 1: Foundation
 [x] Requirements gathering & System Design (ERD, UML).

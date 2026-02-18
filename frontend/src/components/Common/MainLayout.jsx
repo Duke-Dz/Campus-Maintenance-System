@@ -86,7 +86,7 @@ export default function MainLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
   const [isDark, setIsDark] = useState(true);
   const [activeKey, setActiveKey] = useState("dashboard");
-  const [notifications, setNotifications] = useState(3);
+  const [notifications, setNotifications] = useState(0);
 
   const menu = ROLE_MENUS[role] || ROLE_MENUS.STUDENT;
   const meta = ROLE_META[role] || ROLE_META.STUDENT;
