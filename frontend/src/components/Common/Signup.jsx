@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { authService } from "../../services/authService";
 import { useNavigate, Link } from "react-router-dom";
 import { User, Mail, Lock, Building2, ArrowRight, AlertCircle, ShieldCheck, Sun, Moon } from "lucide-react";
 import GlassModal from "./GlassModal";
@@ -10,19 +11,36 @@ const Signup = () => {
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const { isDarkMode, toggleTheme } = useTheme(); // Use Shared Theme
 
-  const [formData, setFormData] = useState({ name: "", username: "", email: "", password: "", confirmPassword: "", acceptTerms: false });
+  const [formData, setFormData] = useState({ name: "", username: "", email: "", password: "", confirmPassword: "", role: "STUDENT", acceptTerms: false });
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [generalError, setGeneralError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setEmailError(""); setPasswordError("");
+    setEmailError(""); setPasswordError(""); setGeneralError("");
     if (!validateEmail(formData.email)) return setEmailError("Invalid email address");
     if (formData.password !== formData.confirmPassword) return setPasswordError("Passwords do not match");
     if (!formData.acceptTerms) return alert("Please accept Terms");
-    navigate("/login"); 
+
+    try {
+      setLoading(true);
+      await authService.register({
+        name: formData.name,
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+      });
+      navigate("/dashboard");
+    } catch (err) {
+      setGeneralError(err.response?.data?.error || "Failed to create account");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputClasses = `w-full pl-12 pr-4 py-3.5 rounded-2xl border focus:ring-[3px] focus:ring-blue-500/30 focus:border-blue-600 transition-all font-medium outline-none ${isDarkMode ? 'bg-white/5 border-white/10 text-white placeholder-slate-500' : 'bg-white border-gray-200 text-slate-900 placeholder-slate-400'}`;
@@ -61,6 +79,7 @@ const Signup = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {emailError && <div className="bg-red-50 text-red-600 text-xs p-3 rounded-xl flex items-center gap-2"><AlertCircle size={14} />{emailError}</div>}
             {passwordError && <div className="bg-red-50 text-red-600 text-xs p-3 rounded-xl flex items-center gap-2"><AlertCircle size={14} />{passwordError}</div>}
+            {generalError && <div className="bg-red-50 text-red-600 text-xs p-3 rounded-xl flex items-center gap-2"><AlertCircle size={14} />{generalError}</div>}
 
             <div className="relative group">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -74,6 +93,17 @@ const Signup = () => {
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input type="text" placeholder="Email Address" required className={inputClasses} onChange={(e) => setFormData({...formData, email: e.target.value})} />
             </div>
+            <div className="relative group">
+              <select
+                value={formData.role}
+                className={`w-full pl-4 pr-4 py-3.5 rounded-2xl border focus:ring-[3px] focus:ring-blue-500/30 focus:border-blue-600 transition-all font-medium outline-none ${isDarkMode ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-gray-200 text-slate-900'}`}
+                onChange={(e) => setFormData({...formData, role: e.target.value})}
+              >
+                <option className="text-slate-900" value="STUDENT">Student</option>
+                <option className="text-slate-900" value="MAINTENANCE">Maintenance Crew</option>
+              </select>
+            </div>
+
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input type="password" placeholder="Password" required className={inputClasses} onChange={(e) => setFormData({...formData, password: e.target.value})} />
@@ -90,8 +120,8 @@ const Signup = () => {
               </label>
             </div>
 
-            <button type="submit" className="group w-full py-4 rounded-2xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white font-bold text-base shadow-lg transition-all duration-300 relative overflow-hidden">
-              <span className="relative flex items-center justify-center gap-2">Create Account <ArrowRight size={18} /></span>
+            <button disabled={loading} type="submit" className="group w-full py-4 rounded-2xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white font-bold text-base shadow-lg transition-all duration-300 relative overflow-hidden disabled:opacity-70">
+              <span className="relative flex items-center justify-center gap-2">{loading ? "Creating..." : "Create Account"} <ArrowRight size={18} /></span>
             </button>
           </form>
 

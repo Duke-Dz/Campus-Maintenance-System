@@ -12,6 +12,32 @@ export const authService = {
       return res.data;
     });
   },
+
+  register(payload) {
+    return api.post("/auth/register", payload).then((res) => {
+      const { token, role } = res.data;
+      setToken(token);
+      setRole(role);
+      return res.data;
+    });
+  },
+
+  requestPasswordReset(email) {
+    return api.post("/auth/forgot-password", { email }).then((res) => res.data);
+  },
+
+  resetPassword(payload) {
+    return api.post("/auth/reset-password", payload).then((res) => res.data);
+  },
+
+  getSocialLinks() {
+    return api.get("/public/social-links").then((res) => res.data);
+  },
+
+  clickSocial(platform) {
+    return api.post(`/public/social-links/${platform}/click`).then((res) => res.data);
+  },
+
   logout() {
     clear();
   },

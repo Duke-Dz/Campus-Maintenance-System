@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ticketService from "../../services/ticketService";
+import { userService } from "../../services/userService";
 import {
   Ticket, CheckCircle2, Clock, AlertTriangle, TrendingUp,
   RefreshCw, Filter, ArrowUpRight, MoreHorizontal, Eye
@@ -86,6 +87,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("ALL");
   const [refreshing, setRefreshing] = useState(false);
+  const [users, setUsers] = useState([]);
 
   const fetchTickets = async () => {
     try {
@@ -101,7 +103,7 @@ export default function AdminDashboard() {
     }
   };
 
-  useEffect(() => { fetchTickets(); }, []);
+  useEffect(() => { fetchTickets(); userService.getUsers().then(setUsers).catch(() => setUsers([])); }, []);
 
   const total = tickets.length;
   const pending = tickets.filter(t => ["PENDING", "Pending"].includes(t.status)).length;
@@ -131,6 +133,7 @@ export default function AdminDashboard() {
         }} />
         <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
         <p style={{ color: "#475569", fontSize: 14 }}>Loading dashboard...</p>
+
       </div>
     </div>
   );
@@ -343,6 +346,36 @@ export default function AdminDashboard() {
             </table>
           </div>
         </div>
+        <div className="glass-card au d6" style={{ padding: "24px", marginTop: 18 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0", marginBottom: 2 }}>User Management</h3>
+          <p style={{ fontSize: 12, color: "#475569", marginBottom: 16 }}>Admin view for all registered users ({users.length})</p>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ color: "#64748b", textAlign: "left" }}>
+                  <th style={{ padding: "10px" }}>Name</th>
+                  <th style={{ padding: "10px" }}>Username</th>
+                  <th style={{ padding: "10px" }}>Role</th>
+                  <th style={{ padding: "10px" }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id} style={{ borderTop: "1px solid rgba(148,163,184,0.15)", color: "#cbd5e1" }}>
+                    <td style={{ padding: "10px" }}>{u.name}</td>
+                    <td style={{ padding: "10px" }}>{u.username}</td>
+                    <td style={{ padding: "10px" }}>{u.role}</td>
+                    <td style={{ padding: "10px" }}>{u.active ? "Active" : "Disabled"}</td>
+                  </tr>
+                ))}
+                {users.length === 0 && (
+                  <tr><td colSpan="4" style={{ padding: "12px", color: "#64748b" }}>No users available or admin endpoint is not reachable.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </>
   );

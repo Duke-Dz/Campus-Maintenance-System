@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/authService";
+import HelpWidget from "./HelpWidget";
 
 const STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
@@ -97,11 +98,26 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [shakeError, setShakeError] = useState(false);
+  const [socialLinks, setSocialLinks] = useState([]);
 
   const triggerError = (msg) => {
     setError(msg);
     setShakeError(true);
     setTimeout(() => setShakeError(false), 500);
+  };
+
+
+  useEffect(() => {
+    authService.getSocialLinks().then(setSocialLinks).catch(() => setSocialLinks([]));
+  }, []);
+
+  const openSocial = async (platform) => {
+    try {
+      const res = await authService.clickSocial(platform);
+      window.open(res.url, "_blank", "noopener,noreferrer");
+    } catch {
+      // no-op
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -301,6 +317,11 @@ export default function Login() {
               </div>
             </div>
 
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <Link to="/forgot-password" style={{ fontSize: 12, color: "#60a5fa", textDecoration: "none", fontWeight: 600 }}>Forgot password?</Link>
+              <a href="mailto:support@campusfix.local" style={{ fontSize: 12, color: "#34d399", textDecoration: "none", fontWeight: 600 }}>Support</a>
+            </div>
+
             {/* Submit */}
             <button
               type="submit"
@@ -369,8 +390,24 @@ export default function Login() {
               ))}
             </div>
           </div>
+
+          <div style={{ marginTop: 16, textAlign: "center" }}>
+            <span style={{ fontSize: 12, color: "#64748b" }}>No account? </span>
+            <Link to="/signup" style={{ color: "#60a5fa", fontWeight: 700, fontSize: 12, textDecoration: "none" }}>Create one now</Link>
+          </div>
+          {socialLinks.length > 0 && (
+            <div style={{ marginTop: 14, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+              {socialLinks.map((item) => (
+                <button key={item.platform} onClick={() => openSocial(item.platform)} style={{ padding: "6px 12px", borderRadius: 999, border: "1px solid rgba(148,163,184,.3)", background: "transparent", color: "#cbd5e1", fontSize: 11, textTransform: "capitalize", cursor: "pointer" }}>
+                  {item.platform}
+                </button>
+              ))}
+            </div>
+          )}
+
         </div>
       </div>
+      <HelpWidget />
     </>
   );
 }

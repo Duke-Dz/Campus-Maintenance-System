@@ -4,10 +4,10 @@ import com.campus.maintenance.entity.User;
 import com.campus.maintenance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
-@Configuration
+@Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
@@ -16,26 +16,21 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // DEFINE YOUR USERS HERE
-        // Format: createAccountIfNotFound("username", "password", Role)
-        
-        createAccountIfNotFound("admin", "password", User.Role.ADMIN);
-        createAccountIfNotFound("student1", "password", User.Role.STUDENT);
-        createAccountIfNotFound("maintenance1", "password", User.Role.MAINTENANCE);
-        
-        // You can add more here whenever you want!
-        // createAccountIfNotFound("myNewUser", "mySecretPass", User.Role.STUDENT);
+        createAccountIfNotFound("admin", "password", "System Admin", "admin@campusfix.local", User.Role.ADMIN);
+        createAccountIfNotFound("student1", "password", "Student One", "student1@campusfix.local", User.Role.STUDENT);
+        createAccountIfNotFound("maintenance1", "password", "Maintenance One", "maintenance1@campusfix.local", User.Role.MAINTENANCE);
     }
 
-    private void createAccountIfNotFound(String username, String rawPassword, User.Role role) {
-        // Only create the user if they don't exist yet
-        if (userRepository.findByUsername(username).isEmpty()) {
+    private void createAccountIfNotFound(String username, String rawPassword, String name, String email, User.Role role) {
+        userRepository.findByUsername(username).orElseGet(() -> {
             User user = new User();
             user.setUsername(username);
             user.setPassword(passwordEncoder.encode(rawPassword));
+            user.setName(name);
+            user.setEmail(email);
             user.setRole(role);
-            userRepository.save(user);
-            System.out.println("✅ DataInitializer: Created user '" + username + "'");
-        }
+            user.setActive(true);
+            return userRepository.save(user);
+        });
     }
 }

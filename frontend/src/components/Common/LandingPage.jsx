@@ -398,6 +398,20 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <section className="fadeUp" style={{ position: "relative", zIndex: 1, maxWidth: 1100, margin: "16px auto 0", padding: "0 24px" }}>
+          <div className="glass rounded-3xl" style={{ padding: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <span style={{ fontSize: 12, color: "#94a3b8", letterSpacing: ".08em", fontWeight: 700 }}>LIVE DASHBOARD PREVIEW</span>
+              <a href="mailto:support@campusfix.local" style={{ fontSize: 12, color: "#34d399", textDecoration: "none", fontWeight: 700 }}>Need support?</a>
+            </div>
+            <img
+              src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1600&q=80"
+              alt="Campus maintenance dashboard preview"
+              style={{ width: "100%", maxHeight: 340, objectFit: "cover", borderRadius: 14, border: "1px solid rgba(255,255,255,0.1)" }}
+            />
+          </div>
+        </section>
+
         {/* ── Features ── */}
         <section id="features" style={{ position: "relative", zIndex: 1, padding: "100px 24px" }}>
           <div style={{ maxWidth: 1100, margin: "0 auto" }}>
