@@ -3,7 +3,7 @@ import { ProtectedRoute } from "./components/Common/ProtectedRoute.jsx";
 import { DashboardShell } from "./components/Dashboard/DashboardShell.jsx";
 import { useAuth } from "./hooks/useAuth";
 import { AdminDashboard } from "./pages/AdminDashboard";
-import { LoginPage } from "./pages/LoginPage";
+import { LoginPage, ForgotPasswordPage, ResetPasswordPage } from "./pages/LoginPage";
 import { MaintenanceDashboard } from "./pages/MaintenanceDashboard";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { RegisterPage } from "./pages/RegisterPage";
@@ -39,6 +39,22 @@ const App = () => (
         element={
           <PublicRoute>
             <RegisterPage />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <PublicRoute>
+            <ForgotPasswordPage />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <PublicRoute>
+            <ResetPasswordPage />
           </PublicRoute>
         }
       />

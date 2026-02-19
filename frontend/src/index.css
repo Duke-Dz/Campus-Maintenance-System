@@ -8,6 +8,7 @@
   :root {
     color-scheme: light;
     --sidebar-width: 280px;
+    --sidebar-collapsed-width: 80px;
     --campus-blue: #3B82F6;
     --campus-blue-dark: #2563EB;
   }
@@ -45,7 +46,9 @@
     border-radius: 1rem;
     padding: 1.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 6px rgba(0, 0, 0, 0.04);
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    border: 1px solid transparent;
+    animation: card-entrance 0.4s ease-out both;
   }
 
   .dark .saas-card {
@@ -55,12 +58,23 @@
   }
 
   .saas-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.1), 0 4px 12px rgba(0, 0, 0, 0.06);
+    border-color: rgba(59, 130, 246, 0.2);
   }
 
   .dark .saas-card:hover {
-    border-color: rgba(71, 85, 105, 0.6);
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.08);
   }
+
+  /* Staggered card entrance delays */
+  .saas-card:nth-child(1) { animation-delay: 0ms; }
+  .saas-card:nth-child(2) { animation-delay: 60ms; }
+  .saas-card:nth-child(3) { animation-delay: 120ms; }
+  .saas-card:nth-child(4) { animation-delay: 180ms; }
+  .saas-card:nth-child(5) { animation-delay: 240ms; }
+  .saas-card:nth-child(6) { animation-delay: 300ms; }
 
   /* ---- Glassmorphism sidebar ---- */
   .glass-sidebar {
@@ -73,6 +87,21 @@
   .dark .glass-sidebar {
     background: rgba(15, 23, 42, 0.95);
     border-right: 1px solid rgba(51, 65, 85, 0.5);
+  }
+
+  /* ---- Glassmorphism footer (login page) ---- */
+  .glass-footer {
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  }
+
+  .dark .glass-footer {
+    background: rgba(30, 41, 59, 0.45);
+    border: 1px solid rgba(51, 65, 85, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   }
 
   /* ---- Pill badge ---- */
@@ -107,10 +136,11 @@
   .btn-primary:hover {
     background: var(--campus-blue-dark);
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+    transform: translateY(-1px);
   }
 
   .btn-primary:active {
-    transform: scale(0.98);
+    transform: scale(0.98) translateY(0);
   }
 
   .btn-danger {
@@ -132,10 +162,11 @@
 
   .btn-danger:hover {
     background: #DC2626;
+    transform: translateY(-1px);
   }
 
   .btn-danger:active {
-    transform: scale(0.98);
+    transform: scale(0.98) translateY(0);
   }
 
   .btn-success {
@@ -157,10 +188,11 @@
 
   .btn-success:hover {
     background: #059669;
+    transform: translateY(-1px);
   }
 
   .btn-success:active {
-    transform: scale(0.98);
+    transform: scale(0.98) translateY(0);
   }
 
   .btn-ghost {
@@ -181,6 +213,7 @@
 
   .btn-ghost:hover {
     background: #F3F4F6;
+    transform: translateY(-1px);
   }
 
   .dark .btn-ghost {
@@ -199,11 +232,25 @@
     align-items: center;
     justify-content: center;
     border-radius: 0.75rem;
-    transition: transform 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
   .icon-wrap:hover {
-    transform: scale(1.1);
+    transform: scale(1.1) rotate(3deg);
+  }
+
+  /* ---- Quick action card hover ---- */
+  .quick-action-card {
+    transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .quick-action-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  }
+
+  .quick-action-card:active {
+    transform: translateY(0) scale(0.98);
   }
 }
 
@@ -213,5 +260,14 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  /* Sidebar padding utilities */
+  .pl-sidebar {
+    padding-left: var(--sidebar-width);
+  }
+
+  .pl-sidebar-collapsed {
+    padding-left: var(--sidebar-collapsed-width);
   }
 }

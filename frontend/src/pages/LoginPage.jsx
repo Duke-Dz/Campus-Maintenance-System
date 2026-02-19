@@ -1,8 +1,9 @@
-import { Eye, EyeOff, Wrench, Zap, Shield, ChevronRight } from "lucide-react";
+import { Eye, EyeOff, Wrench, Zap, Shield, ChevronRight, ArrowLeft, Mail, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { ROLES } from "../utils/constants";
+import { authService } from "../services/authService";
 
 const destination = (role) => {
   if (role === ROLES.ADMIN) return "/admin";
@@ -31,6 +32,34 @@ const CampusFixLogo = () => (
   </div>
 );
 
+/* ---- Glassy Footer ---- */
+const SimpleFooter = () => (
+  <p className="relative z-10 pb-6 text-center text-[11px] font-medium tracking-wide text-gray-600 dark:text-gray-500">
+    © {new Date().getFullYear()} CampusFix Systems
+  </p>
+);
+
+/* ---- Auth Page Background ---- */
+const AuthBackground = ({ children }) => (
+  <div className="relative flex min-h-screen flex-col overflow-hidden">
+    {/* Background */}
+    <div className="absolute inset-0 bg-gradient-to-br from-campus-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-campus-950" />
+    <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,_rgba(59,130,246,0.15),_transparent_50%),radial-gradient(circle_at_80%_70%,_rgba(99,102,241,0.1),_transparent_50%)]" />
+    {/* Floating shapes */}
+    <div className="absolute top-20 left-10 h-72 w-72 rounded-full bg-campus-400/10 blur-3xl" />
+    <div className="absolute bottom-20 right-10 h-64 w-64 rounded-full bg-indigo-400/10 blur-3xl" />
+    {/* Main content — centered */}
+    <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-12">
+      {children}
+    </div>
+    {/* Footer — bottom */}
+    <SimpleFooter />
+  </div>
+);
+
+/* ==================================================================== */
+/*  LOGIN PAGE                                                          */
+/* ==================================================================== */
 export const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -54,14 +83,7 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-campus-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-campus-950" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,_rgba(59,130,246,0.15),_transparent_50%),radial-gradient(circle_at_80%_70%,_rgba(99,102,241,0.1),_transparent_50%)]" />
-      {/* Floating shapes */}
-      <div className="absolute top-20 left-10 h-72 w-72 rounded-full bg-campus-400/10 blur-3xl" />
-      <div className="absolute bottom-20 right-10 h-64 w-64 rounded-full bg-indigo-400/10 blur-3xl" />
-
+    <AuthBackground>
       <form
         onSubmit={submit}
         className="relative z-10 w-full max-w-md animate-soft-rise rounded-3xl border border-white/60 bg-white/90 p-8 shadow-panel backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-900/85"
@@ -72,7 +94,7 @@ export const LoginPage = () => {
           Welcome to Campus<span className="text-campus-500">Fix</span>
         </h1>
         <p className="mt-1.5 text-center text-sm text-gray-500 dark:text-gray-400">
-          Sign in to manage campus maintenance
+          Sign in to access your dashboard
         </p>
 
         {/* Username */}
@@ -109,15 +131,15 @@ export const LoginPage = () => {
           </button>
         </div>
 
-        {/* Forgot */}
+        {/* Remember + Forgot */}
         <div className="mt-3 flex items-center justify-between">
           <label className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <input type="checkbox" className="rounded border-gray-300 text-campus-500 focus:ring-campus-400 dark:border-slate-600" />
             Remember me
           </label>
-          <button type="button" className="text-sm font-semibold text-campus-500 transition hover:text-campus-600">
+          <Link to="/forgot-password" className="text-sm font-semibold text-campus-500 transition hover:text-campus-600">
             Forgot password?
-          </button>
+          </Link>
         </div>
 
         {/* Error */}
@@ -153,14 +175,273 @@ export const LoginPage = () => {
             Create account
           </Link>
         </p>
-
-        {/* Footer */}
-        <div className="mt-6 border-t border-gray-100 pt-4 dark:border-slate-700/50">
-          <p className="text-center text-[11px] text-gray-400 dark:text-gray-500">
-            Smart Campus Maintenance System · CampusFix v1.0
-          </p>
-        </div>
       </form>
-    </div>
+    </AuthBackground>
+  );
+};
+
+/* ==================================================================== */
+/*  FORGOT PASSWORD PAGE                                                */
+/* ==================================================================== */
+export const ForgotPasswordPage = () => {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await authService.forgotPassword(email);
+      setSuccess(true);
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || "Failed to send reset link. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AuthBackground>
+      <div className="relative z-10 w-full max-w-md animate-soft-rise rounded-3xl border border-white/60 bg-white/90 p-8 shadow-panel backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-900/85">
+        <CampusFixLogo />
+
+        {success ? (
+          /* ---- Success State ---- */
+          <div className="mt-6 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/30">
+              <Mail size={28} className="text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Check Your Email</h2>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              We've sent a password reset link to <span className="font-semibold text-campus-600 dark:text-campus-400">{email}</span>.
+              Check your inbox and follow the instructions.
+            </p>
+            <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
+              Didn't receive it? Check your spam folder or try again.
+            </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                onClick={() => { setSuccess(false); setEmail(""); }}
+                className="btn-ghost w-full justify-center"
+              >
+                Try a different email
+              </button>
+              <Link to="/login" className="btn-primary w-full justify-center no-underline">
+                <ArrowLeft size={16} /> Back to Sign In
+              </Link>
+            </div>
+          </div>
+        ) : (
+          /* ---- Form State ---- */
+          <>
+            <h1 className="mt-5 text-center text-2xl font-bold text-gray-900 dark:text-white">
+              Forgot Password?
+            </h1>
+            <p className="mt-1.5 text-center text-sm text-gray-500 dark:text-gray-400">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
+
+            <form onSubmit={submit} className="mt-6">
+              <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+                Email Address
+              </label>
+              <div className="mt-1.5 flex rounded-xl border border-gray-200 bg-white transition-all duration-200 focus-within:border-campus-400 focus-within:ring-2 focus-within:ring-campus-100 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-campus-500 dark:focus-within:ring-campus-900/30">
+                <div className="flex items-center pl-4 text-gray-400">
+                  <Mail size={18} />
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-transparent px-3 py-2.5 text-sm outline-none dark:text-white"
+                  placeholder="Enter your email address"
+                  required
+                />
+              </div>
+
+              {error && (
+                <p className="mt-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 dark:bg-red-900/20 dark:text-red-300">
+                  {error}
+                </p>
+              )}
+
+              <button
+                disabled={loading}
+                type="submit"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-campus-500 to-campus-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-campus-500/25 transition-all duration-200 hover:from-campus-600 hover:to-campus-700 hover:shadow-campus-500/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" /> Sending...
+                  </>
+                ) : (
+                  <>
+                    Send Reset Link
+                    <ChevronRight size={16} />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-5 text-center">
+              <Link to="/login" className="inline-flex items-center gap-1.5 text-sm font-semibold text-campus-500 transition hover:text-campus-600">
+                <ArrowLeft size={14} /> Back to Sign In
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
+    </AuthBackground>
+  );
+};
+
+/* ==================================================================== */
+/*  RESET PASSWORD PAGE                                                 */
+/* ==================================================================== */
+export const ResetPasswordPage = () => {
+  const navigate = useNavigate();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  // Get token from URL
+  const token = new URLSearchParams(window.location.search).get("token");
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      await authService.resetPassword(token, password);
+      setSuccess(true);
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || "Failed to reset password. The link may have expired.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!token) {
+    return (
+      <AuthBackground>
+        <div className="relative z-10 w-full max-w-md animate-soft-rise rounded-3xl border border-white/60 bg-white/90 p-8 shadow-panel backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-900/85 text-center">
+          <CampusFixLogo />
+          <h2 className="mt-5 text-xl font-bold text-gray-900 dark:text-white">Invalid Reset Link</h2>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            This password reset link is invalid or has expired. Please request a new one.
+          </p>
+          <Link to="/forgot-password" className="btn-primary mt-6 w-full justify-center no-underline inline-flex">
+            Request New Link
+          </Link>
+        </div>
+      </AuthBackground>
+    );
+  }
+
+  return (
+    <AuthBackground>
+      <div className="relative z-10 w-full max-w-md animate-soft-rise rounded-3xl border border-white/60 bg-white/90 p-8 shadow-panel backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-900/85">
+        <CampusFixLogo />
+
+        {success ? (
+          <div className="mt-6 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/30">
+              <Shield size={28} className="text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Password Reset!</h2>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              Your password has been successfully updated. You can now sign in with your new password.
+            </p>
+            <Link to="/login" className="btn-primary mt-6 w-full justify-center no-underline inline-flex">
+              Sign In Now
+            </Link>
+          </div>
+        ) : (
+          <>
+            <h1 className="mt-5 text-center text-2xl font-bold text-gray-900 dark:text-white">
+              Set New Password
+            </h1>
+            <p className="mt-1.5 text-center text-sm text-gray-500 dark:text-gray-400">
+              Enter your new password below.
+            </p>
+
+            <form onSubmit={submit} className="mt-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+                  New Password
+                </label>
+                <div className="mt-1.5 flex rounded-xl border border-gray-200 bg-white transition-all duration-200 focus-within:border-campus-400 focus-within:ring-2 focus-within:ring-campus-100 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-campus-500 dark:focus-within:ring-campus-900/30">
+                  <input
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    type={showPassword ? "text" : "password"}
+                    className="w-full rounded-l-xl bg-transparent px-4 py-2.5 text-sm outline-none dark:text-white"
+                    placeholder="Enter new password"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="rounded-r-xl px-3 text-gray-400 transition hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+                  Confirm Password
+                </label>
+                <input
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  type="password"
+                  className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-campus-500 dark:focus:ring-campus-900/30"
+                  placeholder="Confirm new password"
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              {error && (
+                <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 dark:bg-red-900/20 dark:text-red-300">
+                  {error}
+                </p>
+              )}
+
+              <button
+                disabled={loading}
+                type="submit"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-campus-500 to-campus-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-campus-500/25 transition-all duration-200 hover:from-campus-600 hover:to-campus-700 hover:shadow-campus-500/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" /> Updating...
+                  </>
+                ) : (
+                  "Reset Password"
+                )}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
+    </AuthBackground>
   );
 };

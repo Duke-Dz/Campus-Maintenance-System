@@ -368,7 +368,10 @@ export const AdminDashboard = () => {
                 label: "Assign\nCrew", icon: Wrench, bg: "bg-purple-100 dark:bg-purple-900/30", fg: "text-purple-600 dark:text-purple-400",
                 onClick: () => { setActiveTab("tickets"); setFilters((prev) => ({ ...prev, status: "APPROVED" })); }
               },
-              { label: "View\nAnalytics", icon: BarChart3, bg: "bg-amber-100 dark:bg-amber-900/30", fg: "text-amber-600 dark:text-amber-400" },
+              {
+                label: "View\nAnalytics", icon: BarChart3, bg: "bg-amber-100 dark:bg-amber-900/30", fg: "text-amber-600 dark:text-amber-400",
+                onClick: () => window.scrollTo({ top: 0, behavior: "smooth" })
+              },
               {
                 label: "Manage\nUsers", icon: UserCog, bg: "bg-rose-100 dark:bg-rose-900/30", fg: "text-rose-600 dark:text-rose-400",
                 onClick: () => setActiveTab("users")
@@ -489,8 +492,8 @@ export const AdminDashboard = () => {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${activeTab === tab
-                  ? "bg-campus-500 text-white shadow-sm shadow-campus-500/25"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700"
+                ? "bg-campus-500 text-white shadow-sm shadow-campus-500/25"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700"
                 }`}
             >
               {titleCase(tab)}

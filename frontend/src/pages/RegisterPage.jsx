@@ -72,144 +72,146 @@ export const RegisterPage = () => {
     "mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-campus-500 dark:focus:ring-campus-900/30";
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
+    <div className="relative flex min-h-screen flex-col overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-campus-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-campus-950" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,_rgba(59,130,246,0.15),_transparent_50%),radial-gradient(circle_at_80%_70%,_rgba(99,102,241,0.1),_transparent_50%)]" />
       <div className="absolute top-20 left-10 h-72 w-72 rounded-full bg-campus-400/10 blur-3xl" />
       <div className="absolute bottom-20 right-10 h-64 w-64 rounded-full bg-indigo-400/10 blur-3xl" />
 
-      <form
-        onSubmit={submit}
-        className="relative z-10 w-full max-w-lg animate-soft-rise rounded-3xl border border-white/60 bg-white/90 p-8 shadow-panel backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-900/85"
-      >
-        {/* Logo + Branding */}
-        <CampusFixLogo />
-        <h1 className="mt-5 text-center text-2xl font-bold text-gray-900 dark:text-white">
-          Join Campus<span className="text-campus-500">Fix</span>
-        </h1>
-        <p className="mt-1.5 text-center text-sm text-gray-500 dark:text-gray-400">
-          Create your student account to report campus issues
-        </p>
+      <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-12">
 
-        {/* Username + Email row */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Username</label>
-            <input
-              value={form.username}
-              onChange={(e) => setForm((prev) => ({ ...prev, username: e.target.value }))}
-              className={inputClass}
-              placeholder="johndoe"
-              required
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Email</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-              className={inputClass}
-              placeholder="john@university.edu"
-              required
-            />
-          </div>
-        </div>
+        <form
+          onSubmit={submit}
+          className="relative z-10 w-full max-w-lg animate-soft-rise rounded-3xl border border-white/60 bg-white/90 p-8 shadow-panel backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-900/85"
+        >
+          {/* Logo + Branding */}
+          <CampusFixLogo />
+          <h1 className="mt-5 text-center text-2xl font-bold text-gray-900 dark:text-white">
+            Join Campus<span className="text-campus-500">Fix</span>
+          </h1>
+          <p className="mt-1.5 text-center text-sm text-gray-500 dark:text-gray-400">
+            Create your student account to report campus issues
+          </p>
 
-        {/* Full Name */}
-        <div className="mt-4">
-          <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Full Name</label>
-          <input
-            value={form.fullName}
-            onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
-            className={inputClass}
-            placeholder="John Doe"
-            required
-          />
-        </div>
-
-        {/* Password row */}
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Password</label>
-            <div className="mt-1.5 flex rounded-xl border border-gray-200 bg-white transition-all duration-200 focus-within:border-campus-400 focus-within:ring-2 focus-within:ring-campus-100 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-campus-500 dark:focus-within:ring-campus-900/30">
+          {/* Username + Email row */}
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Username</label>
               <input
-                type={showPassword ? "text" : "password"}
-                value={form.password}
-                onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                className="w-full rounded-l-xl bg-transparent px-4 py-2.5 text-sm outline-none dark:text-white"
-                placeholder="Min 8 chars"
+                value={form.username}
+                onChange={(e) => setForm((prev) => ({ ...prev, username: e.target.value }))}
+                className={inputClass}
+                placeholder="Enter username"
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="rounded-r-xl px-3 text-gray-400 transition hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Email</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                className={inputClass}
+                placeholder="Enter email"
+                required
+              />
             </div>
           </div>
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Confirm Password</label>
+
+          {/* Full Name */}
+          <div className="mt-4">
+            <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Full Name</label>
             <input
-              type="password"
-              value={form.confirmPassword}
-              onChange={(e) => setForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+              value={form.fullName}
+              onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
               className={inputClass}
-              placeholder="Re-enter password"
+              placeholder="Enter full name"
               required
             />
           </div>
-        </div>
 
-        {/* Password strength hint */}
-        <p className="mt-2 text-[11px] text-gray-400 dark:text-gray-500">
-          Password must be at least 8 characters long
-        </p>
+          {/* Password row */}
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Password</label>
+              <div className="mt-1.5 flex rounded-xl border border-gray-200 bg-white transition-all duration-200 focus-within:border-campus-400 focus-within:ring-2 focus-within:ring-campus-100 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-campus-500 dark:focus-within:ring-campus-900/30">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                  className="w-full rounded-l-xl bg-transparent px-4 py-2.5 text-sm outline-none dark:text-white"
+                  placeholder="Enter password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="rounded-r-xl px-3 text-gray-400 transition hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Confirm Password</label>
+              <input
+                type="password"
+                value={form.confirmPassword}
+                onChange={(e) => setForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                className={inputClass}
+                placeholder="Confirm password"
+                required
+              />
+            </div>
+          </div>
 
-        {/* Error */}
-        {error && (
-          <p className="mt-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 dark:bg-red-900/20 dark:text-red-300">
-            {error}
+          {/* Password strength hint */}
+          <p className="mt-2 text-[11px] text-gray-400 dark:text-gray-500">
+            Password must be at least 8 characters long
           </p>
-        )}
 
-        {/* Submit */}
-        <button
-          disabled={loading}
-          type="submit"
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-campus-500 to-campus-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-campus-500/25 transition-all duration-200 hover:from-campus-600 hover:to-campus-700 hover:shadow-campus-500/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {loading ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Creating account...
-            </>
-          ) : (
-            <>
-              <UserPlus size={16} />
-              Create Account
-            </>
+          {/* Error */}
+          {error && (
+            <p className="mt-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 dark:bg-red-900/20 dark:text-red-300">
+              {error}
+            </p>
           )}
-        </button>
 
-        {/* Login link */}
-        <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
-          Already have an account?{" "}
-          <Link to="/login" className="font-semibold text-campus-500 transition hover:text-campus-600 hover:underline">
-            Sign in
-          </Link>
-        </p>
+          {/* Submit */}
+          <button
+            disabled={loading}
+            type="submit"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-campus-500 to-campus-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-campus-500/25 transition-all duration-200 hover:from-campus-600 hover:to-campus-700 hover:shadow-campus-500/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {loading ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Creating account...
+              </>
+            ) : (
+              <>
+                <UserPlus size={16} />
+                Create Account
+              </>
+            )}
+          </button>
 
-        {/* Footer */}
-        <div className="mt-6 border-t border-gray-100 pt-4 dark:border-slate-700/50">
-          <p className="text-center text-[11px] text-gray-400 dark:text-gray-500">
-            Smart Campus Maintenance System · CampusFix v1.0
+          {/* Login link */}
+          <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
+            Already have an account?{" "}
+            <Link to="/login" className="font-semibold text-campus-500 transition hover:text-campus-600 hover:underline">
+              Sign in
+            </Link>
           </p>
-        </div>
-      </form>
+
+        </form>
+      </div>
+
+      {/* Footer */}
+      <p className="relative z-10 pb-6 text-center text-[11px] font-medium tracking-wide text-gray-600 dark:text-gray-500">
+        © {new Date().getFullYear()} CampusFix Systems
+      </p>
     </div>
   );
 };

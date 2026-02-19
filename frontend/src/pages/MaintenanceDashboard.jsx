@@ -181,13 +181,22 @@ export const MaintenanceDashboard = () => {
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Quick Actions</h3>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Active\nTasks", icon: Hammer, bg: "bg-blue-100 dark:bg-blue-900/30", fg: "text-campus-600 dark:text-blue-400" },
-            { label: "Upload\nPhotos", icon: ImagePlus, bg: "bg-emerald-100 dark:bg-emerald-900/30", fg: "text-emerald-600 dark:text-emerald-400" },
-            { label: "My\nPerformance", icon: TrendingUp, bg: "bg-purple-100 dark:bg-purple-900/30", fg: "text-purple-600 dark:text-purple-400" },
+            {
+              label: "Active\nTasks", icon: Hammer, bg: "bg-blue-100 dark:bg-blue-900/30", fg: "text-campus-600 dark:text-blue-400",
+              onClick: () => document.getElementById("work-queue")?.scrollIntoView({ behavior: "smooth" })
+            },
+            {
+              label: "Upload\nPhotos", icon: ImagePlus, bg: "bg-emerald-100 dark:bg-emerald-900/30", fg: "text-emerald-600 dark:text-emerald-400",
+              onClick: () => document.getElementById("work-queue")?.scrollIntoView({ behavior: "smooth" })
+            },
+            {
+              label: "My\nPerformance", icon: TrendingUp, bg: "bg-purple-100 dark:bg-purple-900/30", fg: "text-purple-600 dark:text-purple-400",
+              onClick: () => document.getElementById("performance")?.scrollIntoView({ behavior: "smooth" })
+            },
           ].map((a) => {
             const Icon = a.icon;
             return (
-              <button key={a.label} className="group flex flex-col items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/50 p-4 transition-all duration-200 hover:border-gray-200 hover:shadow-card dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-slate-600">
+              <button key={a.label} onClick={a.onClick} className="group flex flex-col items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/50 p-4 transition-all duration-200 hover:border-gray-200 hover:shadow-card hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-slate-600">
                 <div className={`icon-wrap ${a.bg}`}>
                   <Icon size={22} className={a.fg} />
                 </div>
@@ -205,7 +214,7 @@ export const MaintenanceDashboard = () => {
       {!loading && !error && (
         <>
           {/* ---- Active Work Queue ---- */}
-          <section className="space-y-4">
+          <section id="work-queue" className="space-y-4">
             <div className="flex items-center gap-2">
               <Wrench size={18} className="text-campus-500" />
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Active Work Queue</h2>
@@ -322,7 +331,7 @@ export const MaintenanceDashboard = () => {
           </section>
 
           {/* ---- My Performance Card ---- */}
-          <section className="saas-card">
+          <section id="performance" className="saas-card">
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">My Performance</h3>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-xl bg-emerald-50 p-4 text-center dark:bg-emerald-900/20">
