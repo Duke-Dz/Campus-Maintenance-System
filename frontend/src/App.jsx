@@ -1,6 +1,6 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import { Navbar } from "./components/Common/Navbar.jsx";
 import { ProtectedRoute } from "./components/Common/ProtectedRoute.jsx";
+import { DashboardShell } from "./components/Dashboard/DashboardShell.jsx";
 import { useAuth } from "./hooks/useAuth";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { LoginPage } from "./pages/LoginPage";
@@ -22,13 +22,6 @@ const HomeRedirect = () => {
   const { isAuthenticated, homePath } = useAuth();
   return <Navigate to={isAuthenticated ? homePath : "/login"} replace />;
 };
-
-const DashboardLayout = ({ children }) => (
-  <div className="min-h-screen bg-sand dark:bg-slate-950">
-    <Navbar />
-    <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">{children}</main>
-  </div>
-);
 
 const App = () => (
   <Router>
@@ -53,9 +46,9 @@ const App = () => (
         path="/student"
         element={
           <ProtectedRoute roles={[ROLES.STUDENT]}>
-            <DashboardLayout>
+            <DashboardShell>
               <StudentDashboard />
-            </DashboardLayout>
+            </DashboardShell>
           </ProtectedRoute>
         }
       />
@@ -63,9 +56,9 @@ const App = () => (
         path="/maintenance"
         element={
           <ProtectedRoute roles={[ROLES.MAINTENANCE]}>
-            <DashboardLayout>
+            <DashboardShell>
               <MaintenanceDashboard />
-            </DashboardLayout>
+            </DashboardShell>
           </ProtectedRoute>
         }
       />
@@ -73,9 +66,9 @@ const App = () => (
         path="/admin"
         element={
           <ProtectedRoute roles={[ROLES.ADMIN]}>
-            <DashboardLayout>
+            <DashboardShell>
               <AdminDashboard />
-            </DashboardLayout>
+            </DashboardShell>
           </ProtectedRoute>
         }
       />
