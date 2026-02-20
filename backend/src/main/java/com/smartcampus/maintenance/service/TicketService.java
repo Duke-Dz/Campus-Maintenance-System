@@ -1,5 +1,9 @@
 package com.smartcampus.maintenance.service;
 
+import com.smartcampus.maintenance.dto.ticket.CommentCreateRequest;
+import com.smartcampus.maintenance.dto.ticket.CommentResponse;
+import com.smartcampus.maintenance.dto.ticket.DuplicateCheckResponse;
+import com.smartcampus.maintenance.dto.ticket.DuplicateCheckResponse.SimilarTicketSummary;
 import com.smartcampus.maintenance.dto.ticket.TicketAssignRequest;
 import com.smartcampus.maintenance.dto.ticket.TicketCreateRequest;
 import com.smartcampus.maintenance.dto.ticket.TicketDetailResponse;
@@ -9,6 +13,7 @@ import com.smartcampus.maintenance.dto.ticket.TicketRatingResponse;
 import com.smartcampus.maintenance.dto.ticket.TicketResponse;
 import com.smartcampus.maintenance.dto.ticket.TicketStatusUpdateRequest;
 import com.smartcampus.maintenance.entity.Ticket;
+import com.smartcampus.maintenance.entity.TicketComment;
 import com.smartcampus.maintenance.entity.TicketLog;
 import com.smartcampus.maintenance.entity.TicketRating;
 import com.smartcampus.maintenance.entity.User;
@@ -21,6 +26,7 @@ import com.smartcampus.maintenance.exception.ForbiddenException;
 import com.smartcampus.maintenance.exception.NotFoundException;
 import com.smartcampus.maintenance.exception.UnprocessableEntityException;
 import com.smartcampus.maintenance.mapper.TicketMapper;
+import com.smartcampus.maintenance.repository.TicketCommentRepository;
 import com.smartcampus.maintenance.repository.TicketLogRepository;
 import com.smartcampus.maintenance.repository.TicketRatingRepository;
 import com.smartcampus.maintenance.repository.TicketRepository;
@@ -41,24 +47,27 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class TicketService {
 
-    private static final EnumSet<TicketStatus> RESOLVED_OR_CLOSED = EnumSet.of(TicketStatus.RESOLVED, TicketStatus.CLOSED);
+    private static final EnumSet<TicketStatus> RESOLVED_OR_CLOSED = EnumSet.of(TicketStatus.RESOLVED,
+            TicketStatus.CLOSED);
 
     private final TicketRepository ticketRepository;
     private final TicketLogRepository ticketLogRepository;
     private final TicketRatingRepository ticketRatingRepository;
+    private final TicketCommentRepository ticketCommentRepository;
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
 
     public TicketService(
-        TicketRepository ticketRepository,
-        TicketLogRepository ticketLogRepository,
-        TicketRatingRepository ticketRatingRepository,
-        UserRepository userRepository,
-        FileStorageService fileStorageService
-    ) {
+            TicketRepository ticketRepository,
+            TicketLogRepository ticketLogRepository,
+            TicketRatingRepository ticketRatingRepository,
+            TicketCommentRepository ticketCommentRepository,
+            UserRepository userRepository,
+            FileStorageService fileStorageService) {
         this.ticketRepository = ticketRepository;
         this.ticketLogRepository = ticketLogRepository;
         this.ticketRatingRepository = ticketRatingRepository;
+        this.ticketCommentRepository = ticketCommentRepository;
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
     }
@@ -85,39 +94,38 @@ public class TicketService {
 
     @Transactional(readOnly = true)
     public List<TicketResponse> getAllTickets(
-        User actor,
-        TicketStatus status,
-        TicketCategory category,
-        UrgencyLevel urgency,
-        Long assigneeId,
-        String search
-    ) {
+            User actor,
+            TicketStatus status,
+            TicketCategory category,
+            UrgencyLevel urgency,
+            Long assigneeId,
+            String search) {
         requireRole(actor, Role.ADMIN);
         Specification<Ticket> specification = Specification
-            .where(TicketSpecifications.statusEquals(status))
-            .and(TicketSpecifications.categoryEquals(category))
-            .and(TicketSpecifications.urgencyEquals(urgency))
-            .and(TicketSpecifications.assigneeEquals(assigneeId))
-            .and(TicketSpecifications.searchLike(search));
+                .where(TicketSpecifications.statusEquals(status))
+                .and(TicketSpecifications.categoryEquals(category))
+                .and(TicketSpecifications.urgencyEquals(urgency))
+                .and(TicketSpecifications.assigneeEquals(assigneeId))
+                .and(TicketSpecifications.searchLike(search));
         return ticketRepository.findAll(specification, Sort.by(Sort.Direction.DESC, "createdAt")).stream()
-            .map(TicketMapper::toResponse)
-            .toList();
+                .map(TicketMapper::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public List<TicketResponse> getMyTickets(User actor) {
         requireRole(actor, Role.STUDENT);
         return ticketRepository.findByCreatedByIdOrderByCreatedAtDesc(actor.getId()).stream()
-            .map(TicketMapper::toResponse)
-            .toList();
+                .map(TicketMapper::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public List<TicketResponse> getAssignedTickets(User actor) {
         requireRole(actor, Role.MAINTENANCE);
         return ticketRepository.findByAssignedToIdOrderByCreatedAtDesc(actor.getId()).stream()
-            .map(TicketMapper::toResponse)
-            .toList();
+                .map(TicketMapper::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -126,11 +134,11 @@ public class TicketService {
         ensureAccess(ticket, actor);
 
         List<TicketLogResponse> logs = ticketLogRepository.findByTicketIdOrderByTimestampAsc(ticketId).stream()
-            .map(TicketMapper::toLogResponse)
-            .toList();
+                .map(TicketMapper::toLogResponse)
+                .toList();
         TicketRatingResponse rating = ticketRatingRepository.findByTicketId(ticketId)
-            .map(TicketMapper::toRatingResponse)
-            .orElse(null);
+                .map(TicketMapper::toRatingResponse)
+                .orElse(null);
         return new TicketDetailResponse(TicketMapper.toResponse(ticket), logs, rating);
     }
 
@@ -139,8 +147,8 @@ public class TicketService {
         Ticket ticket = requireTicket(ticketId);
         ensureAccess(ticket, actor);
         return ticketLogRepository.findByTicketIdOrderByTimestampAsc(ticketId).stream()
-            .map(TicketMapper::toLogResponse)
-            .toList();
+                .map(TicketMapper::toLogResponse)
+                .toList();
     }
 
     @Transactional
@@ -152,7 +160,7 @@ public class TicketService {
         }
 
         User assignee = userRepository.findById(request.assigneeId())
-            .orElseThrow(() -> new NotFoundException("Maintenance user not found"));
+                .orElseThrow(() -> new NotFoundException("Maintenance user not found"));
         if (assignee.getRole() != Role.MAINTENANCE) {
             throw new UnprocessableEntityException("Assignee must have MAINTENANCE role");
         }
@@ -220,9 +228,10 @@ public class TicketService {
             if (override) {
                 return;
             }
-            boolean allowed = (current == TicketStatus.SUBMITTED && (target == TicketStatus.APPROVED || target == TicketStatus.REJECTED))
-                || (current == TicketStatus.APPROVED && target == TicketStatus.ASSIGNED)
-                || (current == TicketStatus.RESOLVED && target == TicketStatus.CLOSED);
+            boolean allowed = (current == TicketStatus.SUBMITTED
+                    && (target == TicketStatus.APPROVED || target == TicketStatus.REJECTED))
+                    || (current == TicketStatus.APPROVED && target == TicketStatus.ASSIGNED)
+                    || (current == TicketStatus.RESOLVED && target == TicketStatus.CLOSED);
 
             if (!allowed) {
                 throw new ConflictException("Invalid admin transition from " + current + " to " + target);
@@ -238,7 +247,7 @@ public class TicketService {
                 throw new ForbiddenException("Maintenance users can only update assigned tickets");
             }
             boolean allowed = (current == TicketStatus.ASSIGNED && target == TicketStatus.IN_PROGRESS)
-                || (current == TicketStatus.IN_PROGRESS && target == TicketStatus.RESOLVED);
+                    || (current == TicketStatus.IN_PROGRESS && target == TicketStatus.RESOLVED);
             if (!allowed) {
                 throw new ConflictException("Invalid maintenance transition from " + current + " to " + target);
             }
@@ -253,7 +262,7 @@ public class TicketService {
 
     private Ticket requireTicket(Long ticketId) {
         return ticketRepository.findById(ticketId)
-            .orElseThrow(() -> new NotFoundException("Ticket not found"));
+                .orElseThrow(() -> new NotFoundException("Ticket not found"));
     }
 
     private void ensureAccess(Ticket ticket, User actor) {
@@ -264,7 +273,7 @@ public class TicketService {
             return;
         }
         if (actor.getRole() == Role.MAINTENANCE && ticket.getAssignedTo() != null
-            && Objects.equals(ticket.getAssignedTo().getId(), actor.getId())) {
+                && Objects.equals(ticket.getAssignedTo().getId(), actor.getId())) {
             return;
         }
         throw new ForbiddenException("You do not have access to this ticket");
@@ -291,5 +300,111 @@ public class TicketService {
             return note.trim();
         }
         return fallback;
+    }
+
+    // ---- Comments ----
+
+    @Transactional
+    public CommentResponse addComment(Long ticketId, CommentCreateRequest request, User actor) {
+        Ticket ticket = requireTicket(ticketId);
+        ensureAccess(ticket, actor);
+
+        TicketComment comment = new TicketComment();
+        comment.setTicket(ticket);
+        comment.setAuthor(actor);
+        comment.setContent(request.content().trim());
+        comment = ticketCommentRepository.save(comment);
+        return toCommentResponse(comment);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CommentResponse> getComments(Long ticketId, User actor) {
+        Ticket ticket = requireTicket(ticketId);
+        ensureAccess(ticket, actor);
+        return ticketCommentRepository.findByTicketIdOrderByCreatedAtAsc(ticketId).stream()
+                .map(this::toCommentResponse)
+                .toList();
+    }
+
+    private CommentResponse toCommentResponse(TicketComment c) {
+        return new CommentResponse(
+                c.getId(),
+                c.getTicket().getId(),
+                c.getAuthor().getUsername(),
+                c.getAuthor().getFullName(),
+                c.getAuthor().getRole().name(),
+                c.getContent(),
+                c.getCreatedAt());
+    }
+
+    // ---- Duplicate Detection ----
+
+    @Transactional(readOnly = true)
+    public DuplicateCheckResponse checkDuplicates(TicketCreateRequest request) {
+        EnumSet<TicketStatus> closedStatuses = EnumSet.of(TicketStatus.CLOSED, TicketStatus.REJECTED);
+        List<Ticket> candidates = ticketRepository.findByCategoryAndBuildingAndStatusNotIn(
+                request.category(), request.building().trim(), closedStatuses);
+
+        String inputTitle = request.title().trim().toLowerCase();
+        List<SimilarTicketSummary> similar = candidates.stream()
+                .filter(t -> similarity(inputTitle, t.getTitle().toLowerCase()) > 0.5)
+                .limit(5)
+                .map(t -> new SimilarTicketSummary(
+                        t.getId(), t.getTitle(), t.getStatus().name(),
+                        t.getBuilding(), t.getCategory().name()))
+                .toList();
+
+        if (similar.isEmpty()) {
+            return new DuplicateCheckResponse(false, List.of(), "No similar reports found.");
+        }
+        return new DuplicateCheckResponse(true, similar,
+                "Found " + similar.size() + " similar report(s) in " + request.building() + ". You may still submit.");
+    }
+
+    private double similarity(String a, String b) {
+        if (a.equals(b))
+            return 1.0;
+        if (a.isEmpty() || b.isEmpty())
+            return 0.0;
+        // containment check
+        if (a.contains(b) || b.contains(a))
+            return 0.8;
+        // Levenshtein distance
+        int maxLen = Math.max(a.length(), b.length());
+        int distance = levenshtein(a, b);
+        return 1.0 - ((double) distance / maxLen);
+    }
+
+    private int levenshtein(String a, String b) {
+        int[][] dp = new int[a.length() + 1][b.length() + 1];
+        for (int i = 0; i <= a.length(); i++)
+            dp[i][0] = i;
+        for (int j = 0; j <= b.length(); j++)
+            dp[0][j] = j;
+        for (int i = 1; i <= a.length(); i++) {
+            for (int j = 1; j <= b.length(); j++) {
+                int cost = a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1;
+                dp[i][j] = Math.min(Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1), dp[i - 1][j - 1] + cost);
+            }
+        }
+        return dp[a.length()][b.length()];
+    }
+
+    // ---- After-Photo ----
+
+    @Transactional
+    public TicketResponse uploadAfterPhoto(Long ticketId, MultipartFile image, User actor) {
+        requireRole(actor, Role.MAINTENANCE);
+        Ticket ticket = requireTicket(ticketId);
+        if (ticket.getAssignedTo() == null || !Objects.equals(ticket.getAssignedTo().getId(), actor.getId())) {
+            throw new ForbiddenException("Only the assigned crew member can upload after photos");
+        }
+        if (ticket.getStatus() != TicketStatus.IN_PROGRESS && ticket.getStatus() != TicketStatus.RESOLVED) {
+            throw new ConflictException("Ticket must be IN_PROGRESS or RESOLVED to upload after photo");
+        }
+        String path = fileStorageService.store(image);
+        ticket.setAfterImagePath(path);
+        Ticket saved = ticketRepository.save(ticket);
+        return TicketMapper.toResponse(saved);
     }
 }

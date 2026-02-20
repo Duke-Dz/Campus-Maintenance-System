@@ -97,7 +97,7 @@ export const RegisterPage = () => {
           {/* Username + Email row */}
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Username</label>
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-700 dark:text-gray-300">Username</label>
               <input
                 value={form.username}
                 onChange={(e) => setForm((prev) => ({ ...prev, username: e.target.value }))}
@@ -107,7 +107,7 @@ export const RegisterPage = () => {
               />
             </div>
             <div>
-              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Email</label>
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-700 dark:text-gray-300">Email</label>
               <input
                 type="email"
                 value={form.email}
@@ -121,7 +121,7 @@ export const RegisterPage = () => {
 
           {/* Full Name */}
           <div className="mt-4">
-            <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Full Name</label>
+            <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-700 dark:text-gray-300">Full Name</label>
             <input
               value={form.fullName}
               onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
@@ -134,7 +134,7 @@ export const RegisterPage = () => {
           {/* Password row */}
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Password</label>
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-700 dark:text-gray-300">Password</label>
               <div className="mt-1.5 flex rounded-xl border border-gray-200 bg-white transition-all duration-200 focus-within:border-campus-400 focus-within:ring-2 focus-within:ring-campus-100 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-campus-500 dark:focus-within:ring-campus-900/30">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -154,7 +154,7 @@ export const RegisterPage = () => {
               </div>
             </div>
             <div>
-              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Confirm Password</label>
+              <label className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-700 dark:text-gray-300">Confirm Password</label>
               <input
                 type="password"
                 value={form.confirmPassword}
@@ -198,7 +198,7 @@ export const RegisterPage = () => {
           </button>
 
           {/* Login link */}
-          <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-5 text-center text-sm text-gray-700 dark:text-gray-300">
             Already have an account?{" "}
             <Link to="/login" className="font-semibold text-campus-500 transition hover:text-campus-600 hover:underline">
               Sign in

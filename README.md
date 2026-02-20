@@ -1,123 +1,98 @@
-# 🏫 Smart Campus Maintenance System
+# Smart Campus Maintenance System
 
-**A robust, role-based facility management solution designed to streamline maintenance operations in educational institutions.**
+Role-based campus maintenance platform for reporting, routing, and resolving facility issues with live analytics.
 
-![Project Status](https://img.shields.io/badge/status-in_development-orange)
-![License](https://img.shields.io/badge/license-MIT-blue)
-![Tech Stack](https://img.shields.io/badge/stack-React%20|%20Spring%20Boot%20|%20MySQL-green)
+## Stack
+- Frontend: React 18 + Vite + Tailwind + React Router + Axios
+- Backend: Spring Boot 3.5 (Java 21) + Spring Security + JPA
+- Database: H2 (default, file-based) with optional MySQL configuration
 
-## 🧠 Core Concept
+## Current Highlights
+- Role-based authentication and protected dashboards
+- Public landing page with:
+  - Real-time analytics snapshot (`/api/analytics/public-summary`)
+  - Public support configuration (`/api/analytics/public-config`)
+  - Responsive navbar with mobile menu toggle
+  - Scroll reveal animations and mobile-friendly layout
+- Public support form endpoint:
+  - `POST /api/public/contact-support`
 
-The **Smart Campus Maintenance System** transforms how universities handle facility issues. Instead of manual complaints, it offers a digital workflow where:
+## Repository Structure
+- `frontend/` React application
+- `backend/` Spring Boot API
+- `database/` SQL scripts/assets
+- `cpp-optimization/` optimization module area
+- `devops/` deployment-related files
+- `documentation/` project docs
 
-1.  **Students** report issues (broken lights, leaks, WiFi down).
-2.  **Admins** validate and prioritize tickets.
-3.  **The System** automatically assigns the best available crew member (using a **C++ Optimization Engine**).
-4.  **Maintenance Crew** updates progress in real-time via mobile.
-5.  **Analytics** track performance and infrastructure health.
+## Prerequisites
+- Node.js 18+
+- Java 21+
+- Maven 3.9+
 
----
+## Run Locally
 
-## 🏗 System Architecture
-
-- **Frontend:** React.js (Student Portal, Admin Dashboard, Crew Dashboard)
-- **Backend:** Java Spring Boot (REST API, Authentication, Ticket Lifecycle)
-- **Database:** MySQL (Users, Tickets, Assignments, Logs)
-- **Optimization:** C++ (JNI) for assignment algorithms and image compression.
-- **DevOps:** Docker containers for easy deployment.
-
----
-
-## ✨ Key Features by Role
-
-### 🎓 **Student Portal**
-
-- **Ticket Creation:** Select category (Water, Electricity, Internet, HVAC).
-- **Media Upload:** Attach photos of the issue.
-- **Location Mapping:** Pinpoint exact location (Building/Floor).
-- **Live Tracking:** Watch status change: _Submitted → Approved → Assigned → In Progress → Resolved_.
-
-### 👨‍💼 **Admin Dashboard**
-
-- **Ticket Validation:** Approve or reject incoming requests.
-- **Priority Management:** Set urgency (Low, Medium, High, Critical).
-- **Analytics:** View resolution times, most common issues, and crew efficiency.
-- **Manual Override:** Re-assign tasks if necessary.
-
-### 🛠 **Maintenance Crew Dashboard**
-
-- **Task List:** View assigned jobs with urgency levels.
-- **Status Updates:** Mark tasks as "In Progress" or "Completed".
-- **Proof of Work:** Upload "After" photos upon resolution.
-
----
-
-## 🚀 Quick Start Guide
-
-### Prerequisites
-
-- Node.js (v18+)
-- Java JDK 17+ & Maven
-- MySQL Server
-
-### 1. Clone the Repository
-
+### 1. Backend
 ```bash
-git clone [https://github.com/Duke-Dz/campus-maintenance-system.git](https://github.com/Duke-Dz/campus-maintenance-system.git)
-cd campus-maintenance-system
-
-2. Database Setup
-Bash
-
-# Log into MySQL and run the schema scripts
-mysql -u root -p < database/schemas/schema.sql
-mysql -u root -p < database/seed_data.sql
-3. Backend Setup (Spring Boot)
-Bash
-
 cd backend
-# IMPORTANT: Edit src/main/resources/application.properties with your DB password!
-mvn clean install
 mvn spring-boot:run
-4. Frontend Setup (React)
-Bash
+```
 
+Backend defaults:
+- Base URL: `http://localhost:8080`
+- H2 console: `http://localhost:8080/h2-console`
+
+### 2. Frontend
+```bash
 cd frontend
 npm install
 npm run dev
-📅 Project Roadmap (3 Months)
-Month 1: Foundation
-[x] Requirements gathering & System Design (ERD, UML).
-
-[ ] Database implementation (MySQL).
-
-[ ] Basic Authentication (Login/Register with JWT).
-
-[ ] Backend API skeleton.
-
-Month 2: Core Features
-[ ] Ticket Lifecycle (CRUD operations).
-
-[ ] Automatic Assignment Logic (Java/C++).
-
-[ ] Admin & Student Dashboards (UI).
-
-[ ] Role-based Access Control (RBAC).
-
-Month 3: Polish & Optimization
-[ ] Analytics Dashboard (Charts.js).
-
-[ ] C++ Optimization Module integration.
-
-[ ] Testing (Unit & Integration).
-
-[ ] Final Documentation & Deployment.
-
-👥 Team Structure (8 Members)
-Role	Members	Responsibilities
-Frontend	2	Student Portal, Admin/Crew Dashboards, UI/UX.
-Backend API	2	Java REST API, Authentication, Endpoints.
-Logic & DB	2	Database Design, Workload Balancing Algorithm.
-Testing/Sec	1	Input Validation, Security Audits, Bug Testing.
-DevOps/Docs	1	Deployment, ER Diagrams, Documentation.
 ```
+
+Frontend default:
+- App URL: `http://localhost:5173`
+
+## Main Config (Backend)
+File: `backend/src/main/resources/application.properties`
+
+Key values:
+- `jwt.secret`
+- `jwt.expiration-ms`
+- `app.email.enabled`
+- `app.email.from`
+- `app.landing.support-hours`
+- `app.landing.support-phone`
+- `app.landing.support-timezone`
+
+Note: restart backend after changing `application.properties`.
+
+## Public Endpoints
+- `GET /api/analytics/public-summary`
+- `GET /api/analytics/public-config`
+- `POST /api/public/contact-support`
+
+## Security Notes
+- JWT auth is required for protected API routes.
+- Public routes are explicitly allowlisted in `SecurityConfig`.
+- CORS currently allows `http://localhost:5173`.
+
+## Verification Commands
+
+### Frontend
+```bash
+cd frontend
+npx eslint src
+npm run build
+```
+
+### Backend
+```bash
+cd backend
+mvn -q -DskipTests compile
+```
+
+## Responsive Behavior
+- Desktop: full top navigation and auth actions
+- Mobile: navbar collapses into a menu button with in-panel navigation/actions
+- Mobile menu closes on section select, `Esc`, and desktop resize
+

@@ -9,4 +9,8 @@ export const userService = {
     const { data } = await apiClient.get("/users/maintenance");
     return data;
   },
+  async createStaff(payload) {
+    const { data } = await apiClient.post("/users/staff", payload);
+    return data;
+  },
 };

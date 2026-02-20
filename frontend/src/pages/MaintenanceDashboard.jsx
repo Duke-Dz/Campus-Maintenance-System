@@ -176,36 +176,8 @@ export const MaintenanceDashboard = () => {
         })}
       </section>
 
-      {/* ---- Quick Actions ---- */}
-      <section className="saas-card">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Quick Actions</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            {
-              label: "Active\nTasks", icon: Hammer, bg: "bg-blue-100 dark:bg-blue-900/30", fg: "text-campus-600 dark:text-blue-400",
-              onClick: () => document.getElementById("work-queue")?.scrollIntoView({ behavior: "smooth" })
-            },
-            {
-              label: "Upload\nPhotos", icon: ImagePlus, bg: "bg-emerald-100 dark:bg-emerald-900/30", fg: "text-emerald-600 dark:text-emerald-400",
-              onClick: () => document.getElementById("work-queue")?.scrollIntoView({ behavior: "smooth" })
-            },
-            {
-              label: "My\nPerformance", icon: TrendingUp, bg: "bg-purple-100 dark:bg-purple-900/30", fg: "text-purple-600 dark:text-purple-400",
-              onClick: () => document.getElementById("performance")?.scrollIntoView({ behavior: "smooth" })
-            },
-          ].map((a) => {
-            const Icon = a.icon;
-            return (
-              <button key={a.label} onClick={a.onClick} className="group flex flex-col items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/50 p-4 transition-all duration-200 hover:border-gray-200 hover:shadow-card hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-slate-600">
-                <div className={`icon-wrap ${a.bg}`}>
-                  <Icon size={22} className={a.fg} />
-                </div>
-                <span className="text-center text-xs font-semibold leading-tight text-gray-600 dark:text-gray-300 whitespace-pre-line">{a.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+
+
 
       {/* ---- Loading / Error ---- */}
       {loading && <LoadingSpinner label="Loading assigned tickets..." />}

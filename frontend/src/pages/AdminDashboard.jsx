@@ -24,6 +24,7 @@ import {
   FileText,
   ListChecks,
   Loader2,
+  Plus,
   Shield,
   TrendingUp,
   UserCog,
@@ -88,6 +89,12 @@ export const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [usersError, setUsersError] = useState("");
+
+  /* add staff state */
+  const [showAddStaff, setShowAddStaff] = useState(false);
+  const [staffForm, setStaffForm] = useState({ username: "", email: "", fullName: "", password: "" });
+  const [staffLoading, setStaffLoading] = useState(false);
+  const [staffError, setStaffError] = useState("");
 
   /* ticket detail modal */
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -354,41 +361,6 @@ export const AdminDashboard = () => {
             {" · "}SLA targets: Critical 4h · High 24h · Medium 72h · Low 7d
           </p>
         </article>
-
-        {/* Quick Actions */}
-        <article className="saas-card">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Quick Actions</h3>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              {
-                label: "Review\nTickets", icon: ListChecks, bg: "bg-blue-100 dark:bg-blue-900/30", fg: "text-campus-600 dark:text-blue-400",
-                onClick: () => { setActiveTab("tickets"); setFilters((prev) => ({ ...prev, status: "SUBMITTED" })); }
-              },
-              {
-                label: "Assign\nCrew", icon: Wrench, bg: "bg-purple-100 dark:bg-purple-900/30", fg: "text-purple-600 dark:text-purple-400",
-                onClick: () => { setActiveTab("tickets"); setFilters((prev) => ({ ...prev, status: "APPROVED" })); }
-              },
-              {
-                label: "View\nAnalytics", icon: BarChart3, bg: "bg-amber-100 dark:bg-amber-900/30", fg: "text-amber-600 dark:text-amber-400",
-                onClick: () => window.scrollTo({ top: 0, behavior: "smooth" })
-              },
-              {
-                label: "Manage\nUsers", icon: UserCog, bg: "bg-rose-100 dark:bg-rose-900/30", fg: "text-rose-600 dark:text-rose-400",
-                onClick: () => setActiveTab("users")
-              },
-            ].map((a) => {
-              const Icon = a.icon;
-              return (
-                <button key={a.label} onClick={a.onClick} className="group flex flex-col items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/50 p-4 transition-all duration-200 hover:border-gray-200 hover:shadow-card dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-slate-600">
-                  <div className={`icon-wrap ${a.bg}`}>
-                    <Icon size={22} className={a.fg} />
-                  </div>
-                  <span className="text-center text-xs font-semibold leading-tight text-gray-600 dark:text-gray-300 whitespace-pre-line">{a.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </article>
       </section>
 
       {/* ---- Charts Row ---- */}
@@ -567,6 +539,53 @@ export const AdminDashboard = () => {
 
         {activeTab === "users" && (
           <div className="space-y-4">
+            {/* Add Staff Button */}
+            <div className="flex justify-end">
+              <button onClick={() => setShowAddStaff(true)} className="btn-primary">
+                <Plus size={16} /> Add Staff Member
+              </button>
+            </div>
+
+            {/* Add Staff Modal */}
+            <Modal open={showAddStaff} title="Add Maintenance Staff" onClose={() => { setShowAddStaff(false); setStaffError(""); }}>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setStaffLoading(true);
+                setStaffError("");
+                try {
+                  const newUser = await userService.createStaff(staffForm);
+                  setUsers((prev) => [...prev, { ...newUser, ticketCount: 0 }]);
+                  setStaffForm({ username: "", email: "", fullName: "", password: "" });
+                  setShowAddStaff(false);
+                } catch (err) {
+                  setStaffError(err?.response?.data?.message || "Failed to create staff account.");
+                } finally {
+                  setStaffLoading(false);
+                }
+              }} className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Username</label>
+                  <input required minLength={3} maxLength={50} value={staffForm.username} onChange={(e) => setStaffForm((p) => ({ ...p, username: e.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" placeholder="e.g. jmwangi" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Full Name</label>
+                  <input required maxLength={120} value={staffForm.fullName} onChange={(e) => setStaffForm((p) => ({ ...p, fullName: e.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" placeholder="e.g. James Mwangi" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Email</label>
+                  <input required type="email" value={staffForm.email} onChange={(e) => setStaffForm((p) => ({ ...p, email: e.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" placeholder="e.g. jmwangi@campus.local" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Password</label>
+                  <input required type="password" minLength={8} maxLength={120} value={staffForm.password} onChange={(e) => setStaffForm((p) => ({ ...p, password: e.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" placeholder="Minimum 8 characters" />
+                </div>
+                {staffError && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{staffError}</p>}
+                <div className="flex items-center gap-3 pt-2">
+                  <button disabled={staffLoading} className="btn-primary">{staffLoading ? "Creating..." : "Create Staff Account"}</button>
+                  <button type="button" onClick={() => { setShowAddStaff(false); setStaffError(""); }} className="btn-ghost">Cancel</button>
+                </div>
+              </form>
+            </Modal>
             {usersLoading && <LoadingSpinner label="Loading users..." />}
             {!usersLoading && usersError && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{usersError}</p>}
             {!usersLoading && !usersError && (

@@ -14,32 +14,31 @@ public final class TicketMapper {
 
     public static TicketResponse toResponse(Ticket ticket) {
         return new TicketResponse(
-            ticket.getId(),
-            ticket.getTitle(),
-            ticket.getDescription(),
-            ticket.getCategory().name(),
-            ticket.getBuilding(),
-            ticket.getLocation(),
-            ticket.getUrgency().name(),
-            ticket.getStatus().name(),
-            UserMapper.toTicketUserInfo(ticket.getCreatedBy()),
-            UserMapper.toTicketUserInfo(ticket.getAssignedTo()),
-            ticket.getImagePath(),
-            ticket.getCreatedAt(),
-            ticket.getUpdatedAt(),
-            ticket.getResolvedAt()
-        );
+                ticket.getId(),
+                ticket.getTitle(),
+                ticket.getDescription(),
+                ticket.getCategory().name(),
+                ticket.getBuilding(),
+                ticket.getLocation(),
+                ticket.getUrgency().name(),
+                ticket.getStatus().name(),
+                UserMapper.toTicketUserInfo(ticket.getCreatedBy()),
+                UserMapper.toTicketUserInfo(ticket.getAssignedTo()),
+                ticket.getImagePath(),
+                ticket.getAfterImagePath(),
+                ticket.getCreatedAt(),
+                ticket.getUpdatedAt(),
+                ticket.getResolvedAt());
     }
 
     public static TicketLogResponse toLogResponse(TicketLog log) {
         return new TicketLogResponse(
-            log.getId(),
-            log.getOldStatus() == null ? null : log.getOldStatus().name(),
-            log.getNewStatus().name(),
-            log.getNote(),
-            UserMapper.toTicketUserInfo(log.getChangedBy()),
-            log.getTimestamp()
-        );
+                log.getId(),
+                log.getOldStatus() == null ? null : log.getOldStatus().name(),
+                log.getNewStatus().name(),
+                log.getNote(),
+                UserMapper.toTicketUserInfo(log.getChangedBy()),
+                log.getTimestamp());
     }
 
     public static TicketRatingResponse toRatingResponse(TicketRating rating) {
@@ -47,10 +46,9 @@ public final class TicketMapper {
             return null;
         }
         return new TicketRatingResponse(
-            rating.getStars(),
-            rating.getComment(),
-            UserMapper.toTicketUserInfo(rating.getRatedBy()),
-            rating.getCreatedAt()
-        );
+                rating.getStars(),
+                rating.getComment(),
+                UserMapper.toTicketUserInfo(rating.getRatedBy()),
+                rating.getCreatedAt());
     }
 }

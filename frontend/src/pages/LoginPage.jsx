@@ -98,7 +98,7 @@ export const LoginPage = () => {
         </p>
 
         {/* Username */}
-        <label className="mt-6 block text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+        <label className="mt-6 block text-xs font-semibold uppercase tracking-[0.12em] text-gray-700 dark:text-gray-300">
           Username
         </label>
         <input
@@ -110,7 +110,7 @@ export const LoginPage = () => {
         />
 
         {/* Password */}
-        <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+        <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-gray-700 dark:text-gray-300">
           Password
         </label>
         <div className="mt-1.5 flex rounded-xl border border-gray-200 bg-white transition-all duration-200 focus-within:border-campus-400 focus-within:ring-2 focus-within:ring-campus-100 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-campus-500 dark:focus-within:ring-campus-900/30">
@@ -133,7 +133,7 @@ export const LoginPage = () => {
 
         {/* Remember + Forgot */}
         <div className="mt-3 flex items-center justify-between">
-          <label className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input type="checkbox" className="rounded border-gray-300 text-campus-500 focus:ring-campus-400 dark:border-slate-600" />
             Remember me
           </label>
@@ -169,7 +169,7 @@ export const LoginPage = () => {
         </button>
 
         {/* Register link */}
-        <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-5 text-center text-sm text-gray-700 dark:text-gray-300">
           New to CampusFix?{" "}
           <Link to="/register" className="font-semibold text-campus-500 transition hover:text-campus-600 hover:underline">
             Create account
@@ -240,12 +240,12 @@ export const ForgotPasswordPage = () => {
             <h1 className="mt-5 text-center text-2xl font-bold text-gray-900 dark:text-white">
               Forgot Password?
             </h1>
-            <p className="mt-1.5 text-center text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1.5 text-center text-sm text-gray-700 dark:text-gray-300">
               Enter your email address and we'll send you a link to reset your password.
             </p>
 
             <form onSubmit={submit} className="mt-6">
-              <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+              <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-gray-700 dark:text-gray-300">
                 Email Address
               </label>
               <div className="mt-1.5 flex rounded-xl border border-gray-200 bg-white transition-all duration-200 focus-within:border-campus-400 focus-within:ring-2 focus-within:ring-campus-100 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-campus-500 dark:focus-within:ring-campus-900/30">
@@ -302,7 +302,6 @@ export const ForgotPasswordPage = () => {
 /*  RESET PASSWORD PAGE                                                 */
 /* ==================================================================== */
 export const ResetPasswordPage = () => {
-  const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

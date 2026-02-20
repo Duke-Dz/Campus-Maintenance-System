@@ -63,6 +63,9 @@ public class Ticket {
     @Column(name = "image_path", length = 255)
     private String imagePath;
 
+    @Column(name = "after_image_path", length = 255)
+    private String afterImagePath;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -200,5 +203,13 @@ public class Ticket {
 
     public void setResolvedAt(LocalDateTime resolvedAt) {
         this.resolvedAt = resolvedAt;
+    }
+
+    public String getAfterImagePath() {
+        return afterImagePath;
+    }
+
+    public void setAfterImagePath(String afterImagePath) {
+        this.afterImagePath = afterImagePath;
     }
 }

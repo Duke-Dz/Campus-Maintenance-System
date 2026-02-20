@@ -51,7 +51,7 @@ export const TopBar = ({ onMenuClick }) => {
     const handleLogout = () => {
         setShowUserMenu(false);
         logout();
-        window.location.href = "/login";
+        window.location.href = "/";
     };
 
     return (

@@ -1,5 +1,8 @@
 package com.smartcampus.maintenance.controller;
 
+import com.smartcampus.maintenance.dto.ticket.CommentCreateRequest;
+import com.smartcampus.maintenance.dto.ticket.CommentResponse;
+import com.smartcampus.maintenance.dto.ticket.DuplicateCheckResponse;
 import com.smartcampus.maintenance.dto.ticket.TicketAssignRequest;
 import com.smartcampus.maintenance.dto.ticket.TicketCreateRequest;
 import com.smartcampus.maintenance.dto.ticket.TicketDetailResponse;
@@ -52,21 +55,19 @@ public class TicketController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public TicketResponse createTicketWithImage(
-        @Valid @RequestPart("data") TicketCreateRequest request,
-        @RequestPart(value = "image", required = false) MultipartFile image
-    ) {
+            @Valid @RequestPart("data") TicketCreateRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image) {
         User actor = currentUserService.requireCurrentUser();
         return ticketService.createTicket(actor, request, image);
     }
 
     @GetMapping
     public List<TicketResponse> getAllTickets(
-        @RequestParam(value = "status", required = false) TicketStatus status,
-        @RequestParam(value = "category", required = false) TicketCategory category,
-        @RequestParam(value = "urgency", required = false) UrgencyLevel urgency,
-        @RequestParam(value = "assignee", required = false) Long assigneeId,
-        @RequestParam(value = "search", required = false) String search
-    ) {
+            @RequestParam(value = "status", required = false) TicketStatus status,
+            @RequestParam(value = "category", required = false) TicketCategory category,
+            @RequestParam(value = "urgency", required = false) UrgencyLevel urgency,
+            @RequestParam(value = "assignee", required = false) Long assigneeId,
+            @RequestParam(value = "search", required = false) String search) {
         User actor = currentUserService.requireCurrentUser();
         return ticketService.getAllTickets(actor, status, category, urgency, assigneeId, search);
     }
@@ -112,5 +113,37 @@ public class TicketController {
     public List<TicketLogResponse> getTicketLogs(@PathVariable Long id) {
         User actor = currentUserService.requireCurrentUser();
         return ticketService.getLogs(id, actor);
+    }
+
+    // ---- Comments ----
+
+    @PostMapping("/{id}/comments")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CommentResponse addComment(@PathVariable Long id, @Valid @RequestBody CommentCreateRequest request) {
+        User actor = currentUserService.requireCurrentUser();
+        return ticketService.addComment(id, request, actor);
+    }
+
+    @GetMapping("/{id}/comments")
+    public List<CommentResponse> getComments(@PathVariable Long id) {
+        User actor = currentUserService.requireCurrentUser();
+        return ticketService.getComments(id, actor);
+    }
+
+    // ---- Duplicate Check ----
+
+    @PostMapping("/duplicate-check")
+    public DuplicateCheckResponse checkDuplicates(@Valid @RequestBody TicketCreateRequest request) {
+        return ticketService.checkDuplicates(request);
+    }
+
+    // ---- After Photo ----
+
+    @PostMapping(value = "/{id}/after-photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public TicketResponse uploadAfterPhoto(
+            @PathVariable Long id,
+            @RequestPart("image") MultipartFile image) {
+        User actor = currentUserService.requireCurrentUser();
+        return ticketService.uploadAfterPhoto(id, image, actor);
     }
 }

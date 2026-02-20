@@ -22,20 +22,27 @@ public interface TicketRepository extends JpaRepository<Ticket, Long>, JpaSpecif
     long countByAssignedToId(Long assignedToId);
 
     @Query("""
-        select t.building, count(t)
-        from Ticket t
-        group by t.building
-        order by count(t) desc
-    """)
+                select t.building, count(t)
+                from Ticket t
+                group by t.building
+                order by count(t) desc
+            """)
     List<Object[]> countByBuilding();
 
     @Query("""
-        select u.id, u.username, u.fullName, count(t)
-        from Ticket t
-        join t.assignedTo u
-        where t.status in :resolvedStatuses
-        group by u.id, u.username, u.fullName
-        order by count(t) desc
-    """)
+                select u.id, u.username, u.fullName, count(t)
+                from Ticket t
+                join t.assignedTo u
+                where t.status in :resolvedStatuses
+                group by u.id, u.username, u.fullName
+                order by count(t) desc
+            """)
     List<Object[]> crewPerformance(@Param("resolvedStatuses") Collection<TicketStatus> resolvedStatuses);
+
+    List<Ticket> findByCategoryAndBuildingAndStatusNotIn(
+            com.smartcampus.maintenance.entity.enums.TicketCategory category,
+            String building,
+            Collection<TicketStatus> statuses);
+
+    long countByAssignedToIdAndStatusIn(Long assignedToId, Collection<TicketStatus> statuses);
 }

@@ -97,8 +97,8 @@ const TicketTracker = ({ ticket }) => {
                 <div className="flex flex-col items-center flex-1">
                   <div
                     className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all duration-300 ${isCompleted
-                        ? "bg-campus-500 text-white shadow-sm shadow-campus-500/25"
-                        : "bg-gray-100 text-gray-400 dark:bg-slate-700 dark:text-gray-500"
+                      ? "bg-campus-500 text-white shadow-sm shadow-campus-500/25"
+                      : "bg-gray-100 text-gray-400 dark:bg-slate-700 dark:text-gray-500"
                       } ${isCurrent ? "ring-4 ring-campus-100 dark:ring-campus-900/30" : ""}`}
                   >
                     {isCompleted && i < currentIndex ? <CheckCircle2 size={14} /> : i + 1}
@@ -257,45 +257,15 @@ export const StudentDashboard = () => {
         })}
       </section>
 
-      {/* ---- Quick Actions ---- */}
-      <section className="saas-card">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Quick Actions</h3>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { label: "Report\nIssue", icon: ClipboardPlus, bg: "bg-blue-100 dark:bg-blue-900/30", fg: "text-campus-600 dark:text-blue-400", onClick: () => setShowForm(true) },
-            { label: "My\nTickets", icon: ClipboardList, bg: "bg-purple-100 dark:bg-purple-900/30", fg: "text-purple-600 dark:text-purple-400" },
-            { label: "Track\nStatus", icon: Search, bg: "bg-amber-100 dark:bg-amber-900/30", fg: "text-amber-600 dark:text-amber-400" },
-            { label: "Rate\nService", icon: Star, bg: "bg-rose-100 dark:bg-rose-900/30", fg: "text-rose-600 dark:text-rose-400" },
-          ].map((a) => {
-            const Icon = a.icon;
-            return (
-              <button key={a.label} onClick={a.onClick} className="group flex flex-col items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/50 p-4 transition-all duration-200 hover:border-gray-200 hover:shadow-card dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-slate-600">
-                <div className={`icon-wrap ${a.bg}`}>
-                  <Icon size={22} className={a.fg} />
-                </div>
-                <span className="text-center text-xs font-semibold leading-tight text-gray-600 dark:text-gray-300 whitespace-pre-line">{a.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+
 
       {/* ---- Active Ticket Tracker ---- */}
       {latestActiveTicket && <TicketTracker ticket={latestActiveTicket} />}
 
       {/* ---- Report Issue Form ---- */}
-      <section className="saas-card">
-        <button
-          type="button"
-          onClick={() => setShowForm((prev) => !prev)}
-          className="btn-primary"
-        >
-          <Plus size={16} />
-          {showForm ? "Hide Ticket Form" : "Submit New Ticket"}
-        </button>
-
-        {showForm && (
-          <form onSubmit={submitTicket} className="mt-5 grid gap-4 animate-soft-rise md:grid-cols-2">
+      {showForm && (
+        <section className="saas-card animate-soft-rise">
+          <form onSubmit={submitTicket} className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Title</label>
               <input required value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" />
@@ -335,12 +305,13 @@ export const StudentDashboard = () => {
 
             {submitError && <p className="md:col-span-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{submitError}</p>}
 
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 flex items-center gap-3">
               <button disabled={submitLoading} className="btn-primary">{submitLoading ? "Submitting..." : "Submit Ticket"}</button>
+              <button type="button" onClick={() => setShowForm(false)} className="btn-ghost">Cancel</button>
             </div>
           </form>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* ---- Your Tickets ---- */}
       <section className="space-y-4">

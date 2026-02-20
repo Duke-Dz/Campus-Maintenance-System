@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
     LayoutDashboard,
     ClipboardPlus,
@@ -241,7 +242,7 @@ export const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, activeSe
 
     const handleLogout = () => {
         logout();
-        window.location.href = "/login";
+        window.location.href = "/";
     };
 
     return (
@@ -262,7 +263,7 @@ export const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, activeSe
             >
                 {/* Logo */}
                 <div className={`flex items-center ${collapsed ? "justify-center px-3" : "justify-between px-6"} py-5`}>
-                    <div className="flex items-center gap-2.5">
+                    <Link to="/" className="flex items-center gap-2.5 no-underline transition-opacity hover:opacity-80">
                         <CampusFixLogo collapsed={collapsed} />
                         {!collapsed && (
                             <div className="transition-opacity duration-200">
@@ -274,7 +275,7 @@ export const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, activeSe
                                 </p>
                             </div>
                         )}
-                    </div>
+                    </Link>
                     {!collapsed && (
                         <button
                             onClick={onClose}

@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
     const onUnauthorized = () => {
       authStorage.clear();
       setAuth(null);
-      window.location.href = "/login";
+      window.location.href = "/";
     };
     window.addEventListener("auth:unauthorized", onUnauthorized);
     return () => window.removeEventListener("auth:unauthorized", onUnauthorized);

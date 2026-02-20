@@ -3,9 +3,11 @@ import { ProtectedRoute } from "./components/Common/ProtectedRoute.jsx";
 import { DashboardShell } from "./components/Dashboard/DashboardShell.jsx";
 import { useAuth } from "./hooks/useAuth";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { LandingPage } from "./pages/LandingPage";
 import { LoginPage, ForgotPasswordPage, ResetPasswordPage } from "./pages/LoginPage";
 import { MaintenanceDashboard } from "./pages/MaintenanceDashboard";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { ContactSupportPage } from "./pages/ContactSupportPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { StudentDashboard } from "./pages/StudentDashboard";
 import { ROLES } from "./utils/constants";
@@ -16,11 +18,6 @@ const PublicRoute = ({ children }) => {
     return <Navigate to={homePath} replace />;
   }
   return children;
-};
-
-const HomeRedirect = () => {
-  const { isAuthenticated, homePath } = useAuth();
-  return <Navigate to={isAuthenticated ? homePath : "/login"} replace />;
 };
 
 const App = () => (
@@ -58,6 +55,7 @@ const App = () => (
           </PublicRoute>
         }
       />
+      <Route path="/contact-support" element={<ContactSupportPage />} />
       <Route
         path="/student"
         element={
@@ -88,7 +86,7 @@ const App = () => (
           </ProtectedRoute>
         }
       />
-      <Route path="/" element={<HomeRedirect />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </Router>

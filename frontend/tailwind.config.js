@@ -62,6 +62,8 @@ export default {
         "spin-slow": "spin 6s linear infinite",
         "spin-reverse": "spin-reverse 4s linear infinite",
         "card-entrance": "card-entrance 0.4s ease-out both",
+        "float": "float 6s ease-in-out infinite",
+        "float-delayed": "float 6s ease-in-out 3s infinite",
       },
       keyframes: {
         "soft-rise": {
@@ -95,6 +97,10 @@ export default {
         "card-entrance": {
           "0%": { opacity: "0", transform: "translateY(12px) scale(0.97)" },
           "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-20px)" },
         },
       },
     },

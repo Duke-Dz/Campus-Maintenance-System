@@ -67,6 +67,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/h2-console/**", "/uploads/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/analytics/public-summary").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/analytics/public-config").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/public/contact-support").permitAll()
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
