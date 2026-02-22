@@ -1,30 +1,54 @@
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: campus_maintenance
+      MYSQL_DATABASE: Campus_Fix
+      MYSQL_USER: campusfix
+      MYSQL_PASSWORD: campusfix123
     ports:
       - "3306:3306"
     volumes:
-      - ./database/schemas:/docker-entrypoint-initdb.d
+      - mysql_data:/var/lib/mysql
+      - ./database/schemas/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+      - ./database/seed_data.sql:/docker-entrypoint-initdb.d/002_seed_data.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
-  java-backend:
+  backend:
     build:
       context: ./backend
       dockerfile: ../devops/docker/Dockerfile-backend
     ports:
       - "8080:8080"
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/Campus_Fix?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      DB_USERNAME: campusfix
+      DB_PASSWORD: campusfix123
+      H2_CONSOLE_ENABLED: "false"
+      APP_SEED_DEMO_DATA: "false"
+      APP_ADMIN_USERNAME: admin
+      APP_ADMIN_EMAIL: admin@campus.local
+      APP_ADMIN_FULL_NAME: Campus Admin
+      APP_ADMIN_PASSWORD: change-this-admin-password
+      FRONTEND_BASE_URL: http://localhost:3000
+      APP_EMAIL_ENABLED: "false"
+      JWT_SECRET: change-this-jwt-secret-to-32-plus-characters
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
-  node-frontend:
+  frontend:
     build:
       context: ./frontend
       dockerfile: ../devops/docker/Dockerfile-frontend
     ports:
-      - "3000:3000"
+      - "3000:80"
     depends_on:
-      - java-backend
+      - backend
+
+volumes:
+  mysql_data:

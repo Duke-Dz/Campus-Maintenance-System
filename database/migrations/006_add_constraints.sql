@@ -1,5 +1,0 @@
-ALTER TABLE tickets
-    ADD CONSTRAINT chk_status CHECK (status IN ('SUBMITTED', 'APPROVED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'));
-
-ALTER TABLE users
-    ADD CONSTRAINT chk_role CHECK (role IN ('STUDENT', 'ADMIN', 'CREW'));

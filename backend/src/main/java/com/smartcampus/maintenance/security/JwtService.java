@@ -39,6 +39,7 @@ public class JwtService {
             .subject(user.getUsername())
             .claim("role", user.getRole().name())
             .claim("uid", user.getId())
+            .claim("tv", user.getTokenVersion())
             .issuedAt(Date.from(now))
             .expiration(Date.from(now.plusMillis(expirationMs)))
             .signWith(signingKey)
@@ -51,7 +52,17 @@ public class JwtService {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         Claims claims = parseClaims(token);
-        return userDetails.getUsername().equals(claims.getSubject()) && claims.getExpiration().after(new Date());
+        if (!userDetails.getUsername().equals(claims.getSubject()) || !claims.getExpiration().after(new Date())) {
+            return false;
+        }
+
+        if (userDetails instanceof AuthenticatedUser authenticatedUser) {
+            Number tokenVersionClaim = claims.get("tv", Number.class);
+            int tokenVersion = tokenVersionClaim == null ? 0 : tokenVersionClaim.intValue();
+            return tokenVersion == authenticatedUser.getTokenVersion();
+        }
+
+        return true;
     }
 
     private Claims parseClaims(String token) {

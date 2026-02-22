@@ -1,37 +1,26 @@
-# 👥 Team Roles & Responsibilities
+# Team Roles Template
 
-**Total Members:** 8
-**Project Manager / Lead:** [Name]
+Use this file to assign ownership clearly during development.
 
-## 🎨 Frontend Team (2 Members)
+## Suggested Ownership Areas
 
-**Focus:** UI/UX, React Components, State Management.
+- Frontend: routing, dashboards, UX, client validation
+- Backend: authentication, tickets, analytics, notifications, email
+- Database: schema versioning, indexing, seed strategy
+- QA: integration tests, regression checks, smoke tests
+- DevOps: Docker, environment setup, release process
+- Documentation: setup guides and API references
 
-- **Member 1:** **Student Portal** (Forms, History, Profile).
-- **Member 2:** **Dashboards** (Admin Control Panel, Crew Task List, Analytics Charts).
+## Minimum Role Assignments
 
-## ⚙️ Backend Team (2 Members)
+- 1 project lead
+- 1 frontend owner
+- 1 backend owner
+- 1 database owner
+- 1 QA/release owner
 
-**Focus:** API Architecture, Security, Data Flow.
+## Working Agreement
 
-- **Member 3:** **Authentication** (Spring Security, JWT, Password Encryption).
-- **Member 4:** **Ticket Services** (CRUD Logic, Status Transitions, File Uploads).
-
-## 🧠 Logic & Database Team (2 Members)
-
-**Focus:** Data Integrity, Algorithms, C++ Integration.
-
-- **Member 5:** **Database Architect** (Schema Design, SQL Optimization, Migrations).
-- **Member 6:** **Algorithm Engineer** (C++ Optimization Engine, JNI Bridge, Assignment Logic).
-
-## 🛡️ QA & Security (1 Member)
-
-**Focus:** Stability, Bug Hunting.
-
-- **Member 7:** Unit Testing (JUnit), API Testing (Postman), Input Validation, Security Audits.
-
-## 🚀 DevOps & Documentation (1 Member)
-
-**Focus:** Deployment, Workflow.
-
-- **Duke-Dz:** GitHub Repo Management, Dockerization, CI/CD Pipelines, Documentation Maintenance.
+- Keep README and docs in sync with code changes.
+- Update `database/schemas/schema.sql` whenever entity model changes.
+- Run backend + frontend verification commands before merging.

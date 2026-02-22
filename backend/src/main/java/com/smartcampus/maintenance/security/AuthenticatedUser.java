@@ -14,12 +14,14 @@ public class AuthenticatedUser implements UserDetails {
     private final String username;
     private final String passwordHash;
     private final Role role;
+    private final int tokenVersion;
 
     public AuthenticatedUser(User user) {
         this.id = user.getId();
         this.username = user.getUsername();
         this.passwordHash = user.getPasswordHash();
         this.role = user.getRole();
+        this.tokenVersion = user.getTokenVersion();
     }
 
     public Long getId() {
@@ -28,6 +30,10 @@ public class AuthenticatedUser implements UserDetails {
 
     public Role getRole() {
         return role;
+    }
+
+    public int getTokenVersion() {
+        return tokenVersion;
     }
 
     @Override

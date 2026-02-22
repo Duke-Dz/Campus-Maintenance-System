@@ -1,98 +1,116 @@
-# Smart Campus Maintenance System
+# CampusFix Maintenance System
 
-Role-based campus maintenance platform for reporting, routing, and resolving facility issues with live analytics.
+CampusFix is a role-based campus maintenance platform for students, maintenance staff, and administrators.
 
-## Stack
-- Frontend: React 18 + Vite + Tailwind + React Router + Axios
-- Backend: Spring Boot 3.5 (Java 21) + Spring Security + JPA
-- Database: H2 (default, file-based) with optional MySQL configuration
+## Start Here
 
-## Current Highlights
-- Role-based authentication and protected dashboards
-- Public landing page with:
-  - Real-time analytics snapshot (`/api/analytics/public-summary`)
-  - Public support configuration (`/api/analytics/public-config`)
-  - Responsive navbar with mobile menu toggle
-  - Scroll reveal animations and mobile-friendly layout
-- Public support form endpoint:
-  - `POST /api/public/contact-support`
+1. Read `documentation/guides/setup-guide.md` for first-time setup.
+2. Use `backend/README.md` and `frontend/README.md` for service-specific details.
+3. Use `database/README.md` for schema + seed data setup.
 
-## Repository Structure
-- `frontend/` React application
-- `backend/` Spring Boot API
-- `database/` SQL scripts/assets
-- `cpp-optimization/` optimization module area
-- `devops/` deployment-related files
-- `documentation/` project docs
+## Project Structure
+
+- `backend/` Spring Boot API (Java 21, Maven)
+- `frontend/` React + Vite web app (Node 18+)
+- `database/` MySQL schema and seed scripts
+- `documentation/` setup, testing, deployment, and architecture docs
+- `devops/` Docker and Kubernetes manifests
+- `cpp-optimization/` optional research module (not required to run core app)
+- `uploads/` runtime upload storage
 
 ## Prerequisites
-- Node.js 18+
+
 - Java 21+
 - Maven 3.9+
+- Node.js 18+
+- MySQL 8.0+
 
-## Run Locally
+## Quick Start (Local)
 
-### 1. Backend
+### 1. Database
+
+From project root:
+
+```bash
+mysql -u root -p < database/schemas/schema.sql
+mysql -u root -p < database/seed_data.sql
+```
+
+This creates and uses database `Campus_Fix`.
+
+### 2. Backend
+
 ```bash
 cd backend
+cp .env.example .env
+# Windows PowerShell: copy .env.example .env
+# Edit .env values (DB, admin, SMTP)
 mvn spring-boot:run
 ```
 
-Backend defaults:
-- Base URL: `http://localhost:8080`
-- H2 console: `http://localhost:8080/h2-console`
+Backend URL: `http://localhost:8080`
 
-### 2. Frontend
+### 3. Frontend
+
+Open a second terminal:
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Frontend default:
-- App URL: `http://localhost:5173`
+Frontend URL: `http://localhost:5173`
 
-## Main Config (Backend)
-File: `backend/src/main/resources/application.properties`
+## Default Seed Accounts
 
-Key values:
-- `jwt.secret`
-- `jwt.expiration-ms`
-- `app.email.enabled`
-- `app.email.from`
-- `app.landing.support-hours`
-- `app.landing.support-phone`
-- `app.landing.support-timezone`
+`database/seed_data.sql` inserts these demo users (password: `password`):
 
-Note: restart backend after changing `application.properties`.
+- `admin_seed` (ADMIN)
+- `maintenance_seed` (MAINTENANCE)
+- `student_seed` (STUDENT)
 
-## Public Endpoints
-- `GET /api/analytics/public-summary`
-- `GET /api/analytics/public-config`
-- `POST /api/public/contact-support`
+Note: The backend can also bootstrap an admin user from `backend/.env` values.
 
-## Security Notes
-- JWT auth is required for protected API routes.
-- Public routes are explicitly allowlisted in `SecurityConfig`.
-- CORS currently allows `http://localhost:5173`.
+## Email and Password Recovery
+
+- Email verification code is required after registration.
+- Forgot password sends a reset link.
+- Successful reset sends a confirmation email.
+- Configure SMTP in `backend/.env`.
+
+If SMTP is not configured, set `APP_EMAIL_ENABLED=false` for local testing.
+
+## Docker (Optional)
+
+```bash
+docker compose up --build
+```
+
+Services:
+
+- MySQL: `localhost:3306`
+- Backend: `localhost:8080`
+- Frontend: `localhost:3000`
+
+## Documentation Index
+
+- `documentation/README.md`
+- `documentation/guides/setup-guide.md`
+- `documentation/guides/testing-guide.md`
+- `documentation/guides/troubleshooting.md`
+- `documentation/guides/deployment-guide.md`
+- `documentation/guides/admin-credentials-setup.md`
 
 ## Verification Commands
 
-### Frontend
 ```bash
-cd frontend
-npx eslint src
-npm run build
-```
-
-### Backend
-```bash
+# backend
 cd backend
 mvn -q -DskipTests compile
+mvn -q test
+
+# frontend
+cd ../frontend
+npm run build
 ```
-
-## Responsive Behavior
-- Desktop: full top navigation and auth actions
-- Mobile: navbar collapses into a menu button with in-panel navigation/actions
-- Mobile menu closes on section select, `Esc`, and desktop resize
-

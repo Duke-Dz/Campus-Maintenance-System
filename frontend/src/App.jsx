@@ -4,7 +4,7 @@ import { DashboardShell } from "./components/Dashboard/DashboardShell.jsx";
 import { useAuth } from "./hooks/useAuth";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { LandingPage } from "./pages/LandingPage";
-import { LoginPage, ForgotPasswordPage, ResetPasswordPage } from "./pages/LoginPage";
+import { LoginPage, ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from "./pages/LoginPage";
 import { MaintenanceDashboard } from "./pages/MaintenanceDashboard";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ContactSupportPage } from "./pages/ContactSupportPage";
@@ -44,6 +44,14 @@ const App = () => (
         element={
           <PublicRoute>
             <ForgotPasswordPage />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/verify-email"
+        element={
+          <PublicRoute>
+            <VerifyEmailPage />
           </PublicRoute>
         }
       />

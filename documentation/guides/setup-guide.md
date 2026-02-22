@@ -1,73 +1,87 @@
-# 🛠️ Developer Setup Guide
+# Setup Guide
 
-Follow these steps to get the **Smart Campus Maintenance System** running on your local machine.
+This guide gets CampusFix running on a new machine.
 
-## 📋 1. Prerequisites
+## 1. Prerequisites
 
-- **Java JDK 17+**
-- **Node.js 18+**
-- **MySQL Server 8.0**
-- **Maven** (usually included with IntelliJ/Eclipse)
+Install:
 
-## 🗄️ 2. Database Setup
+- Java 21+
+- Maven 3.9+
+- Node.js 18+
+- MySQL 8+
 
-1.  Open your terminal/command prompt.
-2.  Login to MySQL:
-    ```bash
-    mysql -u root -p
-    ```
-3.  Run the schema scripts (ensure you are in the project root folder):
-    ```sql
-    source database/schemas/schema.sql;
-    source database/seed_data.sql;
-    ```
-4.  Check if users exist:
-    ```sql
-    USE campus_maintenance_db;
-    SELECT * FROM users;
-    ```
-
-## ☕ 3. Backend Setup (Spring Boot)
-
-1.  Navigate to the backend folder:
-    ```bash
-    cd backend
-    ```
-2.  **CRITICAL:** Open `src/main/resources/application.properties` and update the database password:
-    ```properties
-    spring.datasource.password=YOUR_REAL_PASSWORD
-    ```
-3.  Install dependencies:
-    ```bash
-    mvn clean install
-    ```
-4.  Run the server:
-    ```bash
-    mvn spring-boot:run
-    ```
-    _Server will start at `http://localhost:8080`_
-
-## ⚛️ 4. Frontend Setup (React)
-
-1.  Open a **new** terminal window (leave the backend running).
-2.  Navigate to the frontend folder:
-    ```bash
-    cd frontend
-    ```
-3.  Install dependencies:
-    ```bash
-    npm install
-    ```
-4.  Start the app:
-    ```bash
-    npm start
-    ```
-    _App will open at `http://localhost:3000`_
-
-## 🐳 Optional: Docker Run
-
-If you have Docker installed, you can skip the above and run:
+## 2. Clone and Open Project
 
 ```bash
-docker-compose up --build
+git clone <repo-url>
+cd campus-maintenance-system
 ```
+
+## 3. Create Database
+
+Run from project root:
+
+```bash
+mysql -u root -p < database/schemas/schema.sql
+mysql -u root -p < database/seed_data.sql
+```
+
+This creates database `Campus_Fix` and inserts demo seed records.
+
+## 4. Backend Setup
+
+```bash
+cd backend
+cp .env.example .env
+# Windows PowerShell: copy .env.example .env
+```
+
+Edit `backend/.env`:
+
+- Set DB credentials (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`)
+- Set admin bootstrap credentials (`APP_ADMIN_*`)
+- Set a strong `JWT_SECRET`
+- Configure SMTP only when ready (`APP_EMAIL_ENABLED=true`)
+
+Start backend:
+
+```bash
+mvn spring-boot:run
+```
+
+Backend runs at `http://localhost:8080`.
+
+## 5. Frontend Setup
+
+Open a new terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend runs at `http://localhost:5173`.
+
+## 6. Verify System
+
+- Open frontend login page.
+- Use seeded user `admin_seed` / `password`.
+- Register a new user and verify email flow.
+
+## 7. Optional Docker Setup
+
+From root:
+
+```bash
+docker compose up --build
+```
+
+Use this if your team wants a containerized local environment.
+
+## Related Docs
+
+- `admin-credentials-setup.md`
+- `testing-guide.md`
+- `troubleshooting.md`

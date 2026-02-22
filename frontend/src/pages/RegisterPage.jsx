@@ -60,7 +60,7 @@ export const RegisterPage = () => {
         fullName: form.fullName,
         password: form.password,
       });
-      navigate("/student", { replace: true });
+      navigate(`/verify-email?email=${encodeURIComponent(form.email.trim().toLowerCase())}`, { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

@@ -44,13 +44,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (payload) => {
-    const data = await authService.register(payload).catch((error) => {
+    return authService.register(payload).catch((error) => {
       throw new Error(parseError(error));
     });
-    const next = normalizeAuth(data);
-    setAuth(next);
-    authStorage.set(next);
-    return next;
   };
 
   const logout = () => {

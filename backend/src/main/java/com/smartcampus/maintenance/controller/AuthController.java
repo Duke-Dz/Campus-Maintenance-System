@@ -3,8 +3,10 @@ package com.smartcampus.maintenance.controller;
 import com.smartcampus.maintenance.dto.auth.AuthResponse;
 import com.smartcampus.maintenance.dto.auth.ForgotPasswordRequest;
 import com.smartcampus.maintenance.dto.auth.LoginRequest;
+import com.smartcampus.maintenance.dto.auth.ResendVerificationRequest;
 import com.smartcampus.maintenance.dto.auth.RegisterRequest;
 import com.smartcampus.maintenance.dto.auth.ResetPasswordRequest;
+import com.smartcampus.maintenance.dto.auth.VerifyEmailRequest;
 import com.smartcampus.maintenance.service.AuthService;
 import jakarta.validation.Valid;
 import java.util.Map;
@@ -32,8 +34,21 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
-        return authService.registerStudent(request);
+    public Map<String, String> register(@Valid @RequestBody RegisterRequest request) {
+        authService.registerStudent(request);
+        return Map.of("message", "Account created. Enter the verification code sent to your email.");
+    }
+
+    @PostMapping("/verify-email")
+    public Map<String, String> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        authService.verifyEmail(request.email(), request.code());
+        return Map.of("message", "Email verified successfully. You can now sign in.");
+    }
+
+    @PostMapping("/resend-verification")
+    public Map<String, String> resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
+        authService.resendVerificationCode(request.email());
+        return Map.of("message", "If the account exists and is not verified, a new code has been sent.");
     }
 
     @PostMapping("/forgot-password")

@@ -11,9 +11,11 @@ import com.smartcampus.maintenance.mapper.UserMapper;
 import com.smartcampus.maintenance.repository.TicketRepository;
 import com.smartcampus.maintenance.repository.UserRepository;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 public class UserService {
@@ -21,12 +23,17 @@ public class UserService {
     private final UserRepository userRepository;
     private final TicketRepository ticketRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final String frontendBaseUrl;
 
     public UserService(UserRepository userRepository, TicketRepository ticketRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder, EmailService emailService,
+            @Value("${app.frontend.base-url:http://localhost:5173}") String frontendBaseUrl) {
         this.userRepository = userRepository;
         this.ticketRepository = ticketRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
+        this.frontendBaseUrl = frontendBaseUrl;
     }
 
     @Transactional(readOnly = true)
@@ -58,19 +65,26 @@ public class UserService {
     @Transactional
     public UserSummaryResponse createStaffUser(User actor, CreateStaffRequest request) {
         requireAdmin(actor);
-        if (userRepository.existsByUsername(request.username())) {
-            throw new ConflictException("Username '" + request.username() + "' is already taken");
+
+        String username = request.username().trim();
+        String email = request.email().trim().toLowerCase();
+        String fullName = request.fullName().trim();
+
+        if (userRepository.existsByUsername(username)) {
+            throw new ConflictException("Username '" + username + "' is already taken");
         }
-        if (userRepository.existsByEmail(request.email())) {
-            throw new ConflictException("Email '" + request.email() + "' is already registered");
+        if (userRepository.existsByEmail(email)) {
+            throw new ConflictException("Email '" + email + "' is already registered");
         }
         User staff = new User();
-        staff.setUsername(request.username());
-        staff.setEmail(request.email());
-        staff.setFullName(request.fullName());
+        staff.setUsername(username);
+        staff.setEmail(email);
+        staff.setFullName(fullName);
         staff.setRole(Role.MAINTENANCE);
+        staff.setEmailVerified(true);
         staff.setPasswordHash(passwordEncoder.encode(request.password()));
         staff = userRepository.save(staff);
+        emailService.sendWelcomeEmail(staff.getFullName(), staff.getEmail(), buildLoginUrl());
         return UserMapper.toSummary(staff);
     }
 
@@ -78,5 +92,13 @@ public class UserService {
         if (actor.getRole() != Role.ADMIN) {
             throw new ForbiddenException("ADMIN role is required");
         }
+    }
+
+    private String buildLoginUrl() {
+        return UriComponentsBuilder
+                .fromUriString(frontendBaseUrl)
+                .path("/login")
+                .build()
+                .toUriString();
     }
 }

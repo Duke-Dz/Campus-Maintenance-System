@@ -1,5 +1,5 @@
-import { Eye, EyeOff, Wrench, Zap, Shield, ChevronRight, ArrowLeft, Mail, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { Eye, EyeOff, Wrench, Zap, Shield, ChevronRight, ArrowLeft, Mail, Loader2, KeyRound, RefreshCcw, CheckCircle2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { ROLES } from "../utils/constants";
@@ -181,6 +181,171 @@ export const LoginPage = () => {
 };
 
 /* ==================================================================== */
+/*  VERIFY EMAIL PAGE                                                   */
+/* ==================================================================== */
+export const VerifyEmailPage = () => {
+  const navigate = useNavigate();
+  const initialEmail = new URLSearchParams(window.location.search).get("email") || "";
+  const [email, setEmail] = useState(initialEmail);
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setNotice("");
+    setSuccess("");
+    if (!email.trim()) {
+      setError("Email is required.");
+      return;
+    }
+    if (!/^\d{6}$/.test(code.trim())) {
+      setError("Verification code must be 6 digits.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await authService.verifyEmail(email.trim(), code.trim());
+      setSuccess(response?.message || "Email verified successfully.");
+      setTimeout(() => navigate("/login", { replace: true }), 1800);
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || "Verification failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendCode = async () => {
+    setError("");
+    setNotice("");
+    setSuccess("");
+    if (!email.trim()) {
+      setError("Enter your email first.");
+      return;
+    }
+    setResendLoading(true);
+    try {
+      const response = await authService.resendVerification(email.trim());
+      setNotice(response?.message || "A new verification code has been sent.");
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || "Failed to resend code.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  return (
+    <AuthBackground>
+      <form
+        onSubmit={submit}
+        className="relative z-10 w-full max-w-md animate-soft-rise rounded-3xl border border-white/60 bg-white/90 p-8 shadow-panel backdrop-blur-xl dark:border-slate-700/60 dark:bg-slate-900/85"
+      >
+        <CampusFixLogo />
+        <h1 className="mt-5 text-center text-2xl font-bold text-gray-900 dark:text-white">
+          Verify Your Email
+        </h1>
+        <p className="mt-1.5 text-center text-sm text-gray-700 dark:text-gray-300">
+          Enter the 6-digit verification code sent to your inbox.
+        </p>
+
+        <label className="mt-6 block text-xs font-semibold uppercase tracking-[0.12em] text-gray-700 dark:text-gray-300">
+          Email Address
+        </label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-campus-500 dark:focus:ring-campus-900/30"
+          placeholder="Enter your email"
+          required
+        />
+
+        <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-gray-700 dark:text-gray-300">
+          Verification Code
+        </label>
+        <div className="mt-1.5 flex rounded-xl border border-gray-200 bg-white transition-all duration-200 focus-within:border-campus-400 focus-within:ring-2 focus-within:ring-campus-100 dark:border-slate-700 dark:bg-slate-800 dark:focus-within:border-campus-500 dark:focus-within:ring-campus-900/30">
+          <div className="flex items-center pl-4 text-gray-400">
+            <KeyRound size={18} />
+          </div>
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            className="w-full bg-transparent px-3 py-2.5 text-sm tracking-[0.4em] outline-none dark:text-white"
+            placeholder="000000"
+            required
+            inputMode="numeric"
+            autoComplete="one-time-code"
+          />
+        </div>
+
+        {error && (
+          <p className="mt-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 dark:bg-red-900/20 dark:text-red-300">
+            {error}
+          </p>
+        )}
+        {notice && (
+          <p className="mt-4 rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+            {notice}
+          </p>
+        )}
+        {success && (
+          <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
+            {success}
+          </p>
+        )}
+
+        <button
+          disabled={loading}
+          type="submit"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-campus-500 to-campus-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-campus-500/25 transition-all duration-200 hover:from-campus-600 hover:to-campus-700 hover:shadow-campus-500/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {loading ? (
+            <>
+              <Loader2 size={16} className="animate-spin" /> Verifying...
+            </>
+          ) : (
+            <>
+              <CheckCircle2 size={16} />
+              Verify Email
+            </>
+          )}
+        </button>
+
+        <button
+          type="button"
+          disabled={resendLoading}
+          onClick={resendCode}
+          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-campus-300 hover:text-campus-600 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200 dark:hover:border-campus-600 dark:hover:text-campus-300"
+        >
+          {resendLoading ? (
+            <>
+              <Loader2 size={16} className="animate-spin" /> Sending...
+            </>
+          ) : (
+            <>
+              <RefreshCcw size={16} />
+              Resend Code
+            </>
+          )}
+        </button>
+
+        <p className="mt-5 text-center text-sm text-gray-700 dark:text-gray-300">
+          Already verified?{" "}
+          <Link to="/login" className="font-semibold text-campus-500 transition hover:text-campus-600 hover:underline">
+            Sign in
+          </Link>
+        </p>
+      </form>
+    </AuthBackground>
+  );
+};
+
+/* ==================================================================== */
 /*  FORGOT PASSWORD PAGE                                                */
 /* ==================================================================== */
 export const ForgotPasswordPage = () => {
@@ -308,6 +473,30 @@ export const ResetPasswordPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    const previousReferrer = document.querySelector("meta[name='referrer']");
+    const previousContent = previousReferrer?.getAttribute("content");
+    const createdMeta = !previousReferrer;
+
+    if (!previousReferrer) {
+      const meta = document.createElement("meta");
+      meta.setAttribute("name", "referrer");
+      meta.setAttribute("content", "no-referrer");
+      document.head.appendChild(meta);
+    } else {
+      previousReferrer.setAttribute("content", "no-referrer");
+    }
+
+    return () => {
+      const currentReferrer = document.querySelector("meta[name='referrer']");
+      if (createdMeta && currentReferrer) {
+        currentReferrer.remove();
+      } else if (currentReferrer && previousContent) {
+        currentReferrer.setAttribute("content", previousContent);
+      }
+    };
+  }, []);
 
   // Get token from URL
   const token = new URLSearchParams(window.location.search).get("token");

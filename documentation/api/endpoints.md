@@ -1,35 +1,52 @@
-# 🔌 API Endpoints Documentation
+# API Endpoints (Current)
 
-Base URL: `http://localhost:8080/api/v1`
+Base URL: `http://localhost:8080/api`
 
-## 🔐 Authentication
+## Public Endpoints
 
-| Method | Endpoint         | Description                 | Access |
-| :----- | :--------------- | :-------------------------- | :----- |
-| POST   | `/auth/register` | Register a new student      | Public |
-| POST   | `/auth/login`    | Login and receive JWT token | Public |
+- `POST /auth/register`
+- `POST /auth/verify-email`
+- `POST /auth/resend-verification`
+- `POST /auth/login`
+- `POST /auth/forgot-password`
+- `POST /auth/reset-password`
+- `GET /analytics/public-summary`
+- `GET /analytics/public-config`
+- `POST /public/contact-support`
 
-## 🎫 Tickets
+## Ticket Endpoints (Authenticated)
 
-| Method | Endpoint               | Description                             | Access     |
-| :----- | :--------------------- | :-------------------------------------- | :--------- |
-| POST   | `/tickets`             | Create a new ticket (with image)        | Student    |
-| GET    | `/tickets`             | Get all tickets (filtered by user role) | All        |
-| GET    | `/tickets/{id}`        | Get specific ticket details             | All        |
-| PUT    | `/tickets/{id}/status` | Update status (e.g., IN_PROGRESS)       | Crew/Admin |
-| DELETE | `/tickets/{id}`        | Delete a ticket (Soft delete)           | Admin      |
+- `POST /tickets` (JSON)
+- `POST /tickets` (multipart with optional image)
+- `GET /tickets`
+- `GET /tickets/my`
+- `GET /tickets/assigned`
+- `GET /tickets/{id}`
+- `PATCH /tickets/{id}/status`
+- `PATCH /tickets/{id}/assign`
+- `POST /tickets/{id}/rate`
+- `GET /tickets/{id}/logs`
+- `POST /tickets/{id}/comments`
+- `GET /tickets/{id}/comments`
+- `POST /tickets/duplicate-check`
+- `POST /tickets/{id}/after-photo` (multipart)
 
-## 🛠 Admin & Assignment
+## User/Admin Endpoints (Authenticated)
 
-| Method | Endpoint                   | Description                       | Access |
-| :----- | :------------------------- | :-------------------------------- | :----- |
-| PUT    | `/admin/assign/{ticketId}` | Manually assign crew member       | Admin  |
-| POST   | `/admin/auto-assign`       | Trigger C++ Auto-Assignment       | Admin  |
-| GET    | `/admin/crew-load`         | View workload of all crew members | Admin  |
+- `GET /users`
+- `GET /users/maintenance`
+- `POST /users/staff`
 
-## 📊 Analytics
+## Other Authenticated Endpoints
 
-| Method | Endpoint                 | Description                        | Access |
-| :----- | :----------------------- | :--------------------------------- | :----- |
-| GET    | `/analytics/dashboard`   | Get summary stats (Open vs Closed) | Admin  |
-| GET    | `/analytics/performance` | Get crew efficiency reports        | Admin  |
+- Announcements: `GET /announcements`, `GET /announcements/all`, `POST /announcements`, `PATCH /announcements/{id}/toggle`
+- Buildings: `GET /buildings`, `POST /buildings`
+- Notifications: `GET /notifications`, `GET /notifications/unread-count`, `PUT /notifications/{id}/read`, `PUT /notifications/read-all`
+- Chat: `GET /tickets/{ticketId}/chat`, `POST /tickets/{ticketId}/chat`
+- Analytics: `GET /analytics/summary`, `GET /analytics/resolution-time`, `GET /analytics/top-buildings`, `GET /analytics/crew-performance`, `GET /analytics/sla-compliance`, `GET /analytics/export/csv`
+
+## Security Notes
+
+- JWT is required for protected endpoints.
+- Role checks are enforced in service layer based on the authenticated user.
+- CORS dev origin is configured for `http://localhost:5173`.

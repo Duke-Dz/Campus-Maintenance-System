@@ -24,6 +24,9 @@ backend/.vscode/
 backend/.idea/
 backend/*.jar
 backend/*.war
+backend/data/*.mv.db
+backend/data/*.trace.db
+backend/smoke-*.log
 # If you use real passwords in application.properties, uncomment the next line:
 # backend/src/main/resources/application.properties
 

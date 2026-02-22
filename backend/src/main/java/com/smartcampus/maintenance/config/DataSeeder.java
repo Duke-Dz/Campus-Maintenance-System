@@ -15,7 +15,10 @@ import com.smartcampus.maintenance.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,29 +27,51 @@ import org.springframework.transaction.annotation.Transactional;
 @Configuration
 public class DataSeeder {
 
+    private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
+
     @Bean
     CommandLineRunner seedData(
         UserRepository userRepository,
         TicketRepository ticketRepository,
         TicketLogRepository ticketLogRepository,
         TicketRatingRepository ticketRatingRepository,
-        PasswordEncoder passwordEncoder
+        PasswordEncoder passwordEncoder,
+        @Value("${app.seed.demo-data:true}") boolean seedDemoData,
+        @Value("${app.seed.admin.username:admin}") String adminUsername,
+        @Value("${app.seed.admin.email:admin@campus.local}") String adminEmail,
+        @Value("${app.seed.admin.full-name:Campus Admin}") String adminFullName,
+        @Value("${app.seed.admin.password:password}") String adminPassword,
+        @Value("${app.seed.demo-password:password}") String demoPassword
     ) {
         return args -> {
-            if (userRepository.count() > 0) {
+            User admin = ensureAdminUser(
+                userRepository,
+                passwordEncoder,
+                adminUsername,
+                adminEmail,
+                adminFullName,
+                adminPassword
+            );
+
+            if (!seedDemoData) {
+                log.info("Demo data seeding disabled (app.seed.demo-data=false).");
                 return;
             }
 
-            User admin = createUser(userRepository, passwordEncoder, "admin", "admin@campus.local", "Campus Admin", Role.ADMIN);
-            User student1 = createUser(userRepository, passwordEncoder, "student1", "student1@campus.local", "Alex Student", Role.STUDENT);
-            User student2 = createUser(userRepository, passwordEncoder, "student2", "student2@campus.local", "Jordan Student", Role.STUDENT);
+            if (userRepository.count() > 1 || ticketRepository.count() > 0) {
+                return;
+            }
+
+            User student1 = createUser(userRepository, passwordEncoder, "student1", "student1@campus.local", "Alex Student", Role.STUDENT, demoPassword);
+            User student2 = createUser(userRepository, passwordEncoder, "student2", "student2@campus.local", "Jordan Student", Role.STUDENT, demoPassword);
             User maintenance1 = createUser(
                 userRepository,
                 passwordEncoder,
                 "maintenance1",
                 "maintenance1@campus.local",
                 "Casey Technician",
-                Role.MAINTENANCE
+                Role.MAINTENANCE,
+                demoPassword
             );
             User maintenance2 = createUser(
                 userRepository,
@@ -54,7 +79,8 @@ public class DataSeeder {
                 "maintenance2",
                 "maintenance2@campus.local",
                 "Taylor Engineer",
-                Role.MAINTENANCE
+                Role.MAINTENANCE,
+                demoPassword
             );
 
             List<Ticket> tickets = new ArrayList<>();
@@ -223,6 +249,7 @@ public class DataSeeder {
 
             addRating(ticketRatingRepository, tickets.get(6), student1, 5, "Resolved quickly and professionally.");
             addRating(ticketRatingRepository, tickets.get(5), student2, 4, "Issue fixed, communication could be better.");
+            log.info("Seeded demo users and tickets.");
         };
     }
 
@@ -347,14 +374,99 @@ public class DataSeeder {
         String username,
         String email,
         String fullName,
-        Role role
+        Role role,
+        String rawPassword
     ) {
         User user = new User();
         user.setUsername(username);
         user.setEmail(email);
         user.setFullName(fullName);
         user.setRole(role);
-        user.setPasswordHash(encoder.encode("password"));
+        user.setEmailVerified(true);
+        user.setPasswordHash(encoder.encode(rawPassword));
         return userRepository.save(user);
+    }
+
+    private User ensureAdminUser(
+        UserRepository userRepository,
+        PasswordEncoder encoder,
+        String adminUsername,
+        String adminEmail,
+        String adminFullName,
+        String adminPassword
+    ) {
+        String username = adminUsername.trim();
+        String email = adminEmail.trim().toLowerCase();
+        String fullName = adminFullName.trim();
+
+        List<User> admins = userRepository.findByRole(Role.ADMIN);
+        if (!admins.isEmpty()) {
+            User targetAdmin = admins.stream()
+                .filter(a -> a.getUsername().equalsIgnoreCase(username))
+                .findFirst()
+                .orElse(admins.get(0));
+
+            if (admins.size() > 1) {
+                log.warn("Multiple admin accounts detected ({}). Syncing configured credentials to admin id {}.", admins.size(), targetAdmin.getId());
+            }
+
+            boolean changed = false;
+
+            if (!targetAdmin.getUsername().equals(username)) {
+                if (userRepository.existsByUsernameAndIdNot(username, targetAdmin.getId())) {
+                    throw new IllegalStateException("Cannot sync admin username. Username '" + username + "' is already used by another user.");
+                }
+                targetAdmin.setUsername(username);
+                changed = true;
+            }
+
+            if (!targetAdmin.getEmail().equals(email)) {
+                if (userRepository.existsByEmailAndIdNot(email, targetAdmin.getId())) {
+                    throw new IllegalStateException("Cannot sync admin email. Email '" + email + "' is already used by another user.");
+                }
+                targetAdmin.setEmail(email);
+                changed = true;
+            }
+
+            if (!targetAdmin.getFullName().equals(fullName)) {
+                targetAdmin.setFullName(fullName);
+                changed = true;
+            }
+
+            if (!targetAdmin.isEmailVerified()) {
+                targetAdmin.setEmailVerified(true);
+                changed = true;
+            }
+
+            if (!encoder.matches(adminPassword, targetAdmin.getPasswordHash())) {
+                targetAdmin.setPasswordHash(encoder.encode(adminPassword));
+                changed = true;
+            }
+
+            if (changed) {
+                targetAdmin = userRepository.save(targetAdmin);
+                log.info("Synchronized bootstrap admin credentials for account '{}'.", targetAdmin.getUsername());
+            }
+
+            return targetAdmin;
+        }
+
+        if (userRepository.existsByUsername(username)) {
+            throw new IllegalStateException("Cannot seed admin user. Username '" + username + "' already exists.");
+        }
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalStateException("Cannot seed admin user. Email '" + email + "' already exists.");
+        }
+
+        User admin = new User();
+        admin.setUsername(username);
+        admin.setEmail(email);
+        admin.setFullName(fullName);
+        admin.setRole(Role.ADMIN);
+        admin.setEmailVerified(true);
+        admin.setPasswordHash(encoder.encode(adminPassword));
+        admin = userRepository.save(admin);
+        log.info("Created bootstrap admin account '{}'", username);
+        return admin;
     }
 }
