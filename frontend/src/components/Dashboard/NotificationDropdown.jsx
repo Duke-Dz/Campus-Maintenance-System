@@ -53,15 +53,15 @@ export const NotificationDropdown = ({
   onOpenNotification,
   onMarkAllRead,
 }) => (
-  <div className="animate-slide-in-down absolute right-0 top-full mt-2 w-[380px] overflow-hidden rounded-2xl border border-gray-200/60 bg-white shadow-dropdown dark:border-slate-700/50 dark:bg-slate-900">
-    <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-slate-700/50">
+  <div className="animate-slide-in-down absolute right-0 top-full mt-2 w-[390px] overflow-hidden rounded-2xl border border-gray-200/70 bg-white/95 shadow-dropdown backdrop-blur dark:border-slate-700/60 dark:bg-slate-900/95">
+    <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-slate-700/60">
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
         <span className="pill-badge bg-ember/10 text-ember">{unreadCount} New</span>
       </div>
       <button
         onClick={onClose}
-        className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800 dark:hover:text-gray-300"
+        className="interactive-control rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800 dark:hover:text-gray-300"
       >
         <X size={16} />
       </button>
@@ -93,7 +93,7 @@ export const NotificationDropdown = ({
               type="button"
               key={notification.id}
               onClick={() => onOpenNotification?.(notification)}
-              className={`flex w-full gap-3.5 border-b border-gray-50 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:border-slate-800/50 dark:hover:bg-slate-800/50 ${
+              className={`interactive-row flex w-full gap-3.5 border-b border-gray-50 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:border-slate-800/50 dark:hover:bg-slate-800/50 ${
                 !notification.read ? "bg-campus-50/40 dark:bg-campus-900/5" : ""
               }`}
             >
@@ -125,13 +125,13 @@ export const NotificationDropdown = ({
     <div className="flex gap-2 border-t border-gray-100 px-5 py-3 dark:border-slate-700/50">
       <button
         onClick={onMarkAllRead}
-        className="flex-1 rounded-xl bg-campus-50 px-4 py-2.5 text-sm font-semibold text-campus-600 transition-all duration-200 hover:bg-campus-100 dark:bg-campus-900/20 dark:text-campus-400 dark:hover:bg-campus-900/30"
+        className="interactive-control flex-1 rounded-xl bg-campus-50 px-4 py-2.5 text-sm font-semibold text-campus-600 transition-all duration-200 hover:bg-campus-100 dark:bg-campus-900/20 dark:text-campus-400 dark:hover:bg-campus-900/30"
       >
         Mark All Read
       </button>
       <button
         onClick={onClose}
-        className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700"
+        className="interactive-control flex-1 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all duration-200 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700"
       >
         Close
       </button>

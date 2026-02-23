@@ -1,334 +1,193 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-    LayoutDashboard,
-    ClipboardPlus,
-    ClipboardList,
-    Bell as BellIcon,
-    Settings,
-    ChevronDown,
-    ChevronLeft,
-    ChevronRight as ChevronRightIcon,
-    Users,
-    BarChart3,
-    Shield,
-    UserCog,
-    Wallet,
-    Wrench,
-    Hammer,
-    Globe,
-    X,
-    Zap,
-    CheckCircle2,
-    Clock,
-    ListTodo,
-    CalendarDays,
-    User,
-    LogOut,
+  Activity,
+  CheckCircle2,
+  ClipboardList,
+  Gauge,
+  Home,
+  LayoutDashboard,
+  LogOut,
+  Megaphone,
+  PanelLeftClose,
+  PanelLeftOpen,
+  UserCog,
+  Users,
+  Wrench,
+  X,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
+import { CampusFixLogo } from "../Common/CampusFixLogo";
 
-/* ------------------------------------------------------------------ */
-/*  Role-based navigation config                                       */
-/* ------------------------------------------------------------------ */
-const studentNav = [
-    { label: "Dashboard", icon: LayoutDashboard, id: "dashboard" },
-    { label: "Report Issue", icon: ClipboardPlus, id: "report" },
-    {
-        label: "My Tickets",
-        icon: ClipboardList,
-        children: [
-            { label: "Active", icon: Clock, id: "tickets-active" },
-            { label: "Resolved", icon: CheckCircle2, id: "tickets-resolved" },
-        ],
-    },
-    { label: "Notifications", icon: BellIcon, id: "notifications" },
-    { label: "Settings", icon: Settings, children: [{ label: "Profile", icon: User, id: "profile" }] },
-];
-
-const adminNav = [
-    { label: "Dashboard", icon: LayoutDashboard, id: "dashboard" },
-    {
-        label: "Tickets",
-        icon: ClipboardList,
-        children: [
-            { label: "All Tickets", icon: ClipboardList, id: "tickets" },
-            { label: "Pending Review", icon: Clock, id: "tickets-pending" },
-            { label: "Assigned", icon: Wrench, id: "tickets-assigned" },
-            { label: "Resolved", icon: CheckCircle2, id: "tickets-resolved" },
-        ],
-    },
-    {
-        label: "Users",
-        icon: Users,
-        children: [
-            { label: "All Users", icon: Users, id: "users" },
-            { label: "Students", icon: User, id: "users-students" },
-            { label: "Staff", icon: Hammer, id: "users-staff" },
-        ],
-    },
-    {
-        label: "Analytics",
-        icon: BarChart3,
-        children: [
-            { label: "Overview", icon: BarChart3, id: "analytics" },
-            { label: "Buildings", icon: Globe, id: "analytics-buildings" },
-            { label: "Crew Performance", icon: Zap, id: "analytics-crew" },
-        ],
-    },
-    { label: "Assignments", icon: ListTodo, id: "assignments" },
-    {
-        label: "Settings",
-        icon: Settings,
-        children: [
-            { label: "General", icon: Settings, id: "settings-general" },
-            { label: "SLA Config", icon: Shield, id: "settings-sla" },
-            { label: "Notifications", icon: BellIcon, id: "settings-notifications" },
-            { label: "Roles", icon: UserCog, id: "settings-roles" },
-        ],
-    },
-];
-
-const staffNav = [
-    { label: "Dashboard", icon: LayoutDashboard, id: "dashboard" },
-    {
-        label: "My Tasks",
-        icon: Hammer,
-        children: [
-            { label: "Active", icon: Clock, id: "tasks-active" },
-            { label: "Completed", icon: CheckCircle2, id: "tasks-completed" },
-        ],
-    },
-    { label: "Schedule", icon: CalendarDays, id: "schedule" },
-    { label: "Notifications", icon: BellIcon, id: "notifications" },
-    {
-        label: "Settings",
-        icon: Settings,
-        children: [
-            { label: "Profile", icon: User, id: "profile" },
-            { label: "Availability", icon: Wallet, id: "availability" },
-        ],
-    },
-];
-
-const getNavForRole = (role) => {
-    switch (role?.toUpperCase()) {
-        case "ADMIN":
-            return adminNav;
-        case "MAINTENANCE":
-            return staffNav;
-        default:
-            return studentNav;
-    }
+const navByRole = {
+  STUDENT: [
+    { id: "dashboard", label: "Overview", icon: LayoutDashboard, hint: "Snapshot and insights" },
+    { id: "tickets", label: "My Tickets", icon: ClipboardList, hint: "Open and resolved issues" },
+  ],
+  ADMIN: [
+    { id: "dashboard", label: "Overview", icon: LayoutDashboard, hint: "Operational summary" },
+    { id: "analytics", label: "Analytics", icon: Gauge, hint: "SLA and trends" },
+    { id: "tickets", label: "Ticket Ops", icon: ClipboardList, hint: "Triage and assignments" },
+    { id: "staff", label: "Staff Onboarding", icon: UserCog, hint: "Invite maintenance staff" },
+    { id: "users", label: "Manage Users", icon: Users, hint: "Directory and role audit" },
+    { id: "broadcast", label: "Broadcast", icon: Megaphone, hint: "Message targeted audiences" },
+  ],
+  MAINTENANCE: [
+    { id: "dashboard", label: "Overview", icon: LayoutDashboard, hint: "Workload pulse" },
+    { id: "work-queue", label: "Work Queue", icon: Wrench, hint: "Assigned active tasks" },
+    { id: "performance", label: "Performance", icon: Activity, hint: "Resolution metrics" },
+    { id: "resolved", label: "Resolved", icon: CheckCircle2, hint: "Completed tickets" },
+  ],
 };
 
-/* ------------------------------------------------------------------ */
-/*  Rotating Tools Logo                                                */
-/* ------------------------------------------------------------------ */
-const CampusFixLogo = ({ collapsed }) => (
-    <div className="relative flex h-10 w-10 items-center justify-center flex-shrink-0">
-        {/* Outer ring */}
-        <div className="absolute inset-0 rounded-xl border-2 border-dashed border-campus-300/50 dark:border-campus-500/30 animate-spin-slow" />
-        {/* Inner icon bg */}
-        <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-campus-500 to-campus-700 shadow-lg">
-            <Wrench size={18} className="text-white animate-spin-reverse" style={{ animationDuration: "8s" }} />
+const roleMeta = {
+  STUDENT: { label: "Student Portal", tone: "bg-campus-500/10 text-campus-600 dark:text-campus-300" },
+  ADMIN: { label: "Admin Command", tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
+  MAINTENANCE: { label: "Field Operations", tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+};
+
+const sectionForRole = (role) => navByRole[role?.toUpperCase()] || navByRole.STUDENT;
+
+const NavItem = ({ item, collapsed, active, onSelect }) => {
+  const Icon = item.icon;
+  return (
+    <div className="relative group">
+      <button
+        type="button"
+        onClick={() => onSelect(item.id, item.label)}
+        title={collapsed ? item.label : undefined}
+        className={`nav-item ${
+          collapsed ? "justify-center px-0 py-2.5" : "justify-between px-3 py-2.5"
+        } ${active ? "nav-item-active" : ""}`}
+      >
+        <span className="flex items-center gap-3">
+          <Icon size={18} />
+          {!collapsed && (
+            <span className="text-left">
+              <span className="block text-sm font-semibold">{item.label}</span>
+              <span className="block text-[10px] font-medium uppercase tracking-[0.1em] opacity-65">{item.hint}</span>
+            </span>
+          )}
+        </span>
+      </button>
+
+      {collapsed && (
+        <div className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+          <div className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-lg dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+            {item.label}
+          </div>
         </div>
-        {/* Floating satellite */}
-        {!collapsed && (
-            <div className="absolute -top-1 -right-1">
-                <Zap size={10} className="text-campus-400" />
-            </div>
-        )}
+      )}
     </div>
-);
-
-/* ------------------------------------------------------------------ */
-/*  NavItem                                                            */
-/* ------------------------------------------------------------------ */
-const NavItem = ({ item, collapsed, activeId, onSelect }) => {
-    const [open, setOpen] = useState(false);
-    const hasChildren = item.children && item.children.length > 0;
-    const Icon = item.icon;
-    const isActive = item.id && item.id === activeId;
-
-    const handleClick = () => {
-        if (hasChildren) {
-            if (collapsed) return; // Don't expand in collapsed mode
-            setOpen(!open);
-        } else if (item.id && onSelect) {
-            onSelect(item.id);
-        }
-    };
-
-    return (
-        <div className="relative group">
-            <button
-                onClick={handleClick}
-                title={collapsed ? item.label : undefined}
-                className={`flex w-full items-center rounded-xl text-sm font-medium transition-all duration-200
-                    ${collapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3 py-2.5"}
-                    ${isActive
-                        ? "bg-campus-500 text-white shadow-sm shadow-campus-500/25"
-                        : "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-gray-200"
-                    }
-                `}
-            >
-                <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} className="flex-shrink-0" />
-                {!collapsed && <span className="flex-1 text-left">{item.label}</span>}
-                {!collapsed && hasChildren && (
-                    <span
-                        className={`transition-transform duration-200 ${open ? "rotate-0" : "-rotate-90"}`}
-                    >
-                        <ChevronDown size={16} />
-                    </span>
-                )}
-            </button>
-
-            {/* Collapsed tooltip */}
-            {collapsed && (
-                <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                    <div className="rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg whitespace-nowrap dark:bg-slate-700">
-                        {item.label}
-                    </div>
-                </div>
-            )}
-
-            {/* Accordion sub-menu (expanded only) */}
-            {!collapsed && hasChildren && (
-                <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? "mt-1 max-h-96 opacity-100" : "max-h-0 opacity-0"
-                        }`}
-                >
-                    <div className="ml-2 space-y-0.5 border-l-2 border-gray-200 pl-4 dark:border-slate-700">
-                        {item.children.map((child) => {
-                            const ChildIcon = child.icon;
-                            const childActive = child.id && child.id === activeId;
-                            return (
-                                <button
-                                    key={child.label}
-                                    onClick={() => child.id && onSelect?.(child.id)}
-                                    className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150
-                                        ${childActive
-                                            ? "bg-campus-100 text-campus-700 font-semibold dark:bg-campus-900/30 dark:text-campus-400"
-                                            : "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-gray-200"
-                                        }
-                                    `}
-                                >
-                                    <ChildIcon size={16} strokeWidth={1.8} />
-                                    <span>{child.label}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+  );
 };
 
-/* ------------------------------------------------------------------ */
-/*  Sidebar                                                            */
-/* ------------------------------------------------------------------ */
 export const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, activeSection, onSectionChange }) => {
-    const { auth, logout } = useAuth();
-    const navItems = getNavForRole(auth?.role);
+  const { auth, logout } = useAuth();
+  const role = auth?.role?.toUpperCase() || "STUDENT";
+  const navItems = sectionForRole(role);
+  const meta = roleMeta[role] || roleMeta.STUDENT;
 
-    const roleLabel =
-        auth?.role?.toUpperCase() === "ADMIN"
-            ? "Administrator"
-            : auth?.role?.toUpperCase() === "MAINTENANCE"
-                ? "Maintenance Staff"
-                : "Student Portal";
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/";
+  };
 
-    const handleLogout = () => {
-        logout();
-        window.location.href = "/";
-    };
+  return (
+    <>
+      {isOpen && <div className="fixed inset-0 z-40 bg-slate-900/45 backdrop-blur-sm lg:hidden" onClick={onClose} />}
 
-    return (
-        <>
-            {/* Mobile overlay */}
-            {isOpen && (
-                <div
-                    className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
-                    onClick={onClose}
-                />
-            )}
+      <aside
+        className={`glass-sidebar fixed left-0 top-0 z-50 flex h-screen flex-col transition-all duration-300 ease-out lg:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } ${collapsed ? "w-sidebar-collapsed" : "w-sidebar"}`}
+      >
+        <div className={`flex items-center ${collapsed ? "justify-center px-3" : "justify-between px-5"} py-5`}>
+          <Link to="/" className="no-underline">
+            <CampusFixLogo collapsed={collapsed} roleLabel={meta.label} roleTone={meta.tone} />
+          </Link>
 
-            <aside
-                className={`glass-sidebar fixed left-0 top-0 z-50 flex h-screen flex-col transition-all duration-300 ease-in-out lg:translate-x-0
-                    ${isOpen ? "translate-x-0" : "-translate-x-full"}
-                    ${collapsed ? "w-sidebar-collapsed" : "w-sidebar"}
-                `}
+          {!collapsed && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => window.location.assign("/")}
+                className="interactive-control hidden h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-100 hover:text-campus-600 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-campus-300 lg:inline-flex"
+                title="Go to Home"
+              >
+                <Home size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800 lg:hidden"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {collapsed && (
+          <div className="px-2 pb-2">
+            <button
+              type="button"
+              onClick={() => window.location.assign("/")}
+              className="nav-item justify-center px-0 py-2.5"
+              title="Home"
             >
-                {/* Logo */}
-                <div className={`flex items-center ${collapsed ? "justify-center px-3" : "justify-between px-6"} py-5`}>
-                    <Link to="/" className="flex items-center gap-2.5 no-underline transition-opacity hover:opacity-80">
-                        <CampusFixLogo collapsed={collapsed} />
-                        {!collapsed && (
-                            <div className="transition-opacity duration-200">
-                                <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white">
-                                    Campus<span className="text-campus-500">Fix</span>
-                                </span>
-                                <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-gray-400 dark:text-gray-500">
-                                    {roleLabel}
-                                </p>
-                            </div>
-                        )}
-                    </Link>
-                    {!collapsed && (
-                        <button
-                            onClick={onClose}
-                            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 lg:hidden"
-                        >
-                            <X size={20} />
-                        </button>
-                    )}
-                </div>
+              <Home size={18} />
+            </button>
+          </div>
+        )}
 
-                {/* Navigation */}
-                <nav className={`flex-1 space-y-1 overflow-y-auto py-2 ${collapsed ? "px-2" : "px-4"}`}>
-                    {!collapsed && (
-                        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 dark:text-gray-500">
-                            Main Menu
-                        </p>
-                    )}
-                    {navItems.map((item) => (
-                        <NavItem
-                            key={item.label}
-                            item={item}
-                            collapsed={collapsed}
-                            activeId={activeSection}
-                            onSelect={onSectionChange}
-                        />
-                    ))}
-                </nav>
+        <nav className={`flex-1 space-y-1 overflow-y-auto ${collapsed ? "px-2" : "px-3"} pb-4`}>
+          {!collapsed && (
+            <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400 dark:text-gray-500">
+              Command Modules
+            </p>
+          )}
+          {navItems.map((item) => (
+            <NavItem
+              key={item.id}
+              item={item}
+              collapsed={collapsed}
+              active={activeSection === item.id}
+              onSelect={onSectionChange}
+            />
+          ))}
+        </nav>
 
-                {/* Bottom section */}
-                <div className={`border-t border-gray-200/60 dark:border-slate-700/50 ${collapsed ? "p-2" : "p-4"}`}>
-                    {/* Logout button */}
-                    <button
-                        onClick={handleLogout}
-                        title={collapsed ? "Sign Out" : undefined}
-                        className={`flex w-full items-center rounded-xl text-sm font-medium text-red-500 transition-all duration-200 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20
-                            ${collapsed ? "justify-center py-2.5" : "gap-3 px-3 py-2.5"}
-                        `}
-                    >
-                        <LogOut size={20} className="flex-shrink-0" />
-                        {!collapsed && <span>Sign Out</span>}
-                    </button>
+        <div className={`border-t border-gray-200/70 dark:border-slate-700/60 ${collapsed ? "p-2" : "p-3"}`}>
+          {!collapsed && (
+            <div className="mb-2 rounded-xl border border-campus-100 bg-campus-50/70 px-3 py-2 dark:border-campus-900/40 dark:bg-campus-900/20">
+              <p className="text-[11px] font-semibold text-campus-700 dark:text-campus-300">System Status</p>
+              <p className="mt-1 flex items-center gap-1.5 text-[11px] text-campus-600 dark:text-campus-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Live telemetry enabled
+              </p>
+            </div>
+          )}
 
-                    {/* Collapse toggle (desktop only) */}
-                    <button
-                        onClick={onToggleCollapse}
-                        className={`mt-2 hidden lg:flex w-full items-center rounded-xl text-sm font-medium text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800 dark:hover:text-gray-300
-                            ${collapsed ? "justify-center py-2.5" : "gap-3 px-3 py-2.5"}
-                        `}
-                    >
-                        {collapsed ? <ChevronRightIcon size={18} /> : <><ChevronLeft size={18} /><span>Collapse</span></>}
-                    </button>
-                </div>
-            </aside>
-        </>
-    );
+          <button
+            type="button"
+            onClick={handleLogout}
+            title={collapsed ? "Sign Out" : undefined}
+            className={`nav-item nav-item-danger ${collapsed ? "justify-center px-0 py-2.5" : "justify-start px-3 py-2.5"}`}
+          >
+            <LogOut size={18} />
+            {!collapsed && <span className="text-sm font-semibold">Sign Out</span>}
+          </button>
+
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className={`mt-2 hidden nav-item lg:flex ${collapsed ? "justify-center px-0 py-2.5" : "justify-start px-3 py-2.5"}`}
+          >
+            {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+            {!collapsed && <span className="text-sm font-semibold">Collapse</span>}
+          </button>
+        </div>
+      </aside>
+    </>
+  );
 };

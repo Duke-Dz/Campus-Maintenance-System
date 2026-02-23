@@ -1,11 +1,17 @@
 package com.smartcampus.maintenance.service;
 
+import com.smartcampus.maintenance.dto.user.BroadcastAudience;
+import com.smartcampus.maintenance.dto.user.BroadcastMessageRequest;
+import com.smartcampus.maintenance.dto.user.BroadcastMessageResponse;
 import com.smartcampus.maintenance.dto.user.StaffInviteRequest;
 import com.smartcampus.maintenance.dto.user.StaffInviteResponse;
+import com.smartcampus.maintenance.dto.user.UserProfileResponse;
+import com.smartcampus.maintenance.dto.user.UserProfileUpdateRequest;
 import com.smartcampus.maintenance.dto.user.UserSummaryResponse;
 import com.smartcampus.maintenance.dto.user.UserWithTicketCountResponse;
 import com.smartcampus.maintenance.entity.StaffInvite;
 import com.smartcampus.maintenance.entity.User;
+import com.smartcampus.maintenance.entity.enums.NotificationType;
 import com.smartcampus.maintenance.entity.enums.Role;
 import com.smartcampus.maintenance.exception.ConflictException;
 import com.smartcampus.maintenance.exception.ForbiddenException;
@@ -15,6 +21,7 @@ import com.smartcampus.maintenance.repository.TicketRepository;
 import com.smartcampus.maintenance.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +36,7 @@ public class UserService {
     private final UsernameSuggestionService usernameSuggestionService;
     private final TokenHashService tokenHashService;
     private final EmailService emailService;
+    private final NotificationDispatchService notificationDispatchService;
     private final String frontendBaseUrl;
     private final long staffInviteTtlHours;
 
@@ -39,6 +47,7 @@ public class UserService {
             UsernameSuggestionService usernameSuggestionService,
             TokenHashService tokenHashService,
             EmailService emailService,
+            NotificationDispatchService notificationDispatchService,
             @Value("${app.frontend.base-url:http://localhost:5173}") String frontendBaseUrl,
             @Value("${app.auth.staff-invite-ttl-hours:48}") long staffInviteTtlHours) {
         this.userRepository = userRepository;
@@ -47,6 +56,7 @@ public class UserService {
         this.usernameSuggestionService = usernameSuggestionService;
         this.tokenHashService = tokenHashService;
         this.emailService = emailService;
+        this.notificationDispatchService = notificationDispatchService;
         this.frontendBaseUrl = frontendBaseUrl;
         this.staffInviteTtlHours = Math.max(1, staffInviteTtlHours);
     }
@@ -65,6 +75,18 @@ public class UserService {
         return userRepository.findByRoleOrderByFullNameAsc(Role.MAINTENANCE).stream()
                 .map(UserMapper::toSummary)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public UserProfileResponse getMyProfile(User actor) {
+        return toProfile(actor);
+    }
+
+    @Transactional
+    public UserProfileResponse updateMyProfile(User actor, UserProfileUpdateRequest request) {
+        actor.setFullName(request.fullName().trim());
+        User saved = userRepository.save(actor);
+        return toProfile(saved);
     }
 
     private long resolveTicketCount(User user) {
@@ -111,6 +133,41 @@ public class UserService {
                 invite.getEmail(),
                 invite.getFullName(),
                 invite.getExpiresAt());
+    }
+
+    @Transactional
+    public BroadcastMessageResponse broadcastMessage(User actor, BroadcastMessageRequest request) {
+        requireAdmin(actor);
+
+        String title = request.title().trim();
+        String message = request.message().trim();
+        BroadcastAudience audience = request.audience() == null ? BroadcastAudience.ALL : request.audience();
+
+        List<User> rawRecipients = switch (audience) {
+            case ALL -> userRepository.findAll();
+            case STUDENTS -> userRepository.findByRole(Role.STUDENT);
+            case STAFF -> Stream.concat(
+                    userRepository.findByRole(Role.ADMIN).stream(),
+                    userRepository.findByRole(Role.MAINTENANCE).stream())
+                    .toList();
+        };
+
+        List<User> recipients = rawRecipients.stream()
+                .filter(user -> user.getId() != null && !user.getId().equals(actor.getId()))
+                .toList();
+
+        notificationDispatchService.notifyUsers(
+                recipients,
+                "Broadcast: " + title,
+                message,
+                NotificationType.ANNOUNCEMENT,
+                "/announcements");
+
+        return new BroadcastMessageResponse(
+                title,
+                audience.name(),
+                recipients.size(),
+                LocalDateTime.now());
     }
 
     @Transactional(readOnly = true)
@@ -160,5 +217,15 @@ public class UserService {
                 .queryParam("token", token)
                 .build()
                 .toUriString();
+    }
+
+    private UserProfileResponse toProfile(User user) {
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getRole().name(),
+                user.getCreatedAt());
     }
 }

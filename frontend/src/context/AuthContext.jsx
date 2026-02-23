@@ -1,9 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { authService } from "../services/authService";
 import { authStorage } from "../utils/storage";
 import { ROLES } from "../utils/constants";
-
-const AuthContext = createContext(null);
+import { AuthContext } from "./auth-context";
 
 const roleHome = (role) => {
   if (role === ROLES.ADMIN) return "/admin";
@@ -33,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener("auth:unauthorized", onUnauthorized);
   }, []);
 
-  const login = async (payload) => {
+  const login = useCallback(async (payload) => {
     const data = await authService.login(payload).catch((error) => {
       throw new Error(parseError(error));
     });
@@ -41,18 +40,28 @@ export const AuthProvider = ({ children }) => {
     setAuth(next);
     authStorage.set(next);
     return next;
-  };
+  }, []);
 
-  const register = async (payload) => {
+  const register = useCallback(async (payload) => {
     return authService.register(payload).catch((error) => {
       throw new Error(parseError(error));
     });
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     authStorage.clear();
     setAuth(null);
-  };
+  }, []);
+
+  const updateAuth = useCallback((partial) => {
+    if (!partial || typeof partial !== "object") return;
+    setAuth((current) => {
+      if (!current) return current;
+      const next = { ...current, ...partial };
+      authStorage.set(next);
+      return next;
+    });
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -62,15 +71,10 @@ export const AuthProvider = ({ children }) => {
       login,
       register,
       logout,
+      updateAuth,
     }),
-    [auth]
+    [auth, login, logout, register, updateAuth]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
-  return context;
 };

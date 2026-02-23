@@ -1,31 +1,28 @@
 import {
-  AlertTriangle,
-  ArrowUpRight,
   CheckCheck,
-  Clock,
   FileText,
-  Hammer,
-  ImagePlus,
   Loader2,
   PlayCircle,
+  Search,
   Star,
   Timer,
   TrendingUp,
   Upload,
   Wrench,
-  Zap,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../components/Common/EmptyState.jsx";
 import { LoadingSpinner } from "../components/Common/LoadingSpinner.jsx";
 import { Modal } from "../components/Common/Modal.jsx";
 import { StatusBadge } from "../components/Common/StatusBadge.jsx";
 import { UrgencyBadge } from "../components/Common/UrgencyBadge.jsx";
+import { UserAvatar } from "../components/Common/UserAvatar.jsx";
 import { TicketTimeline } from "../components/tickets/TicketTimeline.jsx";
 import { useAuth } from "../hooks/useAuth";
 import { useTickets } from "../hooks/useTickets";
 import { ticketService } from "../services/ticketService";
 import { formatDate, titleCase } from "../utils/helpers";
+import { loadProfilePreferences } from "../utils/profilePreferences";
 
 const SLA_TARGETS = { CRITICAL: 4, HIGH: 24, MEDIUM: 72, LOW: 168 };
 
@@ -56,8 +53,10 @@ export const MaintenanceDashboard = () => {
   const [actionState, setActionState] = useState({ ticketId: null, loading: false, error: "" });
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [isAvailable, setIsAvailable] = useState(true);
   const [afterPhotos, setAfterPhotos] = useState({}); // ticketId -> File
+  const [ticketSearch, setTicketSearch] = useState("");
+  const [avgRating, setAvgRating] = useState(null);
+  const [avgRatingLoading, setAvgRatingLoading] = useState(false);
 
   /* ---- computed ---- */
   const activeTickets = useMemo(
@@ -74,6 +73,95 @@ export const MaintenanceDashboard = () => {
     const today = new Date().toDateString();
     return resolvedTickets.filter((t) => t.resolvedAt && new Date(t.resolvedAt).toDateString() === today).length;
   }, [resolvedTickets]);
+  const queueHealth = useMemo(() => {
+    const result = activeTickets.reduce(
+      (acc, ticket) => {
+        const remaining = getSlaRemaining(ticket);
+        if (remaining !== null && remaining <= 0) {
+          acc.overdue += 1;
+        } else if (remaining !== null && remaining <= (SLA_TARGETS[ticket.urgency] || 72) * 0.25) {
+          acc.atRisk += 1;
+        }
+        return acc;
+      },
+      { overdue: 0, atRisk: 0 }
+    );
+    return result;
+  }, [activeTickets]);
+
+  const filteredActiveTickets = useMemo(() => {
+    const query = ticketSearch.trim().toLowerCase();
+    if (!query) return activeTickets;
+    return activeTickets.filter((ticket) => (
+      `${ticket.id}`.includes(query)
+      || ticket.title.toLowerCase().includes(query)
+      || ticket.building.toLowerCase().includes(query)
+      || ticket.location.toLowerCase().includes(query)
+      || ticket.category.toLowerCase().includes(query)
+      || ticket.status.toLowerCase().includes(query)
+    ));
+  }, [activeTickets, ticketSearch]);
+
+  const filteredResolvedTickets = useMemo(() => {
+    const query = ticketSearch.trim().toLowerCase();
+    if (!query) return resolvedTickets;
+    return resolvedTickets.filter((ticket) => (
+      `${ticket.id}`.includes(query)
+      || ticket.title.toLowerCase().includes(query)
+      || ticket.building.toLowerCase().includes(query)
+      || ticket.location.toLowerCase().includes(query)
+      || ticket.category.toLowerCase().includes(query)
+      || ticket.status.toLowerCase().includes(query)
+    ));
+  }, [resolvedTickets, ticketSearch]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadAvgRating = async () => {
+      if (resolvedTickets.length === 0) {
+        setAvgRating(null);
+        setAvgRatingLoading(false);
+        return;
+      }
+      setAvgRatingLoading(true);
+      try {
+        const details = await Promise.all(
+          resolvedTickets.map((ticket) => ticketService.getTicket(ticket.id).catch(() => null))
+        );
+        const ratedValues = details
+          .map((detail) => detail?.rating?.stars)
+          .filter((value) => typeof value === "number");
+        if (!mounted) return;
+        if (ratedValues.length === 0) {
+          setAvgRating(null);
+          return;
+        }
+        const average = ratedValues.reduce((sum, value) => sum + value, 0) / ratedValues.length;
+        setAvgRating(Math.round(average * 10) / 10);
+      } finally {
+        if (mounted) {
+          setAvgRatingLoading(false);
+        }
+      }
+    };
+    loadAvgRating();
+    return () => {
+      mounted = false;
+    };
+  }, [resolvedTickets]);
+
+  useEffect(() => {
+    const handleSearch = (event) => {
+      const query = event.detail?.query?.trim();
+      if (!query) return;
+      setTicketSearch(query);
+      window.requestAnimationFrame(() => {
+        document.getElementById("work-queue")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+    window.addEventListener("dashboard:search", handleSearch);
+    return () => window.removeEventListener("dashboard:search", handleSearch);
+  }, []);
 
   /* ---- actions ---- */
   const updateStatus = async (ticket, status) => {
@@ -84,6 +172,10 @@ export const MaintenanceDashboard = () => {
     }
     setActionState({ ticketId: ticket.id, loading: true, error: "" });
     try {
+      const afterPhoto = afterPhotos[ticket.id];
+      if (status === "RESOLVED" && afterPhoto) {
+        await ticketService.uploadAfterPhoto(ticket.id, afterPhoto);
+      }
       await ticketService.updateStatus(ticket.id, { status, note });
       setNotes((prev) => ({ ...prev, [ticket.id]: "" }));
       setAfterPhotos((prev) => { const copy = { ...prev }; delete copy[ticket.id]; return copy; });
@@ -108,6 +200,7 @@ export const MaintenanceDashboard = () => {
   /* ---- greeting ---- */
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
+  const avatarPreferences = useMemo(() => loadProfilePreferences(auth?.username), [auth?.username]);
 
   /* ---- urgency color helpers ---- */
   const urgencyBorderColor = {
@@ -121,40 +214,44 @@ export const MaintenanceDashboard = () => {
   /*  RENDER                                                          */
   /* ================================================================ */
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="dashboard-shell space-y-6 animate-fade-in">
       {/* ---- Welcome Banner ---- */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-campus-500 via-campus-600 to-campus-800 p-6 text-white shadow-lg">
+      <section id="dashboard" data-dashboard-section="true" className="motion-section relative overflow-hidden rounded-2xl bg-gradient-to-br from-campus-500 via-campus-600 to-campus-800 p-6 text-white shadow-lg">
         <div className="absolute -top-8 -right-8 h-40 w-40 rounded-full bg-white/10" />
         <div className="absolute bottom-0 right-20 h-24 w-24 rounded-full bg-white/5" />
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-xl font-bold backdrop-blur-sm">
-              {(auth?.fullName || "M").charAt(0).toUpperCase()}
+            <div className="rounded-2xl bg-white/15 p-1 backdrop-blur-sm">
+              <UserAvatar
+                fullName={auth?.fullName}
+                username={auth?.username}
+                avatarType={avatarPreferences.avatarType}
+                avatarPreset={avatarPreferences.avatarPreset}
+                avatarImage={avatarPreferences.avatarImage}
+                size={48}
+                className="rounded-xl"
+              />
             </div>
             <div>
-              <h1 className="text-xl font-bold">{greeting}, {auth?.fullName || "Staff"} 🔧</h1>
+              <h1 className="text-xl font-bold">{greeting}, {auth?.fullName || "Staff"}</h1>
               <p className="mt-0.5 text-sm text-blue-100">
                 You have <span className="font-semibold text-white">{activeTickets.length} active tasks</span> in your work queue.
               </p>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-3">
-            {/* Availability Toggle */}
             <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 backdrop-blur-sm">
-              <span className="text-sm font-medium">{isAvailable ? "Available" : "Busy"}</span>
-              <button
-                onClick={() => setIsAvailable(!isAvailable)}
-                className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${isAvailable ? "bg-emerald-400" : "bg-gray-400"}`}
-              >
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${isAvailable ? "left-[22px]" : "left-0.5"}`} />
-              </button>
+              <Timer size={14} />
+              <span className="text-sm font-medium">
+                {queueHealth.overdue > 0 ? `Overdue: ${queueHealth.overdue}` : `At risk: ${queueHealth.atRisk}`}
+              </span>
             </div>
           </div>
         </div>
       </section>
 
       {/* ---- Stats Row (4 cards) ---- */}
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="motion-section motion-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           { label: "Assigned", value: activeTickets.filter((t) => t.status === "ASSIGNED").length, icon: FileText, color: "bg-blue-100 text-campus-600 dark:bg-blue-900/30 dark:text-blue-400" },
           { label: "In Progress", value: activeTickets.filter((t) => t.status === "IN_PROGRESS").length, icon: Loader2, color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" },
@@ -163,7 +260,7 @@ export const MaintenanceDashboard = () => {
         ].map((item) => {
           const Icon = item.icon;
           return (
-            <article key={item.label} className="saas-card flex items-center gap-4">
+            <article key={item.label} className="saas-card interactive-surface flex items-center gap-4">
               <div className={`icon-wrap ${item.color}`}>
                 <Icon size={22} />
               </div>
@@ -186,18 +283,32 @@ export const MaintenanceDashboard = () => {
       {!loading && !error && (
         <>
           {/* ---- Active Work Queue ---- */}
-          <section id="work-queue" className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Wrench size={18} className="text-campus-500" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Active Work Queue</h2>
-              <span className="pill-badge bg-campus-50 text-campus-600 dark:bg-campus-900/20 dark:text-campus-400">{activeTickets.length}</span>
+          <section id="work-queue" data-dashboard-section="true" className="motion-section space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Wrench size={18} className="text-campus-500" />
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Active Work Queue</h2>
+                <span className="pill-badge bg-campus-50 text-campus-600 dark:bg-campus-900/20 dark:text-campus-400">{filteredActiveTickets.length}</span>
+              </div>
+              <div className="flex items-center rounded-xl border border-gray-200 bg-white px-3 dark:border-slate-700 dark:bg-slate-900">
+                <Search size={14} className="text-gray-400" />
+                <input
+                  value={ticketSearch}
+                  onChange={(e) => setTicketSearch(e.target.value)}
+                  placeholder="Search queue/resolved..."
+                  className="w-52 bg-transparent px-2 py-2 text-sm outline-none dark:text-gray-200"
+                />
+              </div>
             </div>
 
-            {activeTickets.length === 0 ? (
-              <EmptyState title="No active tickets" message="All assigned tickets are currently resolved. Great work! 🎉" />
+            {filteredActiveTickets.length === 0 ? (
+              <EmptyState
+                title={activeTickets.length === 0 ? "No active tickets" : "No active tickets match search"}
+                message={activeTickets.length === 0 ? "All assigned tickets are currently resolved. Great work!" : "Try another term or clear the search."}
+              />
             ) : (
-              <div className="grid gap-4">
-                {activeTickets.map((ticket) => {
+              <div className="motion-grid grid gap-4">
+                {filteredActiveTickets.map((ticket) => {
                   const remaining = getSlaRemaining(ticket);
                   const isOverdue = remaining !== null && remaining <= 0;
                   const isAtRisk = remaining !== null && remaining > 0 && remaining <= (SLA_TARGETS[ticket.urgency] || 72) * 0.25;
@@ -205,17 +316,17 @@ export const MaintenanceDashboard = () => {
                   return (
                     <article
                       key={ticket.id}
-                      className={`saas-card border-l-4 ${urgencyBorderColor[ticket.urgency] || "border-l-gray-300"}`}
+                      className={`saas-card interactive-surface border-l-4 ${urgencyBorderColor[ticket.urgency] || "border-l-gray-300"}`}
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <button type="button" onClick={() => openTicket(ticket.id)} className="text-left">
+                          <button type="button" onClick={() => openTicket(ticket.id)} className="interactive-control text-left">
                             <h3 className="font-semibold text-gray-900 hover:text-campus-600 dark:text-white dark:hover:text-campus-400 transition-colors">
                               {ticket.title}
                             </h3>
                           </button>
                           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            {ticket.building} • {ticket.location}
+                            {ticket.building}  |  {ticket.location}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -231,7 +342,7 @@ export const MaintenanceDashboard = () => {
                       </div>
 
                       <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-                        {titleCase(ticket.category)} • Submitted {formatDate(ticket.createdAt)}
+                        {titleCase(ticket.category)}  |  Submitted {formatDate(ticket.createdAt)}
                       </p>
 
                       {/* Work area */}
@@ -247,7 +358,7 @@ export const MaintenanceDashboard = () => {
                         {/* After-photo upload (visible when In Progress) */}
                         {ticket.status === "IN_PROGRESS" && (
                           <div className="flex items-center gap-3">
-                            <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-500 transition hover:border-campus-400 hover:text-campus-600 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-400 dark:hover:border-campus-500">
+                            <label className="interactive-control flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-500 transition hover:border-campus-400 hover:text-campus-600 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-400 dark:hover:border-campus-500">
                               <Upload size={16} />
                               {afterPhotos[ticket.id] ? afterPhotos[ticket.id].name : "Upload after photo"}
                               <input
@@ -264,7 +375,7 @@ export const MaintenanceDashboard = () => {
                                 }}
                               />
                             </label>
-                            <span className="text-[11px] text-gray-400">Max 5MB · JPEG, PNG, WebP</span>
+                            <span className="text-[11px] text-gray-400">Max 5MB  |  JPEG, PNG, WebP</span>
                           </div>
                         )}
 
@@ -277,7 +388,7 @@ export const MaintenanceDashboard = () => {
                             <button
                               disabled={actionState.loading && actionState.ticketId === ticket.id}
                               onClick={() => updateStatus(ticket, "IN_PROGRESS")}
-                              className="btn-primary"
+                              className="btn-primary interactive-control"
                             >
                               <PlayCircle size={16} />
                               {actionState.loading && actionState.ticketId === ticket.id ? "Updating..." : "Start Work"}
@@ -287,7 +398,7 @@ export const MaintenanceDashboard = () => {
                             <button
                               disabled={actionState.loading && actionState.ticketId === ticket.id}
                               onClick={() => updateStatus(ticket, "RESOLVED")}
-                              className="btn-success"
+                              className="btn-success interactive-control"
                             >
                               <CheckCheck size={16} />
                               {actionState.loading && actionState.ticketId === ticket.id ? "Updating..." : "Mark Resolved"}
@@ -303,7 +414,7 @@ export const MaintenanceDashboard = () => {
           </section>
 
           {/* ---- My Performance Card ---- */}
-          <section id="performance" className="saas-card">
+          <section id="performance" data-dashboard-section="true" className="motion-section saas-card interactive-surface">
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">My Performance</h3>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-xl bg-emerald-50 p-4 text-center dark:bg-emerald-900/20">
@@ -317,7 +428,9 @@ export const MaintenanceDashboard = () => {
               <div className="rounded-xl bg-amber-50 p-4 text-center dark:bg-amber-900/20">
                 <div className="flex items-center justify-center gap-1">
                   <Star size={18} className="text-amber-400 fill-amber-400" />
-                  <span className="text-3xl font-bold text-amber-600 dark:text-amber-400">—</span>
+                  <span className="text-3xl font-bold text-amber-600 dark:text-amber-400">
+                    {avgRatingLoading ? "..." : avgRating ?? "-"}
+                  </span>
                 </div>
                 <p className="mt-1 text-xs font-medium text-amber-600/70 dark:text-amber-400/70">Avg Rating</p>
               </div>
@@ -325,22 +438,25 @@ export const MaintenanceDashboard = () => {
           </section>
 
           {/* ---- Resolved Tickets ---- */}
-          <section className="space-y-4">
+          <section id="resolved" data-dashboard-section="true" className="motion-section space-y-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Resolved Tickets</h2>
-            {resolvedTickets.length === 0 ? (
-              <EmptyState title="No resolved tickets" message="Resolved items will appear here." />
+            {filteredResolvedTickets.length === 0 ? (
+              <EmptyState
+                title={resolvedTickets.length === 0 ? "No resolved tickets" : "No resolved tickets match search"}
+                message={resolvedTickets.length === 0 ? "Resolved items will appear here." : "Try another term or clear the search."}
+              />
             ) : (
-              <div className="grid gap-4">
-                {resolvedTickets.map((ticket) => (
-                  <article key={ticket.id} className="saas-card">
+              <div className="motion-grid grid gap-4">
+                {filteredResolvedTickets.map((ticket) => (
+                  <article key={ticket.id} className="saas-card interactive-surface">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <button type="button" onClick={() => openTicket(ticket.id)} className="text-left">
+                        <button type="button" onClick={() => openTicket(ticket.id)} className="interactive-control text-left">
                           <h3 className="font-semibold text-gray-900 hover:text-campus-600 dark:text-white dark:hover:text-campus-400 transition-colors">
                             {ticket.title}
                           </h3>
                         </button>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{ticket.building} • {ticket.location}</p>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{ticket.building}  |  {ticket.location}</p>
                       </div>
                       <div className="flex gap-2">
                         <StatusBadge status={ticket.status} />
@@ -348,7 +464,7 @@ export const MaintenanceDashboard = () => {
                       </div>
                     </div>
                     <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-                      {titleCase(ticket.category)} • Submitted {formatDate(ticket.createdAt)}
+                      {titleCase(ticket.category)}  |  Submitted {formatDate(ticket.createdAt)}
                     </p>
                   </article>
                 ))}
@@ -373,7 +489,7 @@ export const MaintenanceDashboard = () => {
               </div>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{selectedTicket.ticket.description}</p>
               <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-                {titleCase(selectedTicket.ticket.category)} • {selectedTicket.ticket.building} • {selectedTicket.ticket.location}
+                {titleCase(selectedTicket.ticket.category)}  |  {selectedTicket.ticket.building}  |  {selectedTicket.ticket.location}
               </p>
             </div>
             <div>
@@ -386,3 +502,6 @@ export const MaintenanceDashboard = () => {
     </div>
   );
 };
+
+
+

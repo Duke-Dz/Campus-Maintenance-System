@@ -112,5 +112,19 @@ mvn -q test
 
 # frontend
 cd ../frontend
+npm run lint
 npm run build
 ```
+
+## Fast Local Backend Startup (Dev)
+
+Use the `fast` Spring profile while developing to reduce startup overhead:
+
+```bash
+cd backend
+mvn -q -DskipTests spring-boot:run "-Dspring-boot.run.profiles=fast"
+```
+
+Notes:
+- This profile sets lazy initialization and disables JPA auto schema update.
+- Make sure your database schema is already up to date before using it.

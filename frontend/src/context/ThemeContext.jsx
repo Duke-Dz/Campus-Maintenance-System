@@ -1,7 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { themeStorage } from "../utils/storage";
-
-const ThemeContext = createContext(null);
+import { ThemeContext } from "./theme-context";
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(themeStorage.get());
@@ -25,10 +24,4 @@ export const ThemeProvider = ({ children }) => {
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
-};
-
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) throw new Error("useTheme must be used within ThemeProvider");
-  return context;
 };

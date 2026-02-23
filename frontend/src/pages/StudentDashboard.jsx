@@ -1,7 +1,6 @@
 import {
   CheckCircle2,
   ClipboardList,
-  ClipboardPlus,
   Droplets,
   FileText,
   Hammer,
@@ -10,27 +9,27 @@ import {
   ShieldAlert,
   Sparkles,
   Star,
-  TrendingUp,
   Wind,
   Wrench,
   Zap,
   Clock,
-  ArrowUpRight,
   Search,
-  Eye,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EmptyState } from "../components/Common/EmptyState.jsx";
 import { LoadingSpinner } from "../components/Common/LoadingSpinner.jsx";
 import { Modal } from "../components/Common/Modal.jsx";
 import { StatusBadge } from "../components/Common/StatusBadge.jsx";
 import { UrgencyBadge } from "../components/Common/UrgencyBadge.jsx";
+import { UserAvatar } from "../components/Common/UserAvatar.jsx";
 import { TicketTimeline } from "../components/tickets/TicketTimeline.jsx";
 import { useAuth } from "../hooks/useAuth";
 import { useTickets } from "../hooks/useTickets";
+import { buildingService } from "../services/buildingService";
 import { ticketService } from "../services/ticketService";
 import { CATEGORIES, URGENCY_LEVELS } from "../utils/constants";
 import { formatDate, titleCase } from "../utils/helpers";
+import { loadProfilePreferences } from "../utils/profilePreferences";
 
 const categoryIcon = {
   ELECTRICAL: Zap,
@@ -76,7 +75,7 @@ const TicketTracker = ({ ticket }) => {
   const isRejected = ticket.status === "REJECTED";
 
   return (
-    <article className="saas-card">
+    <article className="saas-card interactive-surface">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Active Ticket Tracker</h3>
         <span className="pill-badge bg-campus-50 text-campus-600 dark:bg-campus-900/20 dark:text-campus-400">#{ticket.id}</span>
@@ -125,11 +124,14 @@ const TicketTracker = ({ ticket }) => {
 export const StudentDashboard = () => {
   const { auth } = useAuth();
   const { tickets, loading, error, refresh } = useTickets(() => ticketService.getMyTickets(), []);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(true);
   const [form, setForm] = useState(defaultForm);
   const [imageFile, setImageFile] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [buildings, setBuildings] = useState([]);
+  const [buildingError, setBuildingError] = useState("");
+  const [ticketSearch, setTicketSearch] = useState("");
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [selectedLoading, setSelectedLoading] = useState(false);
   const [rating, setRating] = useState({ stars: 5, comment: "" });
@@ -148,10 +150,18 @@ export const StudentDashboard = () => {
     [tickets]
   );
 
-  const avgRating = useMemo(() => {
-    // Placeholder: will compute from ticket ratings when available
-    return null;
-  }, [tickets]);
+  const filteredTickets = useMemo(() => {
+    const query = ticketSearch.trim().toLowerCase();
+    if (!query) return tickets;
+    return tickets.filter((ticket) => (
+      `${ticket.id}`.includes(query)
+      || ticket.title.toLowerCase().includes(query)
+      || ticket.building.toLowerCase().includes(query)
+      || ticket.location.toLowerCase().includes(query)
+      || ticket.category.toLowerCase().includes(query)
+      || ticket.status.toLowerCase().includes(query)
+    ));
+  }, [ticketSearch, tickets]);
 
   const submitTicket = async (event) => {
     event.preventDefault();
@@ -206,20 +216,77 @@ export const StudentDashboard = () => {
   /* ---- greeting ---- */
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
+  const avatarPreferences = useMemo(() => loadProfilePreferences(auth?.username), [auth?.username]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadBuildings = async () => {
+      try {
+        const items = await buildingService.getBuildings();
+        if (!mounted) return;
+        setBuildings(items);
+        if (items.length > 0) {
+          setForm((prev) => (prev.building ? prev : { ...prev, building: items[0].name }));
+        }
+      } catch (err) {
+        if (!mounted) return;
+        setBuildingError(err?.response?.data?.message || "Failed to load buildings.");
+      }
+    };
+    loadBuildings();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleNavigate = (event) => {
+      const targetId = event.detail?.id;
+      if (!targetId) return;
+      if (targetId === "report") {
+        setShowForm(true);
+        window.requestAnimationFrame(() => {
+          document.getElementById("report")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+    };
+    const handleSearch = (event) => {
+      const query = event.detail?.query?.trim();
+      if (!query) return;
+      setTicketSearch(query);
+      window.requestAnimationFrame(() => {
+        document.getElementById("tickets")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+    window.addEventListener("dashboard:navigate", handleNavigate);
+    window.addEventListener("dashboard:search", handleSearch);
+    return () => {
+      window.removeEventListener("dashboard:navigate", handleNavigate);
+      window.removeEventListener("dashboard:search", handleSearch);
+    };
+  }, []);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="dashboard-shell space-y-6 animate-fade-in">
       {/* ---- Welcome Banner ---- */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-campus-500 via-campus-600 to-campus-800 p-6 text-white shadow-lg">
+      <section id="dashboard" data-dashboard-section="true" className="motion-section relative overflow-hidden rounded-2xl bg-gradient-to-br from-campus-500 via-campus-600 to-campus-800 p-6 text-white shadow-lg">
         <div className="absolute -top-8 -right-8 h-40 w-40 rounded-full bg-white/10" />
         <div className="absolute bottom-0 right-20 h-24 w-24 rounded-full bg-white/5" />
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-xl font-bold backdrop-blur-sm">
-              {(auth?.fullName || "S").charAt(0).toUpperCase()}
+            <div className="rounded-2xl bg-white/15 p-1 backdrop-blur-sm">
+              <UserAvatar
+                fullName={auth?.fullName}
+                username={auth?.username}
+                avatarType={avatarPreferences.avatarType}
+                avatarPreset={avatarPreferences.avatarPreset}
+                avatarImage={avatarPreferences.avatarImage}
+                size={48}
+                className="rounded-xl"
+              />
             </div>
             <div>
-              <h1 className="text-xl font-bold">{greeting}, {auth?.fullName || "Student"} 👋</h1>
+              <h1 className="text-xl font-bold">{greeting}, {auth?.fullName || "Student"}</h1>
               <p className="mt-0.5 text-sm text-blue-100">
                 Report campus issues and track their progress in real-time.
               </p>
@@ -227,7 +294,7 @@ export const StudentDashboard = () => {
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="hidden rounded-xl bg-white/20 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30 sm:flex items-center gap-2"
+            className="interactive-control hidden rounded-xl bg-white/20 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30 sm:flex items-center gap-2"
           >
             <Plus size={16} />
             Report Issue
@@ -236,7 +303,7 @@ export const StudentDashboard = () => {
       </section>
 
       {/* ---- Stats Row (3 cards) ---- */}
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="motion-section motion-grid grid gap-4 sm:grid-cols-3">
         {[
           { label: "Total Submitted", value: stats.total, icon: FileText, color: "bg-blue-100 text-campus-600 dark:bg-blue-900/30 dark:text-blue-400" },
           { label: "In Progress", value: stats.pending, icon: Clock, color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" },
@@ -244,7 +311,7 @@ export const StudentDashboard = () => {
         ].map((item) => {
           const Icon = item.icon;
           return (
-            <article key={item.label} className="saas-card flex items-center gap-4">
+            <article key={item.label} className="saas-card interactive-surface flex items-center gap-4">
               <div className={`icon-wrap ${item.color}`}>
                 <Icon size={22} />
               </div>
@@ -256,15 +323,9 @@ export const StudentDashboard = () => {
           );
         })}
       </section>
-
-
-
-      {/* ---- Active Ticket Tracker ---- */}
-      {latestActiveTicket && <TicketTracker ticket={latestActiveTicket} />}
-
       {/* ---- Report Issue Form ---- */}
       {showForm && (
-        <section className="saas-card animate-soft-rise">
+        <section id="report" data-dashboard-section="true" className="motion-section saas-card interactive-surface animate-soft-rise">
           <form onSubmit={submitTicket} className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Title</label>
@@ -282,7 +343,25 @@ export const StudentDashboard = () => {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Building</label>
-              <input required value={form.building} onChange={(e) => setForm((p) => ({ ...p, building: e.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" />
+              {buildings.length > 0 ? (
+                <select
+                  required
+                  value={form.building}
+                  onChange={(e) => setForm((p) => ({ ...p, building: e.target.value }))}
+                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30"
+                >
+                  {buildings.map((building) => (
+                    <option key={building.id} value={building.name}>
+                      {building.name} ({building.code})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input required value={form.building} onChange={(e) => setForm((p) => ({ ...p, building: e.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" placeholder="Enter building name" />
+              )}
+              {buildingError && (
+                <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{buildingError}</p>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Location</label>
@@ -306,22 +385,41 @@ export const StudentDashboard = () => {
             {submitError && <p className="md:col-span-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{submitError}</p>}
 
             <div className="md:col-span-2 flex items-center gap-3">
-              <button disabled={submitLoading} className="btn-primary">{submitLoading ? "Submitting..." : "Submit Ticket"}</button>
-              <button type="button" onClick={() => setShowForm(false)} className="btn-ghost">Cancel</button>
+              <button disabled={submitLoading} className="btn-primary interactive-control">{submitLoading ? "Submitting..." : "Submit Ticket"}</button>
+              <button type="button" onClick={() => setShowForm(false)} className="btn-ghost interactive-control">Cancel</button>
             </div>
           </form>
         </section>
       )}
 
+      {/* ---- Active Ticket Tracker ---- */}
+      {latestActiveTicket && (
+        <section id="tracker" data-dashboard-section="true" className="motion-section">
+          <TicketTracker ticket={latestActiveTicket} />
+        </section>
+      )}
+
       {/* ---- Your Tickets ---- */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Your Tickets</h2>
+      <section id="tickets" data-dashboard-section="true" className="motion-section space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Your Tickets</h2>
+          <div className="flex items-center rounded-xl border border-gray-200 bg-white px-3 dark:border-slate-700 dark:bg-slate-900">
+            <Search size={14} className="text-gray-400" />
+            <input
+              value={ticketSearch}
+              onChange={(e) => setTicketSearch(e.target.value)}
+              placeholder="Search tickets..."
+              className="w-52 bg-transparent px-2 py-2 text-sm outline-none dark:text-gray-200"
+            />
+          </div>
+        </div>
         {loading && <LoadingSpinner label="Loading your tickets..." />}
         {!loading && error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
         {!loading && !error && tickets.length === 0 && <EmptyState title="No tickets yet" message="Submit your first maintenance issue using the form above." />}
-        {!loading && !error && tickets.length > 0 && (
+        {!loading && !error && tickets.length > 0 && filteredTickets.length === 0 && <EmptyState title="No tickets match your search" message="Try another search term or clear filters." />}
+        {!loading && !error && filteredTickets.length > 0 && (
           <div className="grid gap-4">
-            {tickets.map((ticket) => {
+            {filteredTickets.map((ticket) => {
               const Icon = categoryIcon[ticket.category] || ClipboardList;
               const colorClass = categoryColors[ticket.category] || categoryColors.OTHER;
               return (
@@ -329,7 +427,7 @@ export const StudentDashboard = () => {
                   type="button"
                   key={ticket.id}
                   onClick={() => openTicket(ticket.id)}
-                  className="group saas-card text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover"
+                  className="group saas-card interactive-surface interactive-control text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
@@ -338,7 +436,7 @@ export const StudentDashboard = () => {
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900 dark:text-white">{ticket.title}</h3>
-                        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{ticket.building} • {ticket.location}</p>
+                        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{ticket.building}  |  {ticket.location}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -347,7 +445,7 @@ export const StudentDashboard = () => {
                     </div>
                   </div>
                   <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-                    {titleCase(ticket.category)} • Submitted {formatDate(ticket.createdAt)}
+                    {titleCase(ticket.category)}  |  Submitted {formatDate(ticket.createdAt)}
                   </p>
                 </button>
               );
@@ -371,7 +469,7 @@ export const StudentDashboard = () => {
               </div>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{selectedTicket.ticket.description}</p>
               <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-                {titleCase(selectedTicket.ticket.category)} • {selectedTicket.ticket.building} • {selectedTicket.ticket.location}
+                {titleCase(selectedTicket.ticket.category)}  |  {selectedTicket.ticket.building}  |  {selectedTicket.ticket.location}
               </p>
             </div>
 
@@ -398,7 +496,7 @@ export const StudentDashboard = () => {
                 <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Rate Resolution</h4>
                 <div className="mt-3 flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((s) => (
-                    <button key={s} type="button" onClick={() => setRating((p) => ({ ...p, stars: s }))} className="p-0.5 transition-transform hover:scale-110">
+                    <button key={s} type="button" onClick={() => setRating((p) => ({ ...p, stars: s }))} className="interactive-control p-0.5 transition-transform hover:scale-110">
                       <Star size={24} className={s <= rating.stars ? "text-amber-400 fill-amber-400" : "text-gray-300 dark:text-gray-600"} />
                     </button>
                   ))}
@@ -412,7 +510,7 @@ export const StudentDashboard = () => {
                   className="mt-3 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 />
                 {ratingError && <p className="mt-2 text-sm text-red-600 dark:text-red-300">{ratingError}</p>}
-                <button disabled={ratingLoading} className="btn-primary mt-3">
+                <button disabled={ratingLoading} className="btn-primary interactive-control mt-3">
                   <Star size={15} />
                   {ratingLoading ? "Submitting..." : "Submit Rating"}
                 </button>
@@ -424,3 +522,5 @@ export const StudentDashboard = () => {
     </div>
   );
 };
+
+

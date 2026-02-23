@@ -1,7 +1,7 @@
 import { LogOut, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "../../hooks/useTheme";
 import { titleCase } from "../../utils/helpers";
 
 export const Navbar = () => {

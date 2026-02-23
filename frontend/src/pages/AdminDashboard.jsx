@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   Bar,
@@ -17,21 +17,20 @@ import {
 } from "recharts";
 import {
   AlertTriangle,
+  ArrowDownRight,
   ArrowUpRight,
-  BarChart3,
   CheckCircle2,
   Clock,
   ClipboardList,
   FileText,
-  ListChecks,
   Loader2,
+  Megaphone,
   Plus,
+  Search,
+  Send,
   Shield,
   TrendingUp,
-  UserCog,
   Users,
-  Wrench,
-  Zap,
 } from "lucide-react";
 import { ConfirmDialog } from "../components/Common/ConfirmDialog.jsx";
 import { EmptyState } from "../components/Common/EmptyState.jsx";
@@ -39,6 +38,7 @@ import { LoadingSpinner } from "../components/Common/LoadingSpinner.jsx";
 import { Modal } from "../components/Common/Modal.jsx";
 import { StatusBadge } from "../components/Common/StatusBadge.jsx";
 import { UrgencyBadge } from "../components/Common/UrgencyBadge.jsx";
+import { UserAvatar } from "../components/Common/UserAvatar.jsx";
 import { TicketTimeline } from "../components/tickets/TicketTimeline.jsx";
 import { useAuth } from "../hooks/useAuth";
 import { analyticsService } from "../services/analyticsService";
@@ -47,8 +47,10 @@ import { ticketService } from "../services/ticketService";
 import { userService } from "../services/userService";
 import { CATEGORIES, STATUSES, URGENCY_LEVELS } from "../utils/constants";
 import { formatDate, titleCase, toHours } from "../utils/helpers";
+import { loadProfilePreferences } from "../utils/profilePreferences";
 
 const pieColors = ["#3B82F6", "#1E40AF", "#EF4444", "#0EA5E9", "#F59E0B", "#8B5CF6", "#64748B"];
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 /* ------------------------------------------------------------------ */
 /*  SLA helpers                                                        */
@@ -64,13 +66,23 @@ const getSlaStatus = (ticket) => {
   return "on-track";
 };
 
+const trendPercent = (current, previous) => {
+  if (current === 0 && previous === 0) {
+    return null;
+  }
+  if (previous === 0) {
+    return 100;
+  }
+  return Math.round(((current - previous) / previous) * 100);
+};
+
 /* ================================================================== */
 /*  ADMIN DASHBOARD                                                    */
 /* ================================================================== */
 export const AdminDashboard = () => {
   const { auth } = useAuth();
-  const [activeTab, setActiveTab] = useState("tickets");
   const [filters, setFilters] = useState({ status: "", category: "", urgency: "", assignee: "", search: "" });
+  const [userFilters, setUserFilters] = useState({ role: "", search: "" });
 
   /* analytics state */
   const [summary, setSummary] = useState(null);
@@ -93,12 +105,19 @@ export const AdminDashboard = () => {
   const [usersError, setUsersError] = useState("");
 
   /* add staff state */
-  const [showAddStaff, setShowAddStaff] = useState(false);
   const [staffForm, setStaffForm] = useState({ username: "", email: "", fullName: "" });
   const [staffLoading, setStaffLoading] = useState(false);
   const [staffError, setStaffError] = useState("");
+  const [staffNotice, setStaffNotice] = useState("");
+  const [latestInvite, setLatestInvite] = useState(null);
   const [staffSuggestions, setStaffSuggestions] = useState([]);
   const [staffSuggestionLoading, setStaffSuggestionLoading] = useState(false);
+
+  /* broadcast state */
+  const [broadcastForm, setBroadcastForm] = useState({ title: "", message: "", audience: "ALL" });
+  const [broadcastLoading, setBroadcastLoading] = useState(false);
+  const [broadcastError, setBroadcastError] = useState("");
+  const [broadcastResult, setBroadcastResult] = useState(null);
 
   /* ticket detail modal */
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -133,7 +152,7 @@ export const AdminDashboard = () => {
     }
   };
 
-  const refreshTickets = async () => {
+  const refreshTickets = useCallback(async () => {
     setTicketLoading(true);
     setTicketError("");
     try {
@@ -144,7 +163,7 @@ export const AdminDashboard = () => {
     } finally {
       setTicketLoading(false);
     }
-  };
+  }, [filters]);
 
   const refreshUsers = async () => {
     setUsersLoading(true);
@@ -183,7 +202,31 @@ export const AdminDashboard = () => {
   }, []);
   useEffect(() => {
     refreshTickets();
-  }, [filters.status, filters.category, filters.urgency, filters.assignee, filters.search]);
+  }, [refreshTickets]);
+  useEffect(() => {
+    const handleNavigate = (event) => {
+      const targetId = event.detail?.id;
+      if (!targetId) return;
+      const section = document.getElementById(targetId);
+      section?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    const handleSearch = (event) => {
+      const query = event.detail?.query?.trim();
+      if (!query) return;
+      setFilters((prev) => ({ ...prev, search: query }));
+      window.requestAnimationFrame(() => {
+        document.getElementById("tickets")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+
+    window.addEventListener("dashboard:navigate", handleNavigate);
+    window.addEventListener("dashboard:search", handleSearch);
+    return () => {
+      window.removeEventListener("dashboard:navigate", handleNavigate);
+      window.removeEventListener("dashboard:search", handleSearch);
+    };
+  }, []);
 
   /* ---- computed data ---- */
   const categoryData = useMemo(
@@ -215,6 +258,69 @@ export const AdminDashboard = () => {
   const inProgressCount = summary?.byStatus?.IN_PROGRESS || 0;
   const resolvedCount = (summary?.byStatus?.RESOLVED || 0) + (summary?.byStatus?.CLOSED || 0);
 
+  const ticketTrends = useMemo(() => {
+    const now = new Date();
+    const endCurrent = new Date(now);
+    const startCurrent = new Date(now.getTime() - 6 * ONE_DAY_MS);
+    const startPrevious = new Date(startCurrent.getTime() - 7 * ONE_DAY_MS);
+    const endPrevious = new Date(startCurrent.getTime() - 1);
+
+    const inRange = (value, start, end) => {
+      if (!value) return false;
+      const date = new Date(value);
+      return date >= start && date <= end;
+    };
+
+    const totalCurrent = allTicketsForTrend.filter((ticket) => inRange(ticket.createdAt, startCurrent, endCurrent)).length;
+    const totalPrevious = allTicketsForTrend.filter((ticket) => inRange(ticket.createdAt, startPrevious, endPrevious)).length;
+
+    const resolvedCurrent = allTicketsForTrend.filter(
+      (ticket) => inRange(ticket.resolvedAt, startCurrent, endCurrent) && ["RESOLVED", "CLOSED"].includes(ticket.status)
+    ).length;
+    const resolvedPrevious = allTicketsForTrend.filter(
+      (ticket) => inRange(ticket.resolvedAt, startPrevious, endPrevious) && ["RESOLVED", "CLOSED"].includes(ticket.status)
+    ).length;
+
+    return {
+      total: trendPercent(totalCurrent, totalPrevious),
+      resolved: trendPercent(resolvedCurrent, resolvedPrevious),
+    };
+  }, [allTicketsForTrend]);
+
+  const statCards = useMemo(
+    () => ([
+      {
+        label: "Total Tickets",
+        value: summary?.totalTickets ?? 0,
+        icon: FileText,
+        color: "bg-blue-100 text-campus-600 dark:bg-blue-900/30 dark:text-blue-400",
+        trend: ticketTrends.total,
+      },
+      {
+        label: "Pending",
+        value: pendingCount,
+        icon: Clock,
+        color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
+        trend: null,
+      },
+      {
+        label: "In Progress",
+        value: inProgressCount,
+        icon: Loader2,
+        color: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
+        trend: null,
+      },
+      {
+        label: "Resolved",
+        value: resolvedCount,
+        icon: CheckCircle2,
+        color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
+        trend: ticketTrends.resolved,
+      },
+    ]),
+    [inProgressCount, pendingCount, resolvedCount, summary?.totalTickets, ticketTrends.resolved, ticketTrends.total]
+  );
+
   /* SLA overview */
   const slaOverview = useMemo(() => {
     const active = allTicketsForTrend.filter((t) => !["RESOLVED", "CLOSED", "REJECTED"].includes(t.status));
@@ -224,6 +330,60 @@ export const AdminDashboard = () => {
     const compliance = active.length > 0 ? Math.round(((active.length - breached) / active.length) * 100) : 100;
     return { breached, atRisk, onTrack, compliance, total: active.length };
   }, [allTicketsForTrend]);
+
+  const filteredUsers = useMemo(() => {
+    const term = userFilters.search.trim().toLowerCase();
+    return users.filter((user) => {
+      if (userFilters.role && user.role !== userFilters.role) return false;
+      if (!term) return true;
+      return (
+        user.username.toLowerCase().includes(term)
+        || user.fullName.toLowerCase().includes(term)
+        || user.email.toLowerCase().includes(term)
+      );
+    });
+  }, [userFilters.role, userFilters.search, users]);
+
+  const handleInviteStaff = async (event) => {
+    event.preventDefault();
+    setStaffLoading(true);
+    setStaffError("");
+    setStaffNotice("");
+    try {
+      const response = await userService.createStaffInvite(staffForm);
+      setLatestInvite(response);
+      setStaffNotice(`Invite queued for ${response.email}. The account appears after the invite is accepted.`);
+      toast.success(`Invite sent to ${response.email}.`);
+      setStaffForm({ username: "", email: "", fullName: "" });
+      setStaffSuggestions([]);
+      await refreshUsers();
+    } catch (err) {
+      const message = err?.response?.data?.message || "Failed to create staff invitation.";
+      setStaffError(message);
+      if (message.toLowerCase().includes("username")) {
+        await fetchStaffSuggestions(staffForm.username, staffForm.fullName);
+      }
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
+  const handleBroadcast = async (event) => {
+    event.preventDefault();
+    setBroadcastLoading(true);
+    setBroadcastError("");
+    setBroadcastResult(null);
+    try {
+      const response = await userService.sendBroadcast(broadcastForm);
+      setBroadcastResult(response);
+      setBroadcastForm({ title: "", message: "", audience: broadcastForm.audience });
+      toast.success(`Broadcast sent to ${response.recipientCount} users.`);
+    } catch (err) {
+      setBroadcastError(err?.response?.data?.message || "Failed to send broadcast.");
+    } finally {
+      setBroadcastLoading(false);
+    }
+  };
 
   /* ---- ticket detail actions (unchanged from original) ---- */
   const openTicket = async (ticketId) => {
@@ -275,23 +435,32 @@ export const AdminDashboard = () => {
   /* ---- greeting helper ---- */
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
+  const avatarPreferences = useMemo(() => loadProfilePreferences(auth?.username), [auth?.username]);
 
   /* ================================================================ */
   /*  RENDER                                                          */
   /* ================================================================ */
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="dashboard-shell space-y-6 animate-fade-in">
       {/* ---- Welcome Banner ---- */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-campus-500 via-campus-600 to-campus-800 p-6 text-white shadow-lg">
+      <section id="dashboard" data-dashboard-section="true" className="motion-section relative overflow-hidden rounded-2xl bg-gradient-to-br from-campus-500 via-campus-600 to-campus-800 p-6 text-white shadow-lg">
         <div className="absolute -top-8 -right-8 h-40 w-40 rounded-full bg-white/10" />
         <div className="absolute bottom-0 right-20 h-24 w-24 rounded-full bg-white/5" />
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-xl font-bold backdrop-blur-sm">
-              {(auth?.fullName || "A").charAt(0).toUpperCase()}
+            <div className="rounded-2xl bg-white/15 p-1 backdrop-blur-sm">
+              <UserAvatar
+                fullName={auth?.fullName}
+                username={auth?.username}
+                avatarType={avatarPreferences.avatarType}
+                avatarPreset={avatarPreferences.avatarPreset}
+                avatarImage={avatarPreferences.avatarImage}
+                size={48}
+                className="rounded-xl"
+              />
             </div>
             <div>
-              <h1 className="text-xl font-bold">{greeting}, {auth?.fullName || "Admin"} 👋</h1>
+              <h1 className="text-xl font-bold">{greeting}, {auth?.fullName || "Admin"}</h1>
               <p className="mt-0.5 text-sm text-blue-100">
                 Welcome to your admin command center. You have{" "}
                 <span className="font-semibold text-white">{summary?.byStatus?.SUBMITTED || 0} tickets</span> pending review.
@@ -300,8 +469,11 @@ export const AdminDashboard = () => {
           </div>
           {(summary?.byStatus?.SUBMITTED || 0) > 0 && (
             <button
-              onClick={() => { setActiveTab("tickets"); setFilters((prev) => ({ ...prev, status: "SUBMITTED" })); }}
-              className="hidden rounded-xl bg-white/20 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30 sm:flex items-center gap-2"
+              onClick={() => {
+                setFilters((prev) => ({ ...prev, status: "SUBMITTED" }));
+                document.getElementById("tickets")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              className="interactive-control hidden rounded-xl bg-white/20 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/30 sm:flex items-center gap-2"
             >
               <AlertTriangle size={16} />
               Review Pending ({summary?.byStatus?.SUBMITTED || 0})
@@ -311,16 +483,20 @@ export const AdminDashboard = () => {
       </section>
 
       {/* ---- Stats Row (4 cards) ---- */}
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Total Tickets", value: summary?.totalTickets ?? 0, icon: FileText, color: "bg-blue-100 text-campus-600 dark:bg-blue-900/30 dark:text-blue-400", trend: "+12%" },
-          { label: "Pending", value: pendingCount, icon: Clock, color: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400", trend: null },
-          { label: "In Progress", value: inProgressCount, icon: Loader2, color: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400", trend: null },
-          { label: "Resolved", value: resolvedCount, icon: CheckCircle2, color: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400", trend: "+8%" },
-        ].map((item) => {
+      <section className="motion-section motion-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {statCards.map((item) => {
           const Icon = item.icon;
+          const isPositive = typeof item.trend === "number" && item.trend > 0;
+          const isNegative = typeof item.trend === "number" && item.trend < 0;
+          const TrendIcon = isPositive ? ArrowUpRight : isNegative ? ArrowDownRight : TrendingUp;
+          const trendTone = isPositive
+            ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
+            : isNegative
+              ? "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400"
+              : "bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-300";
+          const trendLabel = item.trend === null || item.trend === undefined ? null : `${item.trend > 0 ? "+" : ""}${item.trend}%`;
           return (
-            <article key={item.label} className="saas-card flex items-center gap-4">
+            <article key={item.label} className="saas-card interactive-surface flex items-center gap-4">
               <div className={`icon-wrap ${item.color}`}>
                 <Icon size={22} />
               </div>
@@ -328,9 +504,9 @@ export const AdminDashboard = () => {
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-400 dark:text-gray-500">{item.label}</p>
                 <div className="flex items-center gap-2">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{item.value}</p>
-                  {item.trend && (
-                    <span className="pill-badge bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400">
-                      <ArrowUpRight size={12} /> {item.trend}
+                  {trendLabel && (
+                    <span className={`pill-badge ${trendTone}`}>
+                      <TrendIcon size={12} /> {trendLabel}
                     </span>
                   )}
                 </div>
@@ -341,9 +517,9 @@ export const AdminDashboard = () => {
       </section>
 
       {/* ---- SLA + Quick Actions Row ---- */}
-      <section className="grid gap-4 xl:grid-cols-2">
+      <section className="motion-section grid gap-4 xl:grid-cols-2">
         {/* SLA Compliance Card */}
-        <article className="saas-card">
+        <article className="saas-card interactive-surface">
           <div className="flex items-center gap-2 mb-4">
             <Shield size={18} className="text-campus-500" />
             <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">SLA Compliance</h3>
@@ -378,8 +554,8 @@ export const AdminDashboard = () => {
             </div>
           </div>
           <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
-            Avg resolution: <span className="font-semibold text-gray-600 dark:text-gray-300">{resolution?.overallAverageHours ?? "—"}h</span>
-            {" · "}SLA targets: Critical 4h · High 24h · Medium 72h · Low 7d
+            Avg resolution: <span className="font-semibold text-gray-600 dark:text-gray-300">{resolution?.overallAverageHours ?? "-"}h</span>
+            {"  |  "}SLA targets: Critical 4h  |  High 24h  |  Medium 72h  |  Low 7d
           </p>
         </article>
       </section>
@@ -389,8 +565,8 @@ export const AdminDashboard = () => {
       {!analyticsLoading && analyticsError && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{analyticsError}</p>}
       {!analyticsLoading && !analyticsError && (
         <>
-          <section className="grid gap-4 xl:grid-cols-3">
-            <article className="saas-card">
+          <section id="analytics" data-dashboard-section="true" className="motion-section motion-grid grid gap-4 xl:grid-cols-3">
+            <article className="saas-card interactive-surface">
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Tickets by Category</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -404,7 +580,7 @@ export const AdminDashboard = () => {
                 </ResponsiveContainer>
               </div>
             </article>
-            <article className="saas-card">
+            <article className="saas-card interactive-surface">
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Tickets by Status</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -420,7 +596,7 @@ export const AdminDashboard = () => {
                 </ResponsiveContainer>
               </div>
             </article>
-            <article className="saas-card">
+            <article className="saas-card interactive-surface">
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Resolution Trend (hrs)</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -437,13 +613,13 @@ export const AdminDashboard = () => {
           </section>
 
           {/* ---- Buildings + Crew ---- */}
-          <section className="grid gap-4 xl:grid-cols-2">
-            <article className="saas-card">
+          <section className="motion-section motion-grid grid gap-4 xl:grid-cols-2">
+            <article className="saas-card interactive-surface">
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Top Buildings</h3>
               <div className="space-y-2">
                 {topBuildings.length === 0 && <p className="text-sm text-gray-400">No data yet.</p>}
                 {topBuildings.map((item, i) => (
-                  <div key={item.building} className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 dark:bg-slate-800">
+                  <div key={item.building} className="interactive-row flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 dark:bg-slate-800">
                     <div className="flex items-center gap-3">
                       <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-campus-100 text-xs font-bold text-campus-600 dark:bg-campus-900/30 dark:text-campus-400">{i + 1}</span>
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{item.building}</span>
@@ -453,12 +629,12 @@ export const AdminDashboard = () => {
                 ))}
               </div>
             </article>
-            <article className="saas-card">
+            <article className="saas-card interactive-surface">
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Crew Performance</h3>
               <div className="space-y-2">
                 {crewPerformance.length === 0 && <p className="text-sm text-gray-400">No data yet.</p>}
                 {crewPerformance.map((item, i) => (
-                  <div key={item.userId} className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 dark:bg-slate-800">
+                  <div key={item.userId} className="interactive-row flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 dark:bg-slate-800">
                     <div className="flex items-center gap-3">
                       <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-xs font-bold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">{i + 1}</span>
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{item.fullName}</span>
@@ -477,223 +653,304 @@ export const AdminDashboard = () => {
         </>
       )}
 
-      {/* ---- Tabs: Tickets / Users ---- */}
-      <section className="saas-card">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          {["tickets", "users"].map((tab) => (
+      {/* ---- Ticket Operations ---- */}
+      <section id="tickets" data-dashboard-section="true" className="motion-section saas-card interactive-surface">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Ticket Operations</h3>
+          {filters.search && (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 ${activeTab === tab
-                ? "bg-campus-500 text-white shadow-sm shadow-campus-500/25"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700"
-                }`}
+              type="button"
+              onClick={() => setFilters((prev) => ({ ...prev, search: "" }))}
+              className="interactive-control rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700"
             >
-              {titleCase(tab)}
+              Clear Search: {filters.search}
             </button>
-          ))}
+          )}
         </div>
 
-        {activeTab === "tickets" && (
-          <div className="space-y-4">
-            {/* Filters */}
-            <div className="grid gap-3 md:grid-cols-5">
-              <select value={filters.status} onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200">
-                <option value="">All Statuses</option>
-                {STATUSES.map((s) => <option key={s} value={s}>{titleCase(s)}</option>)}
-              </select>
-              <select value={filters.category} onChange={(e) => setFilters((p) => ({ ...p, category: e.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200">
-                <option value="">All Categories</option>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{titleCase(c)}</option>)}
-              </select>
-              <select value={filters.urgency} onChange={(e) => setFilters((p) => ({ ...p, urgency: e.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200">
-                <option value="">All Urgency</option>
-                {URGENCY_LEVELS.map((u) => <option key={u} value={u}>{titleCase(u)}</option>)}
-              </select>
-              <select value={filters.assignee} onChange={(e) => setFilters((p) => ({ ...p, assignee: e.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200">
-                <option value="">All Assignees</option>
-                {maintenanceUsers.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
-              </select>
-              <input value={filters.search} onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))} placeholder="Search title/building..." className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200" />
+        <div className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-5">
+            <select value={filters.status} onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200">
+              <option value="">All Statuses</option>
+              {STATUSES.map((s) => <option key={s} value={s}>{titleCase(s)}</option>)}
+            </select>
+            <select value={filters.category} onChange={(e) => setFilters((p) => ({ ...p, category: e.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200">
+              <option value="">All Categories</option>
+              {CATEGORIES.map((c) => <option key={c} value={c}>{titleCase(c)}</option>)}
+            </select>
+            <select value={filters.urgency} onChange={(e) => setFilters((p) => ({ ...p, urgency: e.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200">
+              <option value="">All Urgency</option>
+              {URGENCY_LEVELS.map((u) => <option key={u} value={u}>{titleCase(u)}</option>)}
+            </select>
+            <select value={filters.assignee} onChange={(e) => setFilters((p) => ({ ...p, assignee: e.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200">
+              <option value="">All Assignees</option>
+              {maintenanceUsers.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
+            </select>
+            <div className="flex items-center rounded-xl border border-gray-200 bg-white px-3 dark:border-slate-700 dark:bg-slate-900">
+              <Search size={14} className="text-gray-400" />
+              <input value={filters.search} onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))} placeholder="Search title/building..." className="w-full bg-transparent px-2 py-2 text-sm outline-none dark:text-gray-200" />
             </div>
+          </div>
 
-            {ticketLoading && <LoadingSpinner label="Loading ticket table..." />}
-            {!ticketLoading && ticketError && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{ticketError}</p>}
-            {!ticketLoading && !ticketError && tickets.length === 0 && <EmptyState title="No tickets found" message="Try adjusting the filter criteria." />}
-            {!ticketLoading && !ticketError && tickets.length > 0 && (
-              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700">
-                <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-slate-700">
-                  <thead className="bg-gray-50 dark:bg-slate-800">
-                    <tr className="text-left">
-                      {["ID", "Title", "Category", "Urgency", "Status", "SLA", "Building", "Submitted", "Assignee"].map((h) => (
-                        <th key={h} className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white dark:divide-slate-700 dark:bg-slate-900">
-                    {tickets.map((ticket) => {
-                      const sla = getSlaStatus(ticket);
-                      return (
-                        <tr key={ticket.id} onClick={() => openTicket(ticket.id)} className="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/70">
-                          <td className="px-3 py-2.5 font-semibold text-campus-600 dark:text-campus-400">#{ticket.id}</td>
-                          <td className="px-3 py-2.5 font-medium text-gray-900 dark:text-white">{ticket.title}</td>
-                          <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400">{titleCase(ticket.category)}</td>
-                          <td className="px-3 py-2.5"><UrgencyBadge urgency={ticket.urgency} /></td>
-                          <td className="px-3 py-2.5"><StatusBadge status={ticket.status} /></td>
-                          <td className="px-3 py-2.5">
-                            <span className={`pill-badge ${sla === "on-track" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400" : sla === "at-risk" ? "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400" : sla === "breached" ? "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400" : "bg-gray-50 text-gray-400 dark:bg-gray-800 dark:text-gray-500"}`}>
-                              {sla === "resolved" ? "—" : titleCase(sla.replace("-", " "))}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400">{ticket.building}</td>
-                          <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400">{formatDate(ticket.createdAt)}</td>
-                          <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400">{ticket.assignedTo ? ticket.assignedTo.fullName : <span className="text-gray-300 dark:text-gray-600">Unassigned</span>}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+          {ticketLoading && <LoadingSpinner label="Loading ticket table..." />}
+          {!ticketLoading && ticketError && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{ticketError}</p>}
+          {!ticketLoading && !ticketError && tickets.length === 0 && <EmptyState title="No tickets found" message="Try adjusting the filter criteria." />}
+          {!ticketLoading && !ticketError && tickets.length > 0 && (
+            <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700">
+              <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-slate-700">
+                <thead className="bg-gray-50 dark:bg-slate-800">
+                  <tr className="text-left">
+                    {["ID", "Title", "Category", "Urgency", "Status", "SLA", "Building", "Submitted", "Assignee"].map((h) => (
+                      <th key={h} className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white dark:divide-slate-700 dark:bg-slate-900">
+                  {tickets.map((ticket) => {
+                    const sla = getSlaStatus(ticket);
+                    return (
+                      <tr key={ticket.id} onClick={() => openTicket(ticket.id)} className="interactive-row cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/70">
+                        <td className="px-3 py-2.5 font-semibold text-campus-600 dark:text-campus-400">#{ticket.id}</td>
+                        <td className="px-3 py-2.5 font-medium text-gray-900 dark:text-white">{ticket.title}</td>
+                        <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400">{titleCase(ticket.category)}</td>
+                        <td className="px-3 py-2.5"><UrgencyBadge urgency={ticket.urgency} /></td>
+                        <td className="px-3 py-2.5"><StatusBadge status={ticket.status} /></td>
+                        <td className="px-3 py-2.5">
+                          <span className={`pill-badge ${sla === "on-track" ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400" : sla === "at-risk" ? "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400" : sla === "breached" ? "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400" : "bg-gray-50 text-gray-400 dark:bg-gray-800 dark:text-gray-500"}`}>
+                            {sla === "resolved" ? "-" : titleCase(sla.replace("-", " "))}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400">{ticket.building}</td>
+                        <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400">{formatDate(ticket.createdAt)}</td>
+                        <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400">{ticket.assignedTo ? ticket.assignedTo.fullName : <span className="text-gray-300 dark:text-gray-600">Unassigned</span>}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ---- Staff Onboarding ---- */}
+      <section id="staff" data-dashboard-section="true" className="motion-section saas-card interactive-surface">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Staff Onboarding</h3>
+          <span className="pill-badge bg-campus-50 text-campus-600 dark:bg-campus-900/20 dark:text-campus-400">{maintenanceUsers.length} active maintenance users</span>
+        </div>
+
+        <form onSubmit={handleInviteStaff} className="grid gap-4 md:grid-cols-3">
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Username</label>
+            <input
+              required
+              minLength={3}
+              maxLength={50}
+              autoComplete="username"
+              name="username"
+              value={staffForm.username}
+              onChange={(e) => {
+                const next = e.target.value;
+                setStaffForm((p) => ({ ...p, username: next }));
+                setStaffSuggestions([]);
+              }}
+              onBlur={() => fetchStaffSuggestions(staffForm.username, staffForm.fullName)}
+              className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30"
+              placeholder="e.g. jmwangi"
+            />
+            {staffSuggestionLoading && (
+              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Checking username suggestions...</p>
+            )}
+            {staffSuggestions.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {staffSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => setStaffForm((p) => ({ ...p, username: suggestion }))}
+                    className="interactive-control rounded-full bg-campus-50 px-3 py-1 text-xs font-semibold text-campus-600 transition hover:bg-campus-100 dark:bg-campus-900/20 dark:text-campus-400 dark:hover:bg-campus-900/30"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
               </div>
             )}
           </div>
-        )}
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Full Name</label>
+            <input
+              required
+              maxLength={120}
+              autoComplete="name"
+              name="fullName"
+              value={staffForm.fullName}
+              onChange={(e) => setStaffForm((p) => ({ ...p, fullName: e.target.value }))}
+              className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30"
+              placeholder="e.g. James Mwangi"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Email</label>
+            <input
+              required
+              type="email"
+              autoComplete="email"
+              name="email"
+              value={staffForm.email}
+              onChange={(e) => setStaffForm((p) => ({ ...p, email: e.target.value }))}
+              className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30"
+              placeholder="e.g. jmwangi@campus.local"
+            />
+          </div>
 
-        {activeTab === "users" && (
-          <div className="space-y-4">
-            {/* Add Staff Button */}
-            <div className="flex justify-end">
-              <button onClick={() => setShowAddStaff(true)} className="btn-primary">
-                <Plus size={16} /> Add Staff Member
-              </button>
-            </div>
+          <div className="md:col-span-3 flex flex-wrap items-center gap-3">
+            <button disabled={staffLoading} className="btn-primary interactive-control">
+              <Plus size={16} />
+              {staffLoading ? "Sending Invite..." : "Send Invite"}
+            </button>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Staff appear in the user list after they accept the invite link by email.</p>
+          </div>
+        </form>
 
-            {/* Add Staff Modal */}
-            <Modal open={showAddStaff} title="Invite Maintenance Staff" onClose={() => { setShowAddStaff(false); setStaffError(""); setStaffSuggestions([]); }}>
-              <form onSubmit={async (e) => {
-                e.preventDefault();
-                setStaffLoading(true);
-                setStaffError("");
-                try {
-                  await userService.createStaffInvite(staffForm);
-                  toast.success(`Invite sent to ${staffForm.email}.`);
-                  setStaffForm({ username: "", email: "", fullName: "" });
-                  setStaffSuggestions([]);
-                  setShowAddStaff(false);
-                  await refreshUsers();
-                } catch (err) {
-                  const message = err?.response?.data?.message || "Failed to create staff invitation.";
-                  setStaffError(message);
-                  if (message.toLowerCase().includes("username")) {
-                    await fetchStaffSuggestions(staffForm.username, staffForm.fullName);
-                  }
-                } finally {
-                  setStaffLoading(false);
-                }
-              }} className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Username</label>
-                  <input
-                    required
-                    minLength={3}
-                    maxLength={50}
-                    autoComplete="username"
-                    name="username"
-                    value={staffForm.username}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      setStaffForm((p) => ({ ...p, username: next }));
-                      setStaffSuggestions([]);
-                    }}
-                    onBlur={() => fetchStaffSuggestions(staffForm.username, staffForm.fullName)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30"
-                    placeholder="e.g. jmwangi"
-                  />
-                  {staffSuggestionLoading && (
-                    <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Checking username suggestions...</p>
-                  )}
-                  {staffSuggestions.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {staffSuggestions.map((suggestion) => (
-                        <button
-                          key={suggestion}
-                          type="button"
-                          onClick={() => setStaffForm((p) => ({ ...p, username: suggestion }))}
-                          className="rounded-full bg-campus-50 px-3 py-1 text-xs font-semibold text-campus-600 transition hover:bg-campus-100 dark:bg-campus-900/20 dark:text-campus-400 dark:hover:bg-campus-900/30"
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Full Name</label>
-                  <input
-                    required
-                    maxLength={120}
-                    autoComplete="name"
-                    name="fullName"
-                    value={staffForm.fullName}
-                    onChange={(e) => setStaffForm((p) => ({ ...p, fullName: e.target.value }))}
-                    className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30"
-                    placeholder="e.g. James Mwangi"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Email</label>
-                  <input
-                    required
-                    type="email"
-                    autoComplete="email"
-                    name="email"
-                    value={staffForm.email}
-                    onChange={(e) => setStaffForm((p) => ({ ...p, email: e.target.value }))}
-                    className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30"
-                    placeholder="e.g. jmwangi@campus.local"
-                  />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">An invite link will be emailed. The staff member sets their own password during activation.</p>
-                {staffError && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{staffError}</p>}
-                <div className="flex items-center gap-3 pt-2">
-                  <button disabled={staffLoading} className="btn-primary">{staffLoading ? "Sending Invite..." : "Send Invite"}</button>
-                  <button type="button" onClick={() => { setShowAddStaff(false); setStaffError(""); setStaffSuggestions([]); }} className="btn-ghost">Cancel</button>
-                </div>
-              </form>
-            </Modal>
-            {usersLoading && <LoadingSpinner label="Loading users..." />}
-            {!usersLoading && usersError && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{usersError}</p>}
-            {!usersLoading && !usersError && (
-              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700">
-                <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-slate-700">
-                  <thead className="bg-gray-50 dark:bg-slate-800">
-                    <tr className="text-left">
-                      {["Username", "Name", "Role", "Email", "Tickets"].map((h) => (
-                        <th key={h} className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white dark:divide-slate-700 dark:bg-slate-900">
-                    {users.map((u) => (
-                      <tr key={u.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/70">
-                        <td className="px-3 py-2.5 font-medium text-gray-900 dark:text-white">@{u.username}</td>
-                        <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300">{u.fullName}</td>
-                        <td className="px-3 py-2.5">
-                          <span className={`pill-badge ${u.role === "ADMIN" ? "bg-campus-50 text-campus-600 dark:bg-campus-900/20 dark:text-campus-400" : u.role === "MAINTENANCE" ? "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400" : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"}`}>
-                            {titleCase(u.role)}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400">{u.email}</td>
-                        <td className="px-3 py-2.5 font-bold text-campus-600 dark:text-campus-400">{u.ticketCount}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        {staffError && <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{staffError}</p>}
+        {staffNotice && <p className="mt-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">{staffNotice}</p>}
+        {latestInvite && (
+          <div className="mt-3 rounded-xl border border-campus-100 bg-campus-50/60 px-4 py-3 text-xs text-campus-700 dark:border-campus-900/40 dark:bg-campus-900/20 dark:text-campus-300">
+            Latest invite: @{latestInvite.username} ({latestInvite.email}) expires on {formatDate(latestInvite.expiresAt)}.
           </div>
         )}
       </section>
 
+      {/* ---- User Management ---- */}
+      <section id="users" data-dashboard-section="true" className="motion-section saas-card interactive-surface">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">User Management</h3>
+          <span className="pill-badge bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-300">
+            <Users size={12} /> {filteredUsers.length} visible
+          </span>
+        </div>
+
+        <div className="mb-4 grid gap-3 md:grid-cols-2">
+          <div className="flex items-center rounded-xl border border-gray-200 bg-white px-3 dark:border-slate-700 dark:bg-slate-900">
+            <Search size={14} className="text-gray-400" />
+            <input
+              value={userFilters.search}
+              onChange={(e) => setUserFilters((prev) => ({ ...prev, search: e.target.value }))}
+              placeholder="Search username, name, email..."
+              className="w-full bg-transparent px-2 py-2 text-sm outline-none dark:text-gray-200"
+            />
+          </div>
+          <select
+            value={userFilters.role}
+            onChange={(e) => setUserFilters((prev) => ({ ...prev, role: e.target.value }))}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200"
+          >
+            <option value="">All Roles</option>
+            <option value="ADMIN">Admin</option>
+            <option value="MAINTENANCE">Maintenance</option>
+            <option value="STUDENT">Student</option>
+          </select>
+        </div>
+
+        {usersLoading && <LoadingSpinner label="Loading users..." />}
+        {!usersLoading && usersError && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{usersError}</p>}
+        {!usersLoading && !usersError && filteredUsers.length === 0 && (
+          <EmptyState title="No users match this filter" message="Adjust role or search terms to find accounts." />
+        )}
+        {!usersLoading && !usersError && filteredUsers.length > 0 && (
+          <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700">
+            <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-slate-700">
+              <thead className="bg-gray-50 dark:bg-slate-800">
+                <tr className="text-left">
+                  {["Username", "Name", "Role", "Email", "Tickets"].map((h) => (
+                    <th key={h} className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white dark:divide-slate-700 dark:bg-slate-900">
+                {filteredUsers.map((u) => (
+                  <tr key={u.id} className="interactive-row transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/70">
+                    <td className="px-3 py-2.5 font-medium text-gray-900 dark:text-white">@{u.username}</td>
+                    <td className="px-3 py-2.5 text-gray-600 dark:text-gray-300">{u.fullName}</td>
+                    <td className="px-3 py-2.5">
+                      <span className={`pill-badge ${u.role === "ADMIN" ? "bg-campus-50 text-campus-600 dark:bg-campus-900/20 dark:text-campus-400" : u.role === "MAINTENANCE" ? "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400" : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"}`}>
+                        {titleCase(u.role)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-gray-500 dark:text-gray-400">{u.email}</td>
+                    <td className="px-3 py-2.5 font-bold text-campus-600 dark:text-campus-400">{u.ticketCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* ---- Broadcast Center ---- */}
+      <section id="broadcast" data-dashboard-section="true" className="motion-section saas-card interactive-surface">
+        <div className="mb-4 flex items-center gap-2">
+          <Megaphone size={18} className="text-campus-500" />
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Audience Broadcast</h3>
+        </div>
+
+        <form onSubmit={handleBroadcast} className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Title</label>
+              <input
+                required
+                maxLength={200}
+                value={broadcastForm.title}
+                onChange={(e) => setBroadcastForm((prev) => ({ ...prev, title: e.target.value }))}
+                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30"
+                placeholder="e.g. Scheduled power maintenance"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Audience</label>
+              <select
+                value={broadcastForm.audience}
+                onChange={(e) => setBroadcastForm((prev) => ({ ...prev, audience: e.target.value }))}
+                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30"
+              >
+                <option value="ALL">All Users</option>
+                <option value="STUDENTS">Students Only</option>
+                <option value="STAFF">Staff Only</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Message</label>
+            <textarea
+              required
+              rows={4}
+              maxLength={5000}
+              value={broadcastForm.message}
+              onChange={(e) => setBroadcastForm((prev) => ({ ...prev, message: e.target.value }))}
+              className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30"
+              placeholder="Write the announcement message for selected users..."
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button disabled={broadcastLoading} className="btn-primary interactive-control">
+              <Send size={16} />
+              {broadcastLoading ? "Sending..." : "Send Broadcast"}
+            </button>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Delivered as real in-app notifications based on selected audience.</p>
+          </div>
+        </form>
+
+        {broadcastError && <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{broadcastError}</p>}
+        {broadcastResult && (
+          <p className="mt-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
+            Broadcast delivered to {broadcastResult.recipientCount} recipients ({titleCase(broadcastResult.audience.toLowerCase())}).
+          </p>
+        )}
+      </section>
       {/* ---- Ticket Detail Modal (unchanged logic) ---- */}
       <Modal open={Boolean(selectedTicket) || selectedLoading} title={selectedTicket ? `Ticket #${selectedTicket.ticket.id}` : "Ticket Detail"} onClose={() => setSelectedTicket(null)}>
         {selectedLoading && <LoadingSpinner label="Loading detail..." />}
@@ -703,7 +960,7 @@ export const AdminDashboard = () => {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{selectedTicket.ticket.title}</h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{selectedTicket.ticket.building} • {selectedTicket.ticket.location}</p>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{selectedTicket.ticket.building}  |  {selectedTicket.ticket.location}</p>
                 </div>
                 <div className="flex gap-2">
                   <StatusBadge status={selectedTicket.ticket.status} />
@@ -768,3 +1025,6 @@ export const AdminDashboard = () => {
     </div>
   );
 };
+
+
+

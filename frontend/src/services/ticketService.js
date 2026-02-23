@@ -65,6 +65,13 @@ export const ticketService = {
     return data;
   },
 
+  async uploadAfterPhoto(ticketId, imageFile) {
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    const { data } = await apiClient.post(`/tickets/${ticketId}/after-photo`, formData);
+    return data;
+  },
+
   async getLogs(ticketId) {
     const { data } = await apiClient.get(`/tickets/${ticketId}/logs`);
     return data;
