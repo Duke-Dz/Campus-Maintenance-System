@@ -67,7 +67,7 @@ const formatRemaining = (hours) => {
   return `${Math.round(hours / 24)}d left`;
 };
 
-const WorkQueueCard = ({ ticket, note, afterPhoto, actionState, onNoteChange, onPhotoChange, onOpenTicket, onUpdateStatus }) => {
+const WorkQueueCard = ({ ticket, note, afterPhoto, actionState, onNoteChange, onPhotoChange, onOpenTicket, onUpdateStatus, onRespondAssignment }) => {
   const remaining = getSlaRemaining(ticket);
   const targetHours = SLA_TARGETS[ticket.urgency] || 72;
   const elapsed = remaining === null ? targetHours : Math.max(0, targetHours - remaining);
@@ -134,6 +134,17 @@ const WorkQueueCard = ({ ticket, note, afterPhoto, actionState, onNoteChange, on
         {actionState.ticketId === ticket.id && actionState.error && <p className="text-sm text-red-600 dark:text-red-300">{actionState.error}</p>}
         <div className="flex gap-2">
           {ticket.status === "ASSIGNED" && (
+            <>
+              <button disabled={actionState.loading && actionState.ticketId === ticket.id} onClick={() => onRespondAssignment(ticket, true)} className="btn-primary interactive-control">
+                <BadgeCheck size={16} />
+                {actionState.loading && actionState.ticketId === ticket.id ? "Updating..." : "Accept"}
+              </button>
+              <button disabled={actionState.loading && actionState.ticketId === ticket.id} onClick={() => onRespondAssignment(ticket, false)} className="btn-ghost interactive-control">
+                Decline
+              </button>
+            </>
+          )}
+          {ticket.status === "ACCEPTED" && (
             <button disabled={actionState.loading && actionState.ticketId === ticket.id} onClick={() => onUpdateStatus(ticket, "IN_PROGRESS")} className="btn-primary interactive-control">
               <PlayCircle size={16} />
               {actionState.loading && actionState.ticketId === ticket.id ? "Updating..." : "Start Work"}
@@ -200,7 +211,7 @@ const OperationalBriefDetail = ({ queueHealth, avgRating, avgRatingLoading, aver
 
 export const MaintenanceDashboard = () => {
   const { auth } = useAuth();
-  const { tickets, loading, error, refresh } = useTickets(() => ticketService.getAssignedTickets(), []);
+  const { tickets, loading, error, refresh } = useTickets(() => ticketService.getAssignedTickets(), [], { pollMs: 10000 });
   const [notes, setNotes] = useState({});
   const [actionState, setActionState] = useState({ ticketId: null, loading: false, error: "" });
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -249,7 +260,7 @@ export const MaintenanceDashboard = () => {
   }), [queueFilters.buildingId, queueFilters.requestTypeId, queueFilters.serviceDomainKey, tickets]);
 
   const activeTickets = useMemo(
-    () => catalogFilteredTickets.filter((ticket) => ["ASSIGNED", "IN_PROGRESS"].includes(ticket.status)).sort((left, right) => (urgencyOrder[left.urgency] ?? 5) - (urgencyOrder[right.urgency] ?? 5)),
+    () => catalogFilteredTickets.filter((ticket) => ["ASSIGNED", "ACCEPTED", "IN_PROGRESS"].includes(ticket.status)).sort((left, right) => (urgencyOrder[left.urgency] ?? 5) - (urgencyOrder[right.urgency] ?? 5)),
     [catalogFilteredTickets]
   );
   const resolvedTickets = useMemo(
@@ -265,7 +276,7 @@ export const MaintenanceDashboard = () => {
     [activeTickets]
   );
   const inProgressCount = useMemo(
-    () => activeTickets.filter((ticket) => ticket.status === "IN_PROGRESS").length,
+    () => activeTickets.filter((ticket) => ["ACCEPTED", "IN_PROGRESS"].includes(ticket.status)).length,
     [activeTickets]
   );
   const closedCount = useMemo(
@@ -446,6 +457,24 @@ export const MaintenanceDashboard = () => {
     setActionState({ ticketId: null, loading: false, error: "" });
   };
 
+  const respondToAssignment = async (ticket, accepted) => {
+    setActionState({ ticketId: ticket.id, loading: true, error: "" });
+    try {
+      const note = notes[ticket.id] || "";
+      await ticketService.respondToAssignment(ticket.id, { accepted, note });
+      setNotes((current) => ({ ...current, [ticket.id]: "" }));
+      await refresh();
+    } catch (err) {
+      setActionState({
+        ticketId: ticket.id,
+        loading: false,
+        error: err?.response?.data?.message || "Could not update assignment response.",
+      });
+      return;
+    }
+    setActionState({ ticketId: null, loading: false, error: "" });
+  };
+
   const openTicket = async (ticketId) => {
     setDetailLoading(true);
     try { setSelectedTicket(await ticketService.getTicket(ticketId)); }
@@ -585,6 +614,7 @@ export const MaintenanceDashboard = () => {
                       }}
                       onOpenTicket={openTicket}
                       onUpdateStatus={updateStatus}
+                      onRespondAssignment={respondToAssignment}
                     />
                   ))}
                 </div>

@@ -95,6 +95,37 @@ public class AutoAssignmentService {
                 .findFirst();
     }
 
+    @Transactional(readOnly = true)
+    public Optional<User> findBestAssigneeWithinCapacity(Ticket ticket, int maxActiveOpenTickets) {
+        if (ticket == null) {
+            return Optional.empty();
+        }
+
+        List<AssignmentCandidateMetrics> candidates = userRepository.findByRoleOrderByFullNameAsc(Role.MAINTENANCE)
+                .stream()
+                .map(user -> buildCandidateMetrics(ticket, user))
+                .toList();
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Map<Long, Double> nativeScores = nativeOptimizationGateway.scoreCandidates(candidates)
+                .filter(scores -> scores.length == candidates.size())
+                .map(scores -> mapScores(candidates, scores))
+                .orElseGet(Map::of);
+
+        return candidates.stream()
+                .filter(candidate -> candidate.activeOpenTickets() <= maxActiveOpenTickets)
+                .sorted(Comparator
+                        .comparingDouble((AssignmentCandidateMetrics candidate) -> nativeScores
+                                .getOrDefault(candidate.userId(), scoreCandidate(candidate)))
+                        .reversed()
+                        .thenComparing(AssignmentCandidateMetrics::fullName, String.CASE_INSENSITIVE_ORDER))
+                .map(AssignmentCandidateMetrics::userId)
+                .flatMap(userId -> userRepository.findById(userId).stream())
+                .findFirst();
+    }
+
     private AssignmentCandidateMetrics buildCandidateMetrics(Ticket ticket, User user) {
         String serviceDomainKey = TicketMapper.resolveServiceDomainKey(ticket);
         LocalDateTime recentThreshold = LocalDateTime.now().minusDays(RECENT_RESOLUTION_WINDOW_DAYS);

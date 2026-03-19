@@ -99,6 +99,20 @@ export const QuickLinksSection = ({ config, useAboutLinks = false }) => {
 
     const renderSectionLink = (label, hash) => {
         if (useAboutLinks) {
+            if (hash === "#terms-and-conditions") {
+                return (
+                    <Link to="/terms-and-conditions" className="font-semibold text-gray-700 transition hover:text-campus-600 dark:text-gray-200 dark:hover:text-campus-300 no-underline">
+                        {label}
+                    </Link>
+                );
+            }
+            if (hash === "#privacy-policy") {
+                return (
+                    <Link to="/privacy-policy" className="font-semibold text-gray-700 transition hover:text-campus-600 dark:text-gray-200 dark:hover:text-campus-300 no-underline">
+                        {label}
+                    </Link>
+                );
+            }
             return (
                 <Link to={`/about-us${hash}`} className="font-semibold text-gray-700 transition hover:text-campus-600 dark:text-gray-200 dark:hover:text-campus-300 no-underline">
                     {label}

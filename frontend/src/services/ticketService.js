@@ -62,6 +62,11 @@ export const ticketService = {
     return data;
   },
 
+  async respondToAssignment(ticketId, payload) {
+    const { data } = await apiClient.patch(`/tickets/${ticketId}/assignment-response`, payload);
+    return data;
+  },
+
   async getAssignmentRecommendations(ticketId) {
     const { data } = await apiClient.get(`/tickets/${ticketId}/assignment-recommendations`);
     return data;

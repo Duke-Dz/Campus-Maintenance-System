@@ -4,6 +4,7 @@ import com.smartcampus.maintenance.dto.ticket.CommentCreateRequest;
 import com.smartcampus.maintenance.dto.ticket.CommentResponse;
 import com.smartcampus.maintenance.dto.ticket.DuplicateCheckResponse;
 import com.smartcampus.maintenance.dto.ticket.TicketAssignRequest;
+import com.smartcampus.maintenance.dto.ticket.TicketAssignmentResponseRequest;
 import com.smartcampus.maintenance.dto.ticket.TicketAssignmentRecommendationResponse;
 import com.smartcampus.maintenance.dto.ticket.TicketCreateRequest;
 import com.smartcampus.maintenance.dto.ticket.TicketDetailResponse;
@@ -120,6 +121,14 @@ public class TicketController {
     public TicketResponse assignTicket(@PathVariable Long id, @Valid @RequestBody TicketAssignRequest request) {
         User actor = currentUserService.requireCurrentUser();
         return ticketService.assignTicket(id, request, actor);
+    }
+
+    @PatchMapping("/{id}/assignment-response")
+    public TicketResponse respondToAssignment(
+            @PathVariable Long id,
+            @Valid @RequestBody TicketAssignmentResponseRequest request) {
+        User actor = currentUserService.requireCurrentUser();
+        return ticketService.respondToAssignment(id, request, actor);
     }
 
     @PostMapping("/{id}/rate")

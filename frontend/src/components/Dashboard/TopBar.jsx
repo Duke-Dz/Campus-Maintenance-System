@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Bell,
   CalendarDays,
@@ -30,6 +31,7 @@ const readReduceMotionPreference = () => {
 };
 
 export const TopBar = ({ onMenuClick, activeSectionLabel }) => {
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { auth, logout, updateAuth } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -44,6 +46,7 @@ export const TopBar = ({ onMenuClick, activeSectionLabel }) => {
   const userBtnRef = useRef(null);
 
   const role = auth?.role?.toUpperCase() || "STUDENT";
+  const dashboardPath = role === "ADMIN" ? "/admin" : role === "MAINTENANCE" ? "/maintenance" : "/student";
   const sectionLabel = activeSectionLabel || "Overview";
   const todayLabel = useMemo(
     () => now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
@@ -134,6 +137,26 @@ export const TopBar = ({ onMenuClick, activeSectionLabel }) => {
     setProfilePreferences(nextPreferences);
   };
 
+  const openNotificationLink = (rawUrl) => {
+    if (!rawUrl) return;
+    if (/^https?:\/\//i.test(rawUrl)) {
+      window.location.href = rawUrl;
+      return;
+    }
+
+    const ticketMatch = rawUrl.match(/^\/tickets\/(\d+)/i);
+    if (ticketMatch) {
+      const section = role === "MAINTENANCE" ? "work-queue" : "tickets";
+      navigate(dashboardPath);
+      window.setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("dashboard:navigate", { detail: { id: section } }));
+      }, 120);
+      return;
+    }
+
+    navigate(rawUrl);
+  };
+
   const openNotification = async (notification) => {
     if (!notification) return;
     try {
@@ -142,7 +165,7 @@ export const TopBar = ({ onMenuClick, activeSectionLabel }) => {
       // Ignore and continue navigation.
     }
     setShowNotifications(false);
-    if (notification.linkUrl) window.location.href = notification.linkUrl;
+    openNotificationLink(notification.linkUrl);
   };
 
   return (

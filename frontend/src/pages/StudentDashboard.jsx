@@ -74,7 +74,7 @@ const categoryColors = {
   OTHER: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
 };
 
-const STATUS_STEPS = ["SUBMITTED", "APPROVED", "ASSIGNED", "IN_PROGRESS", "RESOLVED"];
+const STATUS_STEPS = ["SUBMITTED", "APPROVED", "ASSIGNED", "ACCEPTED", "IN_PROGRESS", "RESOLVED"];
 
 const createDefaultForm = ({
   serviceDomainKey = "",
@@ -241,7 +241,7 @@ const RecentActivityDetail = ({ tickets }) => (
 
 export const StudentDashboard = () => {
   const { auth } = useAuth();
-  const { tickets, loading, error, refresh } = useTickets(() => ticketService.getMyTickets(), []);
+  const { tickets, loading, error, refresh } = useTickets(() => ticketService.getMyTickets(), [], { pollMs: 10000 });
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(() => createDefaultForm());
   const [imageFile, setImageFile] = useState(null);

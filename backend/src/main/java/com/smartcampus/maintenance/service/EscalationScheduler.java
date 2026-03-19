@@ -8,6 +8,7 @@ import com.smartcampus.maintenance.entity.enums.TicketStatus;
 import com.smartcampus.maintenance.entity.enums.UrgencyLevel;
 import com.smartcampus.maintenance.repository.TicketRepository;
 import com.smartcampus.maintenance.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.List;
 import org.slf4j.Logger;
@@ -49,7 +50,7 @@ public class EscalationScheduler {
     public void escalateBreachedTickets() {
         EnumSet<TicketStatus> activeStatuses = EnumSet.of(
                 TicketStatus.SUBMITTED, TicketStatus.APPROVED,
-                TicketStatus.ASSIGNED, TicketStatus.IN_PROGRESS);
+                TicketStatus.ASSIGNED, TicketStatus.ACCEPTED, TicketStatus.IN_PROGRESS);
 
         List<Ticket> activeTickets = ticketRepository.findAll().stream()
                 .filter(t -> activeStatuses.contains(t.getStatus()))
@@ -85,6 +86,24 @@ public class EscalationScheduler {
 
         if (escalated > 0) {
             log.info("Escalated {} tickets due to SLA breach", escalated);
+        }
+
+        LocalDateTime staleThreshold = LocalDateTime.now().minusHours(2);
+        List<Ticket> staleUnassigned = ticketRepository.findByStatusAndAssignedToIsNullAndUpdatedAtBefore(
+                TicketStatus.APPROVED,
+                staleThreshold);
+        if (!staleUnassigned.isEmpty()) {
+            for (Ticket ticket : staleUnassigned) {
+                for (User admin : admins) {
+                    notificationService.notify(admin,
+                            "Ticket #" + ticket.getId() + " still unassigned",
+                            "Ticket \"" + ticket.getTitle()
+                                    + "\" has been waiting for assignment for more than 2 hours and needs admin validation.",
+                            NotificationType.ASSIGNMENT,
+                            "/tickets/" + ticket.getId());
+                }
+            }
+            log.info("Flagged {} stale unassigned tickets for admin validation", staleUnassigned.size());
         }
     }
 

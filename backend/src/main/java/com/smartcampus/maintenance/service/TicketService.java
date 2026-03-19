@@ -5,6 +5,7 @@ import com.smartcampus.maintenance.dto.ticket.CommentResponse;
 import com.smartcampus.maintenance.dto.ticket.DuplicateCheckResponse;
 import com.smartcampus.maintenance.dto.ticket.DuplicateCheckResponse.SimilarTicketSummary;
 import com.smartcampus.maintenance.dto.ticket.TicketAssignRequest;
+import com.smartcampus.maintenance.dto.ticket.TicketAssignmentResponseRequest;
 import com.smartcampus.maintenance.dto.ticket.TicketAssignmentRecommendationResponse;
 import com.smartcampus.maintenance.dto.ticket.TicketCreateRequest;
 import com.smartcampus.maintenance.dto.ticket.TicketDetailResponse;
@@ -64,6 +65,7 @@ public class TicketService {
 
     private static final EnumSet<TicketStatus> RESOLVED_OR_CLOSED = EnumSet.of(TicketStatus.RESOLVED,
             TicketStatus.CLOSED);
+    private static final int MAX_AUTO_ASSIGN_ACTIVE_TICKETS = 4;
 
     private final TicketRepository ticketRepository;
     private final TicketLogRepository ticketLogRepository;
@@ -127,12 +129,73 @@ public class TicketService {
 
         Ticket saved = ticketRepository.save(ticket);
         addLog(saved, null, TicketStatus.SUBMITTED, actor, "Ticket submitted");
+
+        boolean autoAssigned = tryAutoAssign(saved, actor);
+        if (!autoAssigned) {
+            TicketStatus previous = saved.getStatus();
+            saved.setStatus(TicketStatus.APPROVED);
+            saved = ticketRepository.save(saved);
+            addLog(saved, previous, TicketStatus.APPROVED, actor,
+                    "Auto-assignment unavailable. Ticket requires admin validation.");
+            notifyAdmins(
+                    "Ticket #" + saved.getId() + " requires admin validation",
+                    "No available crew capacity for \"" + saved.getTitle() + "\". Please validate and assign manually.",
+                    NotificationType.ASSIGNMENT,
+                    ticketLink(saved));
+        }
+
         notifyAdmins(
                 "New ticket #" + saved.getId(),
                 actor.getFullName() + " submitted \"" + saved.getTitle() + "\".",
                 NotificationType.TICKET_UPDATE,
                 ticketLink(saved));
         emailService.sendTicketCreatedEmail(actor.getEmail(), saved.getTitle(), saved.getId());
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public TicketResponse respondToAssignment(Long ticketId, TicketAssignmentResponseRequest request, User actor) {
+        requireRole(actor, Role.MAINTENANCE);
+        Ticket ticket = requireTicket(ticketId);
+        if (ticket.getAssignedTo() == null || !Objects.equals(ticket.getAssignedTo().getId(), actor.getId())) {
+            throw new ForbiddenException("Maintenance users can only respond to their own assignments");
+        }
+        if (ticket.getStatus() != TicketStatus.ASSIGNED) {
+            throw new ConflictException("Only ASSIGNED tickets can be accepted or declined");
+        }
+
+        if (Boolean.TRUE.equals(request.accepted())) {
+            ticket.setStatus(TicketStatus.ACCEPTED);
+            Ticket saved = ticketRepository.save(ticket);
+            addLog(saved, TicketStatus.ASSIGNED, TicketStatus.ACCEPTED, actor,
+                    safeNote(request.note(), "Assignment accepted by maintenance"));
+            notifyTicketStakeholders(
+                    saved,
+                    actor,
+                    "Ticket #" + saved.getId() + " accepted",
+                    "Maintenance accepted \"" + saved.getTitle() + "\" and will begin work shortly.");
+            return toResponse(saved);
+        }
+
+        if (!StringUtils.hasText(request.note())) {
+            throw new UnprocessableEntityException("Please include a reason when declining an assignment");
+        }
+
+        ticket.setAssignedTo(null);
+        ticket.setStatus(TicketStatus.APPROVED);
+        Ticket saved = ticketRepository.save(ticket);
+        addLog(saved, TicketStatus.ASSIGNED, TicketStatus.APPROVED, actor,
+                "Assignment declined by maintenance: " + request.note().trim());
+        notifyAdmins(
+                "Ticket #" + saved.getId() + " requires reassignment",
+                actor.getFullName() + " declined assignment for \"" + saved.getTitle() + "\". Please review and reassign.",
+                NotificationType.ASSIGNMENT,
+                ticketLink(saved));
+        notifyTicketStakeholders(
+                saved,
+                actor,
+                "Ticket #" + saved.getId() + " reassignment in progress",
+                "Maintenance requested reassignment for \"" + saved.getTitle() + "\". Admin review is in progress.");
         return toResponse(saved);
     }
 
@@ -256,6 +319,10 @@ public class TicketService {
         }
 
         ticket.setStatus(targetStatus);
+        if (oldStatus == TicketStatus.ASSIGNED && targetStatus == TicketStatus.APPROVED
+                && actor.getRole() == Role.MAINTENANCE) {
+            ticket.setAssignedTo(null);
+        }
         if (targetStatus == TicketStatus.RESOLVED) {
             ticket.setResolvedAt(LocalDateTime.now());
         } else if (oldStatus == TicketStatus.RESOLVED && targetStatus != TicketStatus.CLOSED) {
@@ -336,6 +403,7 @@ public class TicketService {
             boolean allowed = (current == TicketStatus.SUBMITTED
                     && (target == TicketStatus.APPROVED || target == TicketStatus.REJECTED))
                     || (current == TicketStatus.APPROVED && target == TicketStatus.ASSIGNED)
+                    || (current == TicketStatus.ACCEPTED && target == TicketStatus.IN_PROGRESS)
                     || (current == TicketStatus.RESOLVED && target == TicketStatus.CLOSED);
 
             if (!allowed) {
@@ -351,10 +419,15 @@ public class TicketService {
             if (ticket.getAssignedTo() == null || !Objects.equals(ticket.getAssignedTo().getId(), actor.getId())) {
                 throw new ForbiddenException("Maintenance users can only update assigned tickets");
             }
-            boolean allowed = (current == TicketStatus.ASSIGNED && target == TicketStatus.IN_PROGRESS)
+            boolean allowed = (current == TicketStatus.ASSIGNED && target == TicketStatus.ACCEPTED)
+                    || (current == TicketStatus.ASSIGNED && target == TicketStatus.APPROVED)
+                    || (current == TicketStatus.ACCEPTED && target == TicketStatus.IN_PROGRESS)
                     || (current == TicketStatus.IN_PROGRESS && target == TicketStatus.RESOLVED);
             if (!allowed) {
                 throw new ConflictException("Invalid maintenance transition from " + current + " to " + target);
+            }
+            if (target == TicketStatus.APPROVED && !StringUtils.hasText(request.note())) {
+                throw new UnprocessableEntityException("A decline reason is required to return assignment for admin review");
             }
             if (target == TicketStatus.RESOLVED && !StringUtils.hasText(request.note())) {
                 throw new UnprocessableEntityException("A work note is required when resolving a ticket");
@@ -529,6 +602,31 @@ public class TicketService {
 
     private void notifyAdmins(String title, String message, NotificationType type, String linkUrl) {
         notificationDispatchService.notifyUsers(userRepository.findByRole(Role.ADMIN), title, message, type, linkUrl);
+    }
+
+    private boolean tryAutoAssign(Ticket ticket, User actor) {
+        return autoAssignmentService.findBestAssigneeWithinCapacity(ticket, MAX_AUTO_ASSIGN_ACTIVE_TICKETS)
+                .map(assignee -> {
+                    TicketStatus oldStatus = ticket.getStatus();
+                    ticket.setAssignedTo(assignee);
+                    ticket.setStatus(TicketStatus.ASSIGNED);
+                    Ticket saved = ticketRepository.save(ticket);
+                    addLog(saved, oldStatus, TicketStatus.ASSIGNED, actor, "Auto-assigned by system");
+                    notificationDispatchService.notifyUser(
+                            assignee,
+                            "Ticket #" + saved.getId() + " assigned",
+                            "New ticket \"" + saved.getTitle() + "\" was auto-assigned. Accept or decline from your queue.",
+                            NotificationType.ASSIGNMENT,
+                            ticketLink(saved));
+                    notificationDispatchService.notifyUser(
+                            saved.getCreatedBy(),
+                            "Ticket #" + saved.getId() + " assigned",
+                            "Your ticket \"" + saved.getTitle() + "\" was assigned to maintenance automatically.",
+                            NotificationType.TICKET_UPDATE,
+                            ticketLink(saved));
+                    return true;
+                })
+                .orElse(false);
     }
 
     private void notifyTicketStakeholders(Ticket ticket, User actor, String title, String message) {

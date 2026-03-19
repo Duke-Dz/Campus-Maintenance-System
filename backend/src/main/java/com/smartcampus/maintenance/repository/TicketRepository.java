@@ -2,6 +2,7 @@ package com.smartcampus.maintenance.repository;
 
 import com.smartcampus.maintenance.entity.Ticket;
 import com.smartcampus.maintenance.entity.enums.TicketStatus;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -61,4 +62,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long>, JpaSpecif
             Long assignedToId,
             java.time.LocalDateTime resolvedAfter,
             Collection<TicketStatus> statuses);
+
+    List<Ticket> findByStatusAndAssignedToIsNullAndUpdatedAtBefore(
+            TicketStatus status,
+            LocalDateTime updatedAt);
 }

@@ -7,6 +7,8 @@ import { ROLES } from "./utils/constants";
 const DashboardShell = lazy(() => import("./components/Dashboard/DashboardShell.jsx").then((module) => ({ default: module.DashboardShell })));
 const LandingPage = lazy(() => import("./pages/LandingPage.jsx").then((module) => ({ default: module.LandingPage })));
 const AboutPage = lazy(() => import("./pages/AboutPage.jsx").then((module) => ({ default: module.AboutPage })));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage.jsx").then((module) => ({ default: module.PrivacyPage })));
+const TermsPage = lazy(() => import("./pages/TermsPage.jsx").then((module) => ({ default: module.TermsPage })));
 const ContactSupportPage = lazy(() => import("./pages/ContactSupportPage.jsx").then((module) => ({ default: module.ContactSupportPage })));
 const RegisterPage = lazy(() => import("./pages/RegisterPage.jsx").then((module) => ({ default: module.RegisterPage })));
 const StudentDashboard = lazy(() => import("./pages/StudentDashboard.jsx").then((module) => ({ default: module.StudentDashboard })));
@@ -98,6 +100,8 @@ const App = () => (
       />
       <Route path="/contact-support" element={withSuspense(<ContactSupportPage />)} />
       <Route path="/about-us" element={withSuspense(<AboutPage />)} />
+      <Route path="/privacy-policy" element={withSuspense(<PrivacyPage />)} />
+      <Route path="/terms-and-conditions" element={withSuspense(<TermsPage />)} />
       <Route
         path="/student"
         element={

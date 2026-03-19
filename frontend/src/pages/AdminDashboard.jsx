@@ -219,6 +219,13 @@ export const AdminDashboard = () => {
   useEffect(() => { refreshAnalytics(); refreshUsers(); refreshScheduledEvents(); }, []);
   useEffect(() => { refreshTickets(); }, [refreshTickets]);
   useEffect(() => {
+    const timer = window.setInterval(() => {
+      refreshTickets();
+      refreshAnalytics();
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [refreshTickets]);
+  useEffect(() => {
     if (!filters.requestTypeId) {
       return;
     }
@@ -235,7 +242,7 @@ export const AdminDashboard = () => {
   /*  COMPUTED DATA                                                    */
   /* ================================================================ */
   const pendingCount = (summary?.byStatus?.SUBMITTED || 0) + (summary?.byStatus?.APPROVED || 0) + (summary?.byStatus?.ASSIGNED || 0);
-  const inProgressCount = summary?.byStatus?.IN_PROGRESS || 0;
+  const inProgressCount = (summary?.byStatus?.ACCEPTED || 0) + (summary?.byStatus?.IN_PROGRESS || 0);
   const resolvedCount = (summary?.byStatus?.RESOLVED || 0) + (summary?.byStatus?.CLOSED || 0);
 
   const ticketTrends = useMemo(() => {
