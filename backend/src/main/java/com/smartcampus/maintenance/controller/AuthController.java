@@ -96,12 +96,12 @@ public class AuthController {
         RequestMetadata metadata = requestMetadataResolver.resolve(servletRequest);
         publicEndpointSecurityService.guardRegistration(request.email(), request.captchaToken(), metadata);
         authService.registerStudent(request, metadata);
-        return Map.of("message", "Account created. Enter the verification code sent to your email.");
+        return Map.of("message", "If the details are eligible, check your email for a verification link.");
     }
 
     @PostMapping("/verify-email")
     public Map<String, String> verifyEmail(@Valid @RequestBody VerifyEmailRequest request, HttpServletRequest servletRequest) {
-        authService.verifyEmail(request.email(), request.code(), requestMetadataResolver.resolve(servletRequest));
+        authService.verifyEmail(request.token(), requestMetadataResolver.resolve(servletRequest));
         return Map.of("message", "Email verified successfully. You can now sign in.");
     }
 
@@ -111,7 +111,7 @@ public class AuthController {
         RequestMetadata metadata = requestMetadataResolver.resolve(servletRequest);
         publicEndpointSecurityService.guardResendVerification(request.email(), request.captchaToken(), metadata);
         authService.resendVerificationCode(request.email(), metadata);
-        return Map.of("message", "If the account exists and is not verified, a new code has been sent.");
+        return Map.of("message", "If a pending registration exists, a new verification link has been sent.");
     }
 
     @PostMapping("/forgot-password")

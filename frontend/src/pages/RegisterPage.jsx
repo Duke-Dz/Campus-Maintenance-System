@@ -45,7 +45,7 @@ const normalizeRegisterSubmitError = (message) => {
     return "Unable to create your account.";
   }
   if (value.toLowerCase() === "internal server error") {
-    return "We couldn't create your account right now. Please try again in a moment. If the problem continues, contact support.";
+    return "We couldn't start email verification right now. Please try again in a moment. If the problem continues, contact support.";
   }
   return value;
 };
@@ -124,7 +124,7 @@ export const RegisterPage = () => {
   return (
     <AuthShell
       heading="Create your account"
-      description="Start with your sign-in details. You will verify your email before your first login."
+      description="Start with your sign-in details. We will send a secure verification link before your first login."
       layout="single"
       documentTitle="Create account"
       footer={(

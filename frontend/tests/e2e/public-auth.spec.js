@@ -55,9 +55,9 @@ test("register page accepts non-campus email domains", async ({ page }) => {
   await page.route("**/api/auth/register", async (route) => {
     payload = route.request().postDataJSON();
     await route.fulfill({
-      status: 200,
+      status: 201,
       contentType: "application/json",
-      body: JSON.stringify({ message: "Verification email sent." }),
+      body: JSON.stringify({ message: "If the details are eligible, check your email for a verification link." }),
     });
   });
 
@@ -127,15 +127,34 @@ test("forgot password submits captcha token when verification is enabled", async
   });
 });
 
-test("verify email page keeps query email visible and renders segmented code entry", async ({ page }) => {
+test("verify email page keeps query email visible and explains link verification", async ({ page }) => {
   await page.goto("/verify-email?email=student@example.edu");
 
   await expect(page).toHaveTitle("Verify email | CampusFix");
   await expect(page.locator('input[name="email"]')).toHaveValue("student@example.edu");
-  await expect(page.locator('[data-otp-field="true"]')).toBeVisible();
+  await expect(page.getByText("verification link")).toHaveCount(2);
+  await expect(page.locator('[data-otp-field="true"]')).toHaveCount(0);
+});
 
-  await page.locator('input[name="code"]').fill("123456");
-  await expect(page.locator('[data-otp-slot="5"][data-filled="true"]')).toBeVisible();
+test("verify email auto-submits a secure token from the query string", async ({ page }) => {
+  let payload = null;
+
+  await page.route("**/api/auth/verify-email", async (route) => {
+    payload = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        message: "Email verified successfully. You can now sign in.",
+      }),
+    });
+  });
+
+  await page.goto("/verify-email?token=secure-token-123");
+
+  await expect.poll(() => payload).not.toBeNull();
+  expect(payload).toEqual({ token: "secure-token-123" });
+  await expect(page.getByText("Email verified successfully. You can now sign in.")).toBeVisible();
 });
 
 test("verify email resend submits captcha token when verification is enabled", async ({ page }) => {
@@ -147,7 +166,7 @@ test("verify email resend submits captcha token when verification is enabled", a
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        message: "A new verification code has been sent.",
+        message: "If a pending registration exists, a new verification link has been sent.",
       }),
     });
   });
@@ -155,7 +174,7 @@ test("verify email resend submits captcha token when verification is enabled", a
   await page.goto("/verify-email?email=student@example.edu");
   await expect(page.locator('[data-turnstile-test="true"]')).toBeVisible();
 
-  await page.getByRole("button", { name: "Resend code" }).click();
+  await page.getByRole("button", { name: "Resend verification link" }).click();
 
   await expect.poll(() => payload).not.toBeNull();
   expect(payload).toEqual({

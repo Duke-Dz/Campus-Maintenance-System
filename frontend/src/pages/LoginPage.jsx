@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion as Motion } from "framer-motion";
 import { AuthPasswordField } from "../components/Auth/AuthPasswordField.jsx";
 import { AuthShell } from "../components/Auth/AuthShell.jsx";
 import { useAuth } from "../hooks/useAuth";
@@ -107,7 +107,7 @@ export const LoginPage = () => {
 
         <AnimatePresence mode="wait">
           {submitError ? (
-            <motion.div
+            <Motion.div
               key="login-error"
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
@@ -116,7 +116,7 @@ export const LoginPage = () => {
               className="rounded-[1.35rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
             >
               {submitError}
-            </motion.div>
+            </Motion.div>
           ) : null}
         </AnimatePresence>
 

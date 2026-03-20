@@ -47,27 +47,26 @@ public class EmailService {
                 "If you did not expect this email, contact CampusFix support immediately.");
     }
 
-    public void sendVerificationCodeEmail(String fullName, String toEmail, String verificationCode, long expiresInMinutes,
-            String verifyUrl) {
+    public void sendVerificationLinkEmail(String fullName, String toEmail, String verifyUrl, long expiresInMinutes) {
         String text = """
                 Hi %s,
 
-                Use this verification code to activate your CampusFix account: %s
+                Open this secure link to activate your CampusFix account:
+                %s
 
-                This code expires in %d minutes.
-                Verification page: %s
-                """.formatted(displayName(fullName), verificationCode, expiresInMinutes, verifyUrl);
+                This link expires in %d minutes.
+                """.formatted(displayName(fullName), verifyUrl, expiresInMinutes);
         sendBrandedEmail(
                 toEmail,
                 "CampusFix: Verify Your Email",
                 text,
                 "Verify account",
                 "Finish creating your CampusFix account.",
-                "Enter the verification code below, or open the verification page directly from the secure button.",
-                verificationCode,
-                "Open Verification Page",
+                "Use the secure button below to verify your email address and finish creating your account.",
+                null,
+                "Verify Email",
                 verifyUrl,
-                "This verification code expires in " + expiresInMinutes + " minutes.");
+                "This verification link expires in " + expiresInMinutes + " minutes.");
     }
 
     public void sendStaffInviteEmail(String fullName, String toEmail, String acceptUrl, long expiresInHours) {
@@ -227,6 +226,7 @@ public class EmailService {
             String note) {
         Context context = new Context();
         context.setVariable("subject", subject);
+        context.setVariable("preheader", intro);
         context.setVariable("eyebrow", eyebrow);
         context.setVariable("heading", heading);
         context.setVariable("intro", intro);

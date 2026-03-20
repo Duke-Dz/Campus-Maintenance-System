@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { z } from "zod";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion as Motion } from "framer-motion";
 import { AuthShell } from "../components/Auth/AuthShell.jsx";
 import { TurnstileWidget } from "../components/Auth/TurnstileWidget.jsx";
 import { turnstileEnabled } from "../components/Auth/turnstileConfig.js";
@@ -79,7 +79,7 @@ export const ForgotPasswordPage = () => {
     >
       <AnimatePresence mode="wait">
         {successMessage ? (
-          <motion.div
+          <Motion.div
             key="forgot-success"
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -100,9 +100,9 @@ export const ForgotPasswordPage = () => {
             <div className="rounded-[1.35rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
               {successMessage}
             </div>
-          </motion.div>
+          </Motion.div>
         ) : (
-          <motion.form
+          <Motion.form
             key="forgot-form"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -133,7 +133,7 @@ export const ForgotPasswordPage = () => {
 
             <AnimatePresence mode="wait">
               {submitError ? (
-                <motion.div
+                <Motion.div
                   key="forgot-error"
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -142,7 +142,7 @@ export const ForgotPasswordPage = () => {
                   className="rounded-[1.35rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
                 >
                   {submitError}
-                </motion.div>
+                </Motion.div>
               ) : null}
             </AnimatePresence>
 
@@ -155,7 +155,7 @@ export const ForgotPasswordPage = () => {
               {isSubmitting ? "Sending..." : "Send instructions"}
               <ArrowRight size={16} />
             </button>
-          </motion.form>
+          </Motion.form>
         )}
       </AnimatePresence>
     </AuthShell>

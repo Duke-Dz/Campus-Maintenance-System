@@ -5,20 +5,21 @@ import com.smartcampus.maintenance.dto.auth.AuthResponse;
 import com.smartcampus.maintenance.dto.auth.CurrentUserResponse;
 import com.smartcampus.maintenance.dto.auth.LoginRequest;
 import com.smartcampus.maintenance.dto.auth.RegisterRequest;
-import com.smartcampus.maintenance.entity.EmailVerificationToken;
 import com.smartcampus.maintenance.entity.PasswordResetToken;
+import com.smartcampus.maintenance.entity.PendingRegistration;
 import com.smartcampus.maintenance.entity.StaffInvite;
 import com.smartcampus.maintenance.entity.User;
 import com.smartcampus.maintenance.entity.enums.Role;
+import com.smartcampus.maintenance.event.PendingRegistrationVerificationRequestedEvent;
+import com.smartcampus.maintenance.event.PendingRegistrationVerifiedEvent;
 import com.smartcampus.maintenance.exception.BadRequestException;
 import com.smartcampus.maintenance.exception.ConflictException;
 import com.smartcampus.maintenance.exception.UnauthorizedException;
-import com.smartcampus.maintenance.repository.EmailVerificationTokenRepository;
 import com.smartcampus.maintenance.repository.PasswordResetTokenRepository;
+import com.smartcampus.maintenance.repository.PendingRegistrationRepository;
 import com.smartcampus.maintenance.repository.StaffInviteRepository;
 import com.smartcampus.maintenance.repository.UserRepository;
 import com.smartcampus.maintenance.security.JwtService;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,6 +36,9 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
@@ -43,10 +48,10 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
+    private final PendingRegistrationRepository pendingRegistrationRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final PasswordResetTokenRepository resetTokenRepository;
-    private final EmailVerificationTokenRepository verificationTokenRepository;
     private final StaffInviteRepository staffInviteRepository;
     private final UserService userService;
     private final PasswordPolicyService passwordPolicyService;
@@ -55,22 +60,22 @@ public class AuthService {
     private final AuthRefreshTokenService authRefreshTokenService;
     private final RefreshCookieService refreshCookieService;
     private final AuditEventService auditEventService;
+    private final ApplicationEventPublisher eventPublisher;
+    private final TransactionTemplate requiresNewTransactionTemplate;
     private final String frontendBaseUrl;
     private final long verificationCodeTtlMinutes;
     private final long resetTokenTtlMinutes;
-    private final int verificationCodeMaxAttempts;
     private final long verificationResendCooldownSeconds;
     private final long resetRequestCooldownSeconds;
     private final long publicRequestMinDelayMs;
-    private final SecureRandom secureRandom;
 
     public AuthService(
             AuthenticationManager authenticationManager,
             UserRepository userRepository,
+            PendingRegistrationRepository pendingRegistrationRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             PasswordResetTokenRepository resetTokenRepository,
-            EmailVerificationTokenRepository verificationTokenRepository,
             StaffInviteRepository staffInviteRepository,
             UserService userService,
             PasswordPolicyService passwordPolicyService,
@@ -79,19 +84,20 @@ public class AuthService {
             AuthRefreshTokenService authRefreshTokenService,
             RefreshCookieService refreshCookieService,
             AuditEventService auditEventService,
+            ApplicationEventPublisher eventPublisher,
+            PlatformTransactionManager transactionManager,
             @Value("${app.frontend.base-url:http://localhost:5173}") String frontendBaseUrl,
             @Value("${app.auth.verification-code-ttl-minutes:15}") long verificationCodeTtlMinutes,
             @Value("${app.auth.reset-token-ttl-minutes:60}") long resetTokenTtlMinutes,
-            @Value("${app.auth.verification-code-max-attempts:5}") int verificationCodeMaxAttempts,
             @Value("${app.auth.verification-resend-cooldown-seconds:60}") long verificationResendCooldownSeconds,
             @Value("${app.auth.reset-request-cooldown-seconds:60}") long resetRequestCooldownSeconds,
             @Value("${app.auth.public-request-min-delay-ms:350}") long publicRequestMinDelayMs) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
+        this.pendingRegistrationRepository = pendingRegistrationRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.resetTokenRepository = resetTokenRepository;
-        this.verificationTokenRepository = verificationTokenRepository;
         this.staffInviteRepository = staffInviteRepository;
         this.userService = userService;
         this.passwordPolicyService = passwordPolicyService;
@@ -100,14 +106,15 @@ public class AuthService {
         this.authRefreshTokenService = authRefreshTokenService;
         this.refreshCookieService = refreshCookieService;
         this.auditEventService = auditEventService;
+        this.eventPublisher = eventPublisher;
+        this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager);
+        this.requiresNewTransactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.frontendBaseUrl = frontendBaseUrl;
         this.verificationCodeTtlMinutes = verificationCodeTtlMinutes;
         this.resetTokenTtlMinutes = resetTokenTtlMinutes;
-        this.verificationCodeMaxAttempts = verificationCodeMaxAttempts;
         this.verificationResendCooldownSeconds = verificationResendCooldownSeconds;
         this.resetRequestCooldownSeconds = resetRequestCooldownSeconds;
         this.publicRequestMinDelayMs = publicRequestMinDelayMs;
-        this.secureRandom = new SecureRandom();
     }
 
     public AuthResponse login(LoginRequest request, RequestMetadata metadata, HttpHeaders responseHeaders) {
@@ -136,7 +143,7 @@ public class AuthService {
                     String.valueOf(user.getId()),
                     metadata,
                     Map.of("reason", "email_not_verified"));
-            throw new UnauthorizedException("Email not verified. Enter your verification code first.");
+            throw new UnauthorizedException("Email not verified. Check your inbox for the verification link first.");
         }
 
         AuthRefreshTokenService.IssuedRefreshToken refreshToken = authRefreshTokenService.issue(user, metadata);
@@ -185,93 +192,101 @@ public class AuthService {
 
     @Transactional
     public void registerStudent(RegisterRequest request, RequestMetadata metadata) {
-        String username = request.username().trim();
-        String email = request.email().trim().toLowerCase();
-        String fullName = request.fullName().trim();
+        long startedAtNs = System.nanoTime();
+        try {
+            String username = request.username().trim();
+            String email = request.email().trim().toLowerCase();
+            String fullName = request.fullName().trim();
 
-        if (userRepository.existsByUsernameIgnoreCase(username)) {
-            List<String> suggestions = userService.suggestAvailableUsernames(username, fullName, 5);
-            throw new ConflictException("Username is already in use. Try: " + String.join(", ", suggestions));
-        }
-        if (userRepository.existsByEmailIgnoreCase(email)) {
-            throw new ConflictException("Email is already in use");
-        }
-        passwordPolicyService.enforce(request.password(), username, email, fullName);
+            PendingRegistration existingPending = pendingRegistrationRepository.findByEmailIgnoreCase(email).orElse(null);
+            ensureUsernameAvailable(username, fullName, existingPending == null ? null : existingPending.getId());
 
-        User user = new User();
-        user.setUsername(username);
-        user.setEmail(email);
-        user.setFullName(fullName);
-        user.setRole(Role.STUDENT);
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setEmailVerified(false);
-        User saved = userRepository.save(user);
-        issueEmailVerificationCode(saved);
-        auditEventService.record(
-                "auth.registered",
-                saved,
-                "user",
-                String.valueOf(saved.getId()),
-                metadata,
-                Map.of("email", saved.getEmail()));
+            if (userRepository.existsByEmailIgnoreCase(email)) {
+                auditEventService.record(
+                        "auth.register.duplicate_email",
+                        null,
+                        "email",
+                        email,
+                        metadata,
+                        Map.of("email", email));
+                return;
+            }
+
+            passwordPolicyService.enforce(request.password(), username, email, fullName);
+
+            PendingRegistration pending = existingPending == null ? new PendingRegistration() : existingPending;
+            pending.setUsername(username);
+            pending.setEmail(email);
+            pending.setFullName(fullName);
+            pending.setPasswordHash(passwordEncoder.encode(request.password()));
+
+            String rawToken = rotateVerificationLink(pending);
+            PendingRegistration saved = pendingRegistrationRepository.save(pending);
+
+            eventPublisher.publishEvent(new PendingRegistrationVerificationRequestedEvent(
+                    saved.getEmail(),
+                    saved.getFullName(),
+                    buildVerifyEmailUrl(rawToken),
+                    verificationCodeTtlMinutes));
+            auditEventService.record(
+                    "auth.register.pending",
+                    null,
+                    "pending_registration",
+                    String.valueOf(saved.getId()),
+                    metadata,
+                    Map.of("email", saved.getEmail(), "username", saved.getUsername()));
+        } finally {
+            enforceMinimumPublicDelay(startedAtNs);
+        }
     }
 
     @Transactional
-    public void verifyEmail(String email, String code, RequestMetadata metadata) {
-        String normalizedEmail = email.trim().toLowerCase();
-        String normalizedCode = code.trim();
-        User user = userRepository.findByEmail(normalizedEmail)
-                .orElseThrow(() -> new BadRequestException("Invalid verification code."));
-
-        if (user.isEmailVerified()) {
-            return;
+    public void verifyEmail(String token, RequestMetadata metadata) {
+        String normalizedToken = token == null ? "" : token.trim();
+        if (normalizedToken.isEmpty()) {
+            throw new BadRequestException("Verification token is required.");
         }
 
-        EmailVerificationToken token = verificationTokenRepository
-                .findTopByUser_IdAndUsedFalseOrderByCreatedAtDesc(user.getId())
-                .orElseThrow(() -> new BadRequestException("Invalid verification code."));
+        PendingRegistration pending = pendingRegistrationRepository
+                .findByVerificationTokenHash(tokenHashService.hashSha256(normalizedToken))
+                .orElseThrow(() -> new BadRequestException("Invalid or expired verification link."));
 
-        if (token.isExpired()) {
-            token.setUsed(true);
-            verificationTokenRepository.save(token);
-            throw new BadRequestException("Verification code expired. Request a new code.");
+        if (pending.isVerificationTokenExpired()) {
+            clearVerificationLinkInNewTransaction(pending.getId());
+            throw new BadRequestException("This verification link has expired. Request a new one.");
         }
 
-        if (!token.getCode().equals(normalizedCode)) {
-            int attempts = token.getAttemptCount() + 1;
-            token.setAttemptCount(attempts);
-            if (attempts >= verificationCodeMaxAttempts) {
-                token.setUsed(true);
-            }
-            verificationTokenRepository.save(token);
-
-            if (attempts >= verificationCodeMaxAttempts) {
-                auditEventService.record(
-                        "auth.verify_email.locked",
-                        user,
-                        "user",
-                        String.valueOf(user.getId()),
-                        metadata,
-                        Map.of("email", normalizedEmail));
-                throw new BadRequestException("Too many invalid attempts. Request a new code.");
-            }
-            throw new BadRequestException("Invalid verification code.");
+        if (userRepository.existsByEmailIgnoreCase(pending.getEmail())) {
+            pendingRegistrationRepository.delete(pending);
+            throw new BadRequestException("This verification link is no longer valid. Sign in or register again.");
+        }
+        if (userRepository.existsByUsernameIgnoreCase(pending.getUsername())) {
+            pendingRegistrationRepository.delete(pending);
+            throw new BadRequestException("This verification link is no longer valid. Register again to choose a different username.");
         }
 
+        User user = new User();
+        user.setUsername(pending.getUsername());
+        user.setEmail(pending.getEmail());
+        user.setFullName(pending.getFullName());
+        user.setRole(Role.STUDENT);
         user.setEmailVerified(true);
-        userRepository.save(user);
+        user.setPasswordHash(pending.getPasswordHash());
+        User savedUser = userRepository.save(user);
 
-        token.setUsed(true);
-        verificationTokenRepository.save(token);
+        pendingRegistrationRepository.delete(pending);
 
-        emailService.sendWelcomeEmail(user.getFullName(), user.getEmail(), buildLoginUrl());
+        eventPublisher.publishEvent(new PendingRegistrationVerifiedEvent(
+                savedUser.getEmail(),
+                savedUser.getFullName(),
+                buildLoginUrl()));
         auditEventService.record(
                 "auth.verify_email.success",
-                user,
+                savedUser,
                 "user",
-                String.valueOf(user.getId()),
+                String.valueOf(savedUser.getId()),
                 metadata,
-                Map.of("email", normalizedEmail));
+                Map.of("email", savedUser.getEmail()));
     }
 
     @Transactional
@@ -279,37 +294,42 @@ public class AuthService {
         long startedAtNs = System.nanoTime();
         try {
             String normalizedEmail = email.trim().toLowerCase();
-            User user = userRepository.findByEmail(normalizedEmail).orElse(null);
-            if (user == null) {
-                log.info("Verification resend requested for unknown email: {}", normalizedEmail);
-                auditEventService.record(
-                        "auth.verify_email.resend.unknown",
-                        null,
-                        "email",
-                        normalizedEmail,
-                        metadata,
-                        Map.of());
-                return;
-            }
-            if (user.isEmailVerified()) {
-                log.info("Verification resend ignored for already-verified email: {}", normalizedEmail);
+            PendingRegistration pending = pendingRegistrationRepository.findByEmailIgnoreCase(normalizedEmail).orElse(null);
+            if (pending == null) {
+                if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+                    log.info("Verification resend ignored for already-verified email: {}", normalizedEmail);
+                } else {
+                    log.info("Verification resend requested for unknown email: {}", normalizedEmail);
+                    auditEventService.record(
+                            "auth.verify_email.resend.unknown",
+                            null,
+                            "email",
+                            normalizedEmail,
+                            metadata,
+                            Map.of());
+                }
                 return;
             }
 
-            var activeToken = verificationTokenRepository.findTopByUser_IdAndUsedFalseOrderByCreatedAtDesc(user.getId());
-            if (activeToken.isPresent() && isCooldownActive(activeToken.get().getCreatedAt(), verificationResendCooldownSeconds)
-                    && !activeToken.get().isExpired()) {
-                log.info("Verification resend cooldown active for user '{}'", user.getUsername());
+            if (isResendCooldownActive(pending)) {
+                log.info("Verification resend cooldown active for pending registration '{}'", pending.getEmail());
                 return;
             }
-            issueEmailVerificationCode(user);
+
+            String rawToken = rotateVerificationLink(pending);
+            PendingRegistration saved = pendingRegistrationRepository.save(pending);
+            eventPublisher.publishEvent(new PendingRegistrationVerificationRequestedEvent(
+                    saved.getEmail(),
+                    saved.getFullName(),
+                    buildVerifyEmailUrl(rawToken),
+                    verificationCodeTtlMinutes));
             auditEventService.record(
                     "auth.verify_email.resend",
-                    user,
-                    "user",
-                    String.valueOf(user.getId()),
+                    null,
+                    "pending_registration",
+                    String.valueOf(saved.getId()),
                     metadata,
-                    Map.of("email", normalizedEmail));
+                    Map.of("email", saved.getEmail()));
         } finally {
             enforceMinimumPublicDelay(startedAtNs);
         }
@@ -473,11 +493,11 @@ public class AuthService {
                 .toUriString();
     }
 
-    private String buildVerifyEmailUrl(String email) {
+    private String buildVerifyEmailUrl(String token) {
         return UriComponentsBuilder
                 .fromUriString(frontendBaseUrl)
                 .path("/verify-email")
-                .queryParam("email", email)
+                .queryParam("token", token)
                 .build()
                 .toUriString();
     }
@@ -492,26 +512,43 @@ public class AuthService {
         throw new IllegalStateException("Unable to generate unique reset token");
     }
 
-    private void issueEmailVerificationCode(User user) {
-        verificationTokenRepository.deleteByUser_IdAndUsedFalse(user.getId());
-
-        String code = generateVerificationCode();
-        EmailVerificationToken token = new EmailVerificationToken();
-        token.setUser(user);
-        token.setCode(code);
-        token.setExpiresAt(LocalDateTime.now().plusMinutes(verificationCodeTtlMinutes));
-        verificationTokenRepository.save(token);
-
-        emailService.sendVerificationCodeEmail(
-                user.getFullName(),
-                user.getEmail(),
-                code,
-                verificationCodeTtlMinutes,
-                buildVerifyEmailUrl(user.getEmail()));
+    private void ensureUsernameAvailable(String username, String fullName, Long pendingRegistrationId) {
+        boolean verifiedUserExists = userRepository.existsByUsernameIgnoreCase(username);
+        boolean pendingExists = pendingRegistrationId == null
+                ? pendingRegistrationRepository.existsByUsernameIgnoreCase(username)
+                : pendingRegistrationRepository.existsByUsernameIgnoreCaseAndIdNot(username, pendingRegistrationId);
+        if (verifiedUserExists || pendingExists) {
+            List<String> suggestions = userService.suggestAvailableUsernames(username, fullName, 5);
+            throw new ConflictException("Username is already in use. Try: " + String.join(", ", suggestions));
+        }
     }
 
-    private String generateVerificationCode() {
-        return String.format("%06d", secureRandom.nextInt(1_000_000));
+    private String rotateVerificationLink(PendingRegistration pending) {
+        String rawToken = tokenHashService.generateUrlToken(32);
+        LocalDateTime now = LocalDateTime.now();
+        pending.setVerificationTokenHash(tokenHashService.hashSha256(rawToken));
+        pending.setVerificationTokenExpiresAt(now.plusMinutes(verificationCodeTtlMinutes));
+        pending.setLastVerificationSentAt(now);
+        pending.setResendAvailableAt(now.plusSeconds(verificationResendCooldownSeconds));
+        return rawToken;
+    }
+
+    private void clearVerificationLink(PendingRegistration pending) {
+        pending.setVerificationTokenHash(null);
+        pending.setVerificationTokenExpiresAt(null);
+    }
+
+    private void clearVerificationLinkInNewTransaction(Long pendingRegistrationId) {
+        requiresNewTransactionTemplate.executeWithoutResult(status -> pendingRegistrationRepository
+                .findById(pendingRegistrationId)
+                .ifPresent(existing -> {
+                    clearVerificationLink(existing);
+                    pendingRegistrationRepository.save(existing);
+                }));
+    }
+
+    private boolean isResendCooldownActive(PendingRegistration pending) {
+        return pending.getResendAvailableAt() != null && pending.getResendAvailableAt().isAfter(LocalDateTime.now());
     }
 
     private boolean isCooldownActive(LocalDateTime createdAt, long cooldownSeconds) {
@@ -534,11 +571,6 @@ public class AuthService {
             return;
         }
         try {
-            // Use LockSupport.parkNanos instead of Thread.sleep for a lighter
-            // wait that doesn't hold a monitor.  In a virtual-thread environment
-            // (Java 21+ with --enable-preview) this yields the carrier thread
-            // automatically.  On platform threads the impact is the same as
-            // Thread.sleep but signals intent more clearly.
             java.util.concurrent.locks.LockSupport.parkNanos(remainingMs * 1_000_000);
         } catch (Exception ex) {
             Thread.currentThread().interrupt();

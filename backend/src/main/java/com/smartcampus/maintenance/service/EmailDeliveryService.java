@@ -21,12 +21,15 @@ public class EmailDeliveryService {
 
     private final JavaMailSender javaMailSender;
     private final String fromAddress;
+    private final String mailHost;
 
     public EmailDeliveryService(
             @Autowired(required = false) JavaMailSender javaMailSender,
-            @Value("${app.email.from:no-reply@campusfix.local}") String fromAddress) {
+            @Value("${app.email.from:no-reply@campusfix.local}") String fromAddress,
+            @Value("${spring.mail.host:}") String mailHost) {
         this.javaMailSender = javaMailSender;
         this.fromAddress = fromAddress;
+        this.mailHost = mailHost;
     }
 
     public void send(String to, String subject, String plainText, String htmlBody) {
@@ -49,7 +52,7 @@ public class EmailDeliveryService {
             message.setText(body);
             javaMailSender.send(message);
         } catch (MailException ex) {
-            throw ex;
+            throw enrichDeliveryException(ex);
         }
     }
 
@@ -63,10 +66,7 @@ public class EmailDeliveryService {
             helper.setText(plainText, htmlBody);
             javaMailSender.send(message);
         } catch (MailException | MessagingException ex) {
-            if (ex instanceof MailException mailException) {
-                throw mailException;
-            }
-            throw new IllegalStateException("Failed to compose HTML email", ex);
+            throw enrichDeliveryException(ex);
         }
     }
 
@@ -84,5 +84,21 @@ public class EmailDeliveryService {
             return false;
         }
         return true;
+    }
+
+    private RuntimeException enrichDeliveryException(Exception ex) {
+        if (isGmailHost(mailHost)) {
+            String message = "Gmail SMTP delivery failed. Ensure the mailbox has 2-Step Verification enabled and MAIL_PASSWORD is a Google App Password.";
+            log.error(message, ex);
+            return new IllegalStateException(message, ex);
+        }
+        if (ex instanceof RuntimeException runtimeException) {
+            return runtimeException;
+        }
+        return new IllegalStateException("Failed to deliver email", ex);
+    }
+
+    private boolean isGmailHost(String host) {
+        return StringUtils.hasText(host) && host.trim().equalsIgnoreCase("smtp.gmail.com");
     }
 }

@@ -16,6 +16,7 @@ import com.smartcampus.maintenance.entity.enums.Role;
 import com.smartcampus.maintenance.exception.ConflictException;
 import com.smartcampus.maintenance.exception.ForbiddenException;
 import com.smartcampus.maintenance.mapper.UserMapper;
+import com.smartcampus.maintenance.repository.PendingRegistrationRepository;
 import com.smartcampus.maintenance.repository.StaffInviteRepository;
 import com.smartcampus.maintenance.repository.TicketRepository;
 import com.smartcampus.maintenance.repository.UserRepository;
@@ -31,6 +32,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PendingRegistrationRepository pendingRegistrationRepository;
     private final TicketRepository ticketRepository;
     private final StaffInviteRepository staffInviteRepository;
     private final UsernameSuggestionService usernameSuggestionService;
@@ -42,6 +44,7 @@ public class UserService {
 
     public UserService(
             UserRepository userRepository,
+            PendingRegistrationRepository pendingRegistrationRepository,
             TicketRepository ticketRepository,
             StaffInviteRepository staffInviteRepository,
             UsernameSuggestionService usernameSuggestionService,
@@ -51,6 +54,7 @@ public class UserService {
             @Value("${app.frontend.base-url:http://localhost:5173}") String frontendBaseUrl,
             @Value("${app.auth.staff-invite-ttl-hours:48}") long staffInviteTtlHours) {
         this.userRepository = userRepository;
+        this.pendingRegistrationRepository = pendingRegistrationRepository;
         this.ticketRepository = ticketRepository;
         this.staffInviteRepository = staffInviteRepository;
         this.usernameSuggestionService = usernameSuggestionService;
@@ -191,6 +195,7 @@ public class UserService {
             return true;
         }
         return userRepository.existsByUsernameIgnoreCase(normalized)
+                || pendingRegistrationRepository.existsByUsernameIgnoreCase(normalized)
                 || staffInviteRepository.existsByUsernameIgnoreCaseAndUsedFalse(normalized);
     }
 
@@ -201,6 +206,7 @@ public class UserService {
             return true;
         }
         return userRepository.existsByEmailIgnoreCase(normalized)
+                || pendingRegistrationRepository.existsByEmailIgnoreCase(normalized)
                 || staffInviteRepository.existsByEmailIgnoreCaseAndUsedFalse(normalized);
     }
 

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { z } from "zod";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion as Motion } from "framer-motion";
 import { AuthPasswordField } from "../components/Auth/AuthPasswordField.jsx";
 import { AuthShell } from "../components/Auth/AuthShell.jsx";
 import { PasswordChecklist } from "../components/Auth/PasswordChecklist.jsx";
@@ -106,7 +106,7 @@ export const ResetPasswordPage = () => {
     >
       <AnimatePresence mode="wait">
         {successMessage ? (
-          <motion.div
+          <Motion.div
             key="reset-success"
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -133,9 +133,9 @@ export const ResetPasswordPage = () => {
               <KeyRound size={16} />
               Sign in
             </Link>
-          </motion.div>
+          </Motion.div>
         ) : (
-          <motion.form
+          <Motion.form
             key="reset-form"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -160,7 +160,7 @@ export const ResetPasswordPage = () => {
 
             <AnimatePresence mode="wait">
               {submitError ? (
-                <motion.div
+                <Motion.div
                   key="reset-error"
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -169,7 +169,7 @@ export const ResetPasswordPage = () => {
                   className="rounded-[1.35rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
                 >
                   {submitError}
-                </motion.div>
+                </Motion.div>
               ) : null}
             </AnimatePresence>
 
@@ -181,7 +181,7 @@ export const ResetPasswordPage = () => {
               <CheckCircle2 size={16} />
               {isSubmitting ? "Updating..." : "Update password"}
             </button>
-          </motion.form>
+          </Motion.form>
         )}
       </AnimatePresence>
     </AuthShell>

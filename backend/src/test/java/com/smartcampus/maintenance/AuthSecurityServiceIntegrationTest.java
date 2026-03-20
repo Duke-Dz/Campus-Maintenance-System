@@ -3,13 +3,16 @@ package com.smartcampus.maintenance;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.smartcampus.maintenance.entity.EmailVerificationToken;
+import com.smartcampus.maintenance.dto.auth.RegisterRequest;
+import com.smartcampus.maintenance.entity.EmailOutbox;
 import com.smartcampus.maintenance.entity.PasswordResetToken;
+import com.smartcampus.maintenance.entity.PendingRegistration;
 import com.smartcampus.maintenance.entity.User;
 import com.smartcampus.maintenance.entity.enums.Role;
 import com.smartcampus.maintenance.exception.BadRequestException;
-import com.smartcampus.maintenance.repository.EmailVerificationTokenRepository;
+import com.smartcampus.maintenance.repository.EmailOutboxRepository;
 import com.smartcampus.maintenance.repository.PasswordResetTokenRepository;
+import com.smartcampus.maintenance.repository.PendingRegistrationRepository;
 import com.smartcampus.maintenance.repository.UserRepository;
 import com.smartcampus.maintenance.security.CustomUserDetailsService;
 import com.smartcampus.maintenance.security.JwtService;
@@ -19,16 +22,15 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
-@Transactional
+@SpringBootTest(properties = "app.email.enabled=true")
 class AuthSecurityServiceIntegrationTest {
 
     private static final RequestMetadata TEST_METADATA = new RequestMetadata("127.0.0.1", "JUnit");
@@ -40,10 +42,13 @@ class AuthSecurityServiceIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private PendingRegistrationRepository pendingRegistrationRepository;
+
+    @Autowired
     private PasswordResetTokenRepository resetTokenRepository;
 
     @Autowired
-    private EmailVerificationTokenRepository verificationTokenRepository;
+    private EmailOutboxRepository emailOutboxRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -85,28 +90,35 @@ class AuthSecurityServiceIntegrationTest {
     }
 
     @Test
-    void verifyEmailLocksTokenAfterTooManyInvalidAttempts() {
-        User user = createUser(false, "password");
+    void resendVerificationCooldownPreventsImmediateTokenRotation() {
+        RegisterRequest request = pendingRegistrationRequest();
 
-        authService.resendVerificationCode(user.getEmail(), TEST_METADATA);
-        EmailVerificationToken activeToken = verificationTokenRepository
-                .findTopByUser_IdAndUsedFalseOrderByCreatedAtDesc(user.getId())
-                .orElseThrow();
+        authService.registerStudent(request, TEST_METADATA);
+        PendingRegistration beforeResend = pendingRegistrationRepository.findByEmailIgnoreCase(request.email()).orElseThrow();
+        String tokenHashBefore = beforeResend.getVerificationTokenHash();
 
-        String wrongCode = activeToken.getCode().equals("999999") ? "888888" : "999999";
+        authService.resendVerificationCode(request.email(), TEST_METADATA);
 
-        for (int i = 0; i < 4; i++) {
-            assertThatThrownBy(() -> authService.verifyEmail(user.getEmail(), wrongCode, TEST_METADATA))
-                    .isInstanceOf(BadRequestException.class)
-                    .hasMessageContaining("Invalid verification code.");
-        }
+        PendingRegistration afterResend = pendingRegistrationRepository.findByEmailIgnoreCase(request.email()).orElseThrow();
+        assertThat(afterResend.getVerificationTokenHash()).isEqualTo(tokenHashBefore);
+    }
 
-        assertThatThrownBy(() -> authService.verifyEmail(user.getEmail(), wrongCode, TEST_METADATA))
+    @Test
+    void verifyEmailRejectsExpiredVerificationLink() {
+        RegisterRequest request = pendingRegistrationRequest();
+
+        authService.registerStudent(request, TEST_METADATA);
+        String rawToken = latestVerificationToken(request.email());
+        PendingRegistration pending = pendingRegistrationRepository.findByEmailIgnoreCase(request.email()).orElseThrow();
+        pending.setVerificationTokenExpiresAt(LocalDateTime.now().minusMinutes(1));
+        pendingRegistrationRepository.save(pending);
+
+        assertThatThrownBy(() -> authService.verifyEmail(rawToken, TEST_METADATA))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Too many invalid attempts");
+                .hasMessageContaining("expired");
 
-        assertThat(verificationTokenRepository.findTopByUser_IdAndUsedFalseOrderByCreatedAtDesc(user.getId()))
-                .isEmpty();
+        PendingRegistration updated = pendingRegistrationRepository.findByEmailIgnoreCase(request.email()).orElseThrow();
+        assertThat(updated.getVerificationTokenHash()).isNull();
     }
 
     @Test
@@ -141,6 +153,38 @@ class AuthSecurityServiceIntegrationTest {
 
         var updatedUserDetails = customUserDetailsService.loadUserByUsername(user.getUsername());
         assertThat(jwtService.isTokenValid(oldJwt, updatedUserDetails)).isFalse();
+    }
+
+    private RegisterRequest pendingRegistrationRequest() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        return new RegisterRequest(
+                "pending_" + suffix,
+                "pending_" + suffix + "@example.com",
+                "Pending " + suffix,
+                "StrongPass#123",
+                "");
+    }
+
+    private String latestVerificationToken(String email) {
+        EmailOutbox queuedMessage = emailOutboxRepository.findAll().stream()
+                .filter(message -> email.equalsIgnoreCase(message.getToEmail()))
+                .max(Comparator.comparing(EmailOutbox::getId))
+                .orElseThrow();
+        return extractToken(queuedMessage.getPlainTextBody());
+    }
+
+    private String extractToken(String body) {
+        String marker = "token=";
+        int start = body.indexOf(marker);
+        if (start < 0) {
+            throw new IllegalStateException("Verification token URL was not found in email body.");
+        }
+        int tokenStart = start + marker.length();
+        int tokenEnd = body.indexOf('\n', tokenStart);
+        if (tokenEnd < 0) {
+            tokenEnd = body.length();
+        }
+        return body.substring(tokenStart, tokenEnd).trim();
     }
 
     private User createUser(boolean emailVerified, String rawPassword) {

@@ -21,8 +21,8 @@ export const authService = {
     const { data } = await apiClient.post("/auth/register", payload);
     return data;
   },
-  async verifyEmail(email, code) {
-    const { data } = await apiClient.post("/auth/verify-email", { email, code });
+  async verifyEmail(token) {
+    const { data } = await apiClient.post("/auth/verify-email", { token });
     return data;
   },
   async resendVerification(payloadOrEmail, captchaToken = "") {

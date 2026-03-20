@@ -1,18 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, Mail, RefreshCcw } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { CheckCircle2, Link2, Mail, RefreshCcw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { AuthShell } from "../components/Auth/AuthShell.jsx";
-import { OtpCodeField } from "../components/Auth/OtpCodeField.jsx";
 import { TurnstileWidget } from "../components/Auth/TurnstileWidget.jsx";
 import { turnstileEnabled } from "../components/Auth/turnstileConfig.js";
 import { authService } from "../services/authService";
 
 const verifySchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
-  code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit verification code."),
 });
 
 const fieldClass = (hasError) =>
@@ -24,48 +22,77 @@ const fieldClass = (hasError) =>
 
 export const VerifyEmailPage = () => {
   const navigate = useNavigate();
-  const initialEmail = new URLSearchParams(window.location.search).get("email") || "";
+  const searchParams = new URLSearchParams(window.location.search);
+  const verificationToken = searchParams.get("token") || "";
+  const initialEmail = searchParams.get("email") || "";
   const [submitError, setSubmitError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [notice, setNotice] = useState("");
   const [captchaToken, setCaptchaToken] = useState("");
   const [resending, setResending] = useState(false);
+  const [verifyingToken, setVerifyingToken] = useState(Boolean(verificationToken));
 
   const {
     register,
     handleSubmit,
-    control,
     getValues,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm({
     resolver: zodResolver(verifySchema),
     defaultValues: {
       email: initialEmail,
-      code: "",
     },
   });
 
-  const verificationDescription = useMemo(() => {
-    if (initialEmail) {
-      return `We sent a 6-digit code to ${initialEmail}.`;
+  useEffect(() => {
+    if (!verificationToken) {
+      setVerifyingToken(false);
+      return undefined;
     }
-    return "We sent a 6-digit code to your email address.";
-  }, [initialEmail]);
 
-  const onSubmit = async (values) => {
+    let cancelled = false;
     setSubmitError("");
     setSuccessMessage("");
     setNotice("");
-    try {
-      const response = await authService.verifyEmail(values.email.trim(), values.code.trim());
-      setSuccessMessage(response?.message || "Email verified successfully.");
-      setTimeout(() => navigate("/login", { replace: true }), 1400);
-    } catch (error) {
-      setSubmitError(error?.response?.data?.message || error?.message || "Verification failed.");
-    }
-  };
+    setVerifyingToken(true);
 
-  const resendCode = async () => {
+    authService
+      .verifyEmail(verificationToken)
+      .then((response) => {
+        if (cancelled) {
+          return;
+        }
+        setSuccessMessage(response?.message || "Email verified successfully.");
+        window.setTimeout(() => navigate("/login", { replace: true }), 1400);
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return;
+        }
+        setSubmitError(error?.response?.data?.message || error?.message || "Verification failed.");
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setVerifyingToken(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, verificationToken]);
+
+  const verificationDescription = useMemo(() => {
+    if (verificationToken) {
+      return "We detected a secure verification link and are checking it now.";
+    }
+    if (initialEmail) {
+      return `We sent a verification link to ${initialEmail}. Open it from your inbox, or request a fresh link below.`;
+    }
+    return "Open the verification link from your email, or request a fresh link below.";
+  }, [initialEmail, verificationToken]);
+
+  const resendLink = async () => {
     setSubmitError("");
     setSuccessMessage("");
     setNotice("");
@@ -76,7 +103,7 @@ export const VerifyEmailPage = () => {
       return;
     }
     if (turnstileEnabled && !captchaToken) {
-      setSubmitError("Complete the verification challenge before requesting a new code.");
+      setSubmitError("Complete the verification challenge before requesting a new link.");
       return;
     }
 
@@ -86,10 +113,10 @@ export const VerifyEmailPage = () => {
         email: email.trim(),
         captchaToken,
       });
-      setNotice(response?.message || "A new verification code has been sent.");
+      setNotice(response?.message || "If a pending registration exists, a new verification link has been sent.");
       setCaptchaToken("");
     } catch (error) {
-      setSubmitError(error?.response?.data?.message || error?.message || "Unable to resend the code.");
+      setSubmitError(error?.response?.data?.message || error?.message || "Unable to resend the verification link.");
     } finally {
       setResending(false);
     }
@@ -97,13 +124,12 @@ export const VerifyEmailPage = () => {
 
   const resendButton = (
     <button
-      type="button"
-      onClick={resendCode}
-      disabled={resending}
+      type="submit"
+      disabled={resending || verifyingToken}
       className="inline-flex w-full items-center justify-center gap-2 rounded-[1.35rem] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-campus-300 hover:text-campus-700 disabled:cursor-not-allowed disabled:opacity-70 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-campus-500 dark:hover:text-campus-200"
     >
       <RefreshCcw size={16} />
-      {resending ? "Sending..." : "Resend code"}
+      {resending ? "Sending..." : "Resend verification link"}
     </button>
   );
 
@@ -112,10 +138,10 @@ export const VerifyEmailPage = () => {
       <div>
         <div className="flex items-center gap-2">
           <Mail size={16} className="text-campus-700 dark:text-campus-300" />
-          <p className="text-sm font-semibold text-slate-900 dark:text-white">Need a new code?</p>
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">Need a fresh link?</p>
         </div>
         <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-          Use resend if the code expired or did not arrive. Verification is required before a new code is sent.
+          Request a new verification link if the old one expired or never arrived. Verification is required before your first sign-in.
         </p>
       </div>
       <TurnstileWidget onVerify={(token) => setCaptchaToken(token || "")} />
@@ -126,7 +152,7 @@ export const VerifyEmailPage = () => {
   return (
     <AuthShell
       sectionLabel="Verify email"
-      heading="Enter your verification code"
+      heading="Verify your email"
       description={verificationDescription}
       aside={verifyAside}
       taskIcon={Mail}
@@ -140,7 +166,16 @@ export const VerifyEmailPage = () => {
         </div>
       )}
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(resendLink)} className="space-y-5">
+        {verificationToken ? (
+          <div className="rounded-[1.35rem] border border-campus-200 bg-campus-50 px-4 py-3 text-sm font-medium text-campus-700 dark:border-campus-500/30 dark:bg-campus-500/10 dark:text-campus-200">
+            <div className="flex items-center gap-2">
+              <Link2 size={16} />
+              <span>{verifyingToken ? "Verifying your secure link..." : "Secure verification link detected."}</span>
+            </div>
+          </div>
+        ) : null}
+
         <label className="block">
           <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Email</span>
           <input
@@ -155,22 +190,6 @@ export const VerifyEmailPage = () => {
           {errors.email ? <p className="mt-2 text-sm font-medium text-rose-600 dark:text-rose-300">{errors.email.message}</p> : null}
         </label>
 
-        <Controller
-          name="code"
-          control={control}
-          render={({ field }) => (
-            <OtpCodeField
-              label="Verification code"
-              value={field.value || ""}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              name={field.name}
-              inputRef={field.ref}
-              error={errors.code?.message}
-            />
-          )}
-        />
-
         <div className="lg:hidden">{resendButton}</div>
 
         {submitError ? <div className="rounded-[1.35rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">{submitError}</div> : null}
@@ -178,12 +197,12 @@ export const VerifyEmailPage = () => {
         {successMessage ? <div className="rounded-[1.35rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">{successMessage}</div> : null}
 
         <button
-          type="submit"
-          disabled={isSubmitting}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-[1.35rem] bg-[linear-gradient(135deg,#102033,#1d63ed)] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_20px_40px_-24px_rgba(16,32,51,0.55)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+          type="button"
+          onClick={() => navigate("/login")}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-[1.35rem] bg-[linear-gradient(135deg,#102033,#1d63ed)] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_20px_40px_-24px_rgba(16,32,51,0.55)] transition hover:-translate-y-0.5"
         >
           <CheckCircle2 size={16} />
-          {isSubmitting ? "Verifying..." : "Verify email"}
+          Return to sign in
         </button>
       </form>
     </AuthShell>

@@ -24,6 +24,24 @@ CREATE TABLE users (
   UNIQUE KEY uk_users_email (email)
 ) ENGINE=InnoDB;
 
+CREATE TABLE pending_registrations (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  username VARCHAR(50) NOT NULL,
+  email VARCHAR(120) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  full_name VARCHAR(120) NOT NULL,
+  verification_token_hash VARCHAR(64) DEFAULT NULL,
+  verification_token_expires_at DATETIME(6) DEFAULT NULL,
+  last_verification_sent_at DATETIME(6) DEFAULT NULL,
+  resend_available_at DATETIME(6) DEFAULT NULL,
+  created_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_pending_registrations_username (username),
+  UNIQUE KEY uk_pending_registrations_email (email),
+  UNIQUE KEY uk_pending_registrations_token (verification_token_hash)
+) ENGINE=InnoDB;
+
 CREATE TABLE email_verification_tokens (
   id BIGINT NOT NULL AUTO_INCREMENT,
   user_id BIGINT NOT NULL,
