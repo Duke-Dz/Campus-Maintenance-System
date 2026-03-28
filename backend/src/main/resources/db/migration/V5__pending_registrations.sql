@@ -65,6 +65,13 @@ where user_id in (
     where email_verified = false
 );
 
+delete from notifications
+where user_id in (
+    select id
+    from users
+    where email_verified = false
+);
+
 update audit_events
 set actor_user_id = null
 where actor_user_id in (
