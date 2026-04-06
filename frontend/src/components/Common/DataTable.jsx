@@ -173,7 +173,7 @@ export const DataTable = ({
 
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           {searchable && (
-            <label className="dashboard-table-search relative flex min-w-[220px] flex-1 items-center px-3 sm:min-w-[240px] sm:flex-none">
+            <label className="dashboard-table-search relative flex min-w-0 flex-1 items-center px-3 sm:min-w-[240px] sm:flex-none">
               <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 value={activeSearch}
@@ -195,7 +195,7 @@ export const DataTable = ({
         </div>
       ) : (
         <>
-          <div className="space-y-3 md:hidden">
+          <div className="space-y-3 lg:hidden">
             {pagedData.map((row, index) => (
               onRowClick ? (
                 <button
@@ -206,7 +206,7 @@ export const DataTable = ({
                 >
                   <div className="space-y-3">
                     {columns.map((column) => (
-                      <div key={column.key} className="grid grid-cols-[98px_minmax(0,1fr)] gap-3">
+                      <div key={column.key} className="grid grid-cols-[86px_minmax(0,1fr)] gap-2.5">
                         <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400 dark:text-slate-500">{column.header}</span>
                         <div className="min-w-0 text-sm text-gray-700 dark:text-gray-200">{renderCellValue(column, row)}</div>
                       </div>
@@ -220,7 +220,7 @@ export const DataTable = ({
                 >
                   <div className="space-y-3">
                     {columns.map((column) => (
-                      <div key={column.key} className="grid grid-cols-[98px_minmax(0,1fr)] gap-3">
+                      <div key={column.key} className="grid grid-cols-[86px_minmax(0,1fr)] gap-2.5">
                         <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400 dark:text-slate-500">{column.header}</span>
                         <div className="min-w-0 text-sm text-gray-700 dark:text-gray-200">{renderCellValue(column, row)}</div>
                       </div>
@@ -231,7 +231,7 @@ export const DataTable = ({
             ))}
           </div>
 
-          <div className="dashboard-table-frame hidden overflow-x-auto md:block">
+          <div className="dashboard-table-frame hidden overflow-x-auto lg:block">
             <table className="dashboard-data-table min-w-full divide-y divide-gray-200 text-sm dark:divide-slate-700">
               <thead className="bg-gray-50/80 dark:bg-slate-800/90">
                 <tr className="text-left">
@@ -270,8 +270,8 @@ export const DataTable = ({
             </table>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:justify-between">
+            <div className="flex w-full flex-wrap items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 sm:w-auto sm:justify-start">
               <span>Rows per page</span>
               <select
                 value={rowsPerPage}
@@ -290,7 +290,7 @@ export const DataTable = ({
               </span>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex w-full items-center justify-center gap-1 sm:w-auto sm:justify-end">
               <button
                 type="button"
                 disabled={clampedPage === 0}

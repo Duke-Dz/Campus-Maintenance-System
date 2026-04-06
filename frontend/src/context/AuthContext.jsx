@@ -18,6 +18,8 @@ const normalizeSession = (data) => ({
   role: data.role,
 });
 
+const isMfaChallenge = (data) => Boolean(data?.mfaRequired && data?.mfaChallengeId);
+
 const parseError = (error, fallback = "Request failed. Please try again.") =>
   error?.response?.data?.message || error?.message || fallback;
 
@@ -53,6 +55,19 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(async (payload) => {
     try {
       const data = await authService.login(payload);
+      if (isMfaChallenge(data)) {
+        return {
+          mfaRequired: true,
+          mfaChallengeId: data.mfaChallengeId,
+          message: data.message || "Enter the sign-in code sent to your email.",
+          username: data.username,
+          fullName: data.fullName,
+          role: data.role,
+        };
+      }
+      if (!data?.accessToken) {
+        throw new Error("Unable to sign in.");
+      }
       const next = normalizeSession(data);
       setAuth(next);
       return next;

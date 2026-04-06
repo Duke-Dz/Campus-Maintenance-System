@@ -5,6 +5,7 @@ import com.smartcampus.maintenance.dto.auth.AuthResponse;
 import com.smartcampus.maintenance.dto.auth.CurrentUserResponse;
 import com.smartcampus.maintenance.dto.auth.LoginRequest;
 import com.smartcampus.maintenance.dto.auth.RegisterRequest;
+import com.smartcampus.maintenance.entity.AuthMfaChallenge;
 import com.smartcampus.maintenance.entity.PasswordResetToken;
 import com.smartcampus.maintenance.entity.PendingRegistration;
 import com.smartcampus.maintenance.entity.StaffInvite;
@@ -15,16 +16,21 @@ import com.smartcampus.maintenance.event.PendingRegistrationVerifiedEvent;
 import com.smartcampus.maintenance.exception.BadRequestException;
 import com.smartcampus.maintenance.exception.ConflictException;
 import com.smartcampus.maintenance.exception.UnauthorizedException;
+import com.smartcampus.maintenance.repository.AuthMfaChallengeRepository;
 import com.smartcampus.maintenance.repository.PasswordResetTokenRepository;
 import com.smartcampus.maintenance.repository.PendingRegistrationRepository;
 import com.smartcampus.maintenance.repository.StaffInviteRepository;
 import com.smartcampus.maintenance.repository.UserRepository;
 import com.smartcampus.maintenance.security.JwtService;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,6 +58,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final PasswordResetTokenRepository resetTokenRepository;
+    private final AuthMfaChallengeRepository mfaChallengeRepository;
     private final StaffInviteRepository staffInviteRepository;
     private final UserService userService;
     private final PasswordPolicyService passwordPolicyService;
@@ -67,7 +74,12 @@ public class AuthService {
     private final long resetTokenTtlMinutes;
     private final long verificationResendCooldownSeconds;
     private final long resetRequestCooldownSeconds;
+    private final long mfaCodeTtlMinutes;
+    private final long mfaResendCooldownSeconds;
+    private final int mfaCodeMaxAttempts;
+    private final Set<String> mfaRequiredRoles;
     private final long publicRequestMinDelayMs;
+    private final SecureRandom secureRandom = new SecureRandom();
 
     public AuthService(
             AuthenticationManager authenticationManager,
@@ -76,6 +88,7 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             PasswordResetTokenRepository resetTokenRepository,
+            AuthMfaChallengeRepository mfaChallengeRepository,
             StaffInviteRepository staffInviteRepository,
             UserService userService,
             PasswordPolicyService passwordPolicyService,
@@ -91,6 +104,10 @@ public class AuthService {
             @Value("${app.auth.reset-token-ttl-minutes:60}") long resetTokenTtlMinutes,
             @Value("${app.auth.verification-resend-cooldown-seconds:60}") long verificationResendCooldownSeconds,
             @Value("${app.auth.reset-request-cooldown-seconds:60}") long resetRequestCooldownSeconds,
+            @Value("${app.auth.mfa.code-ttl-minutes:10}") long mfaCodeTtlMinutes,
+            @Value("${app.auth.mfa.resend-cooldown-seconds:45}") long mfaResendCooldownSeconds,
+            @Value("${app.auth.mfa.code-max-attempts:5}") int mfaCodeMaxAttempts,
+            @Value("${app.auth.mfa.required-roles:}") List<String> mfaRequiredRoles,
             @Value("${app.auth.public-request-min-delay-ms:350}") long publicRequestMinDelayMs) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
@@ -98,6 +115,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.resetTokenRepository = resetTokenRepository;
+        this.mfaChallengeRepository = mfaChallengeRepository;
         this.staffInviteRepository = staffInviteRepository;
         this.userService = userService;
         this.passwordPolicyService = passwordPolicyService;
@@ -114,6 +132,15 @@ public class AuthService {
         this.resetTokenTtlMinutes = resetTokenTtlMinutes;
         this.verificationResendCooldownSeconds = verificationResendCooldownSeconds;
         this.resetRequestCooldownSeconds = resetRequestCooldownSeconds;
+        this.mfaCodeTtlMinutes = Math.max(1, mfaCodeTtlMinutes);
+        this.mfaResendCooldownSeconds = Math.max(0, mfaResendCooldownSeconds);
+        this.mfaCodeMaxAttempts = Math.max(1, mfaCodeMaxAttempts);
+        this.mfaRequiredRoles = (mfaRequiredRoles == null ? List.<String>of() : mfaRequiredRoles).stream()
+                .flatMap(value -> Stream.of(value.split(",")))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .map(String::toUpperCase)
+                .collect(Collectors.toSet());
         this.publicRequestMinDelayMs = publicRequestMinDelayMs;
     }
 
@@ -143,7 +170,29 @@ public class AuthService {
                     String.valueOf(user.getId()),
                     metadata,
                     Map.of("reason", "email_not_verified"));
-            throw new UnauthorizedException("Email not verified. Check your inbox for the verification link first.");
+            throw new UnauthorizedException("Email not verified. Enter the verification code sent to your inbox first.");
+        }
+
+        if (requiresMfa(user)) {
+            IssuedMfaChallenge challenge = issueMfaChallenge(user);
+            long expiresInMinutes = Math.max(1, mfaCodeTtlMinutes);
+            emailService.sendMfaCodeEmail(user.getFullName(), user.getEmail(), challenge.rawCode(), expiresInMinutes);
+            auditEventService.record(
+                    "auth.login.mfa_required",
+                    user,
+                    "user",
+                    String.valueOf(user.getId()),
+                    metadata,
+                    Map.of("role", user.getRole().name()));
+            return new AuthResponse(
+                    null,
+                    null,
+                    user.getUsername(),
+                    user.getFullName(),
+                    user.getRole().name(),
+                    true,
+                    challenge.challengeId(),
+                    "A sign-in code was sent to your email.");
         }
 
         AuthRefreshTokenService.IssuedRefreshToken refreshToken = authRefreshTokenService.issue(user, metadata);
@@ -172,6 +221,95 @@ public class AuthService {
                 metadata,
                 Map.of("role", user.getRole().name()));
         return buildAuthResponse(user);
+    }
+
+    @Transactional
+    public AuthResponse verifyMfa(String challengeId, String code, RequestMetadata metadata, HttpHeaders responseHeaders) {
+        String normalizedChallengeId = challengeId == null ? "" : challengeId.trim();
+        String normalizedCode = code == null ? "" : code.trim();
+        if (normalizedChallengeId.isEmpty() || normalizedCode.isEmpty()) {
+            throw new BadRequestException("Challenge ID and code are required.");
+        }
+
+        AuthMfaChallenge challenge = mfaChallengeRepository.findByChallengeIdAndConsumedFalse(normalizedChallengeId)
+                .orElseThrow(() -> new BadRequestException("Invalid or expired sign-in challenge."));
+
+        if (challenge.isExpired()) {
+            challenge.setConsumed(true);
+            mfaChallengeRepository.save(challenge);
+            throw new BadRequestException("This sign-in code has expired. Request a new one.");
+        }
+
+        if (challenge.getAttemptCount() >= mfaCodeMaxAttempts) {
+            challenge.setConsumed(true);
+            mfaChallengeRepository.save(challenge);
+            throw new BadRequestException("Too many invalid attempts. Request a new sign-in code.");
+        }
+
+        String codeHash = tokenHashService.hashSha256(normalizedCode);
+        if (!codeHash.equals(challenge.getCodeHash())) {
+            challenge.setAttemptCount(challenge.getAttemptCount() + 1);
+            if (challenge.getAttemptCount() >= mfaCodeMaxAttempts) {
+                challenge.setConsumed(true);
+            }
+            mfaChallengeRepository.save(challenge);
+            throw new UnauthorizedException("Invalid sign-in code.");
+        }
+
+        User user = challenge.getUser();
+        challenge.setConsumed(true);
+        mfaChallengeRepository.save(challenge);
+
+        AuthRefreshTokenService.IssuedRefreshToken refreshToken = authRefreshTokenService.issue(user, metadata);
+        refreshCookieService.writeRefreshCookie(responseHeaders, refreshToken.rawToken(),
+                durationUntil(refreshToken.expiresAt()));
+        auditEventService.record(
+                "auth.login.success",
+                user,
+                "user",
+                String.valueOf(user.getId()),
+                metadata,
+                Map.of("role", user.getRole().name(), "mfa", "email_code"));
+        return buildAuthResponse(user);
+    }
+
+    @Transactional
+    public void resendMfaCode(String challengeId, RequestMetadata metadata) {
+        String normalizedChallengeId = challengeId == null ? "" : challengeId.trim();
+        if (normalizedChallengeId.isEmpty()) {
+            throw new BadRequestException("Challenge ID is required.");
+        }
+
+        AuthMfaChallenge challenge = mfaChallengeRepository.findByChallengeIdAndConsumedFalse(normalizedChallengeId)
+                .orElseThrow(() -> new BadRequestException("Invalid or expired sign-in challenge."));
+
+        if (challenge.isExpired()) {
+            challenge.setConsumed(true);
+            mfaChallengeRepository.save(challenge);
+            throw new BadRequestException("This sign-in challenge has expired. Sign in again.");
+        }
+
+        if (challenge.getResendAvailableAt() != null && challenge.getResendAvailableAt().isAfter(LocalDateTime.now())) {
+            return;
+        }
+
+        String rawCode = generateNumericCode(6);
+        LocalDateTime now = LocalDateTime.now();
+        challenge.setCodeHash(tokenHashService.hashSha256(rawCode));
+        challenge.setExpiresAt(now.plusMinutes(mfaCodeTtlMinutes));
+        challenge.setResendAvailableAt(now.plusSeconds(mfaResendCooldownSeconds));
+        challenge.setAttemptCount(0);
+        mfaChallengeRepository.save(challenge);
+
+        User user = challenge.getUser();
+        emailService.sendMfaCodeEmail(user.getFullName(), user.getEmail(), rawCode, mfaCodeTtlMinutes);
+        auditEventService.record(
+                "auth.login.mfa_resent",
+                user,
+                "user",
+                String.valueOf(user.getId()),
+                metadata,
+                Map.of());
     }
 
     public void logout(String rawRefreshToken, RequestMetadata metadata, HttpHeaders responseHeaders) {
@@ -220,13 +358,13 @@ public class AuthService {
             pending.setFullName(fullName);
             pending.setPasswordHash(passwordEncoder.encode(request.password()));
 
-            String rawToken = rotateVerificationLink(pending);
+            String verificationCode = rotateVerificationCode(pending);
             PendingRegistration saved = pendingRegistrationRepository.save(pending);
 
             eventPublisher.publishEvent(new PendingRegistrationVerificationRequestedEvent(
                     saved.getEmail(),
                     saved.getFullName(),
-                    buildVerifyEmailUrl(rawToken),
+                    verificationCode,
                     verificationCodeTtlMinutes));
             auditEventService.record(
                     "auth.register.pending",
@@ -241,28 +379,33 @@ public class AuthService {
     }
 
     @Transactional
-    public void verifyEmail(String token, RequestMetadata metadata) {
-        String normalizedToken = token == null ? "" : token.trim();
-        if (normalizedToken.isEmpty()) {
-            throw new BadRequestException("Verification token is required.");
+    public void verifyEmail(String email, String code, RequestMetadata metadata) {
+        String normalizedEmail = email == null ? "" : email.trim().toLowerCase();
+        String normalizedCode = code == null ? "" : code.trim();
+        if (normalizedEmail.isEmpty() || normalizedCode.isEmpty()) {
+            throw new BadRequestException("Email and verification code are required.");
         }
 
-        PendingRegistration pending = pendingRegistrationRepository
-                .findByVerificationTokenHash(tokenHashService.hashSha256(normalizedToken))
-                .orElseThrow(() -> new BadRequestException("Invalid or expired verification link."));
+        PendingRegistration pending = pendingRegistrationRepository.findByEmailIgnoreCase(normalizedEmail)
+                .orElseThrow(() -> new BadRequestException("Invalid or expired verification code."));
 
         if (pending.isVerificationTokenExpired()) {
-            clearVerificationLinkInNewTransaction(pending.getId());
-            throw new BadRequestException("This verification link has expired. Request a new one.");
+            clearVerificationCodeInNewTransaction(pending.getId());
+            throw new BadRequestException("This verification code has expired. Request a new one.");
+        }
+
+        String codeHash = tokenHashService.hashSha256(normalizedCode);
+        if (pending.getVerificationTokenHash() == null || !pending.getVerificationTokenHash().equals(codeHash)) {
+            throw new BadRequestException("Invalid or expired verification code.");
         }
 
         if (userRepository.existsByEmailIgnoreCase(pending.getEmail())) {
             pendingRegistrationRepository.delete(pending);
-            throw new BadRequestException("This verification link is no longer valid. Sign in or register again.");
+            throw new BadRequestException("This verification code is no longer valid. Sign in or register again.");
         }
         if (userRepository.existsByUsernameIgnoreCase(pending.getUsername())) {
             pendingRegistrationRepository.delete(pending);
-            throw new BadRequestException("This verification link is no longer valid. Register again to choose a different username.");
+            throw new BadRequestException("This verification code is no longer valid. Register again to choose a different username.");
         }
 
         User user = new User();
@@ -316,12 +459,12 @@ public class AuthService {
                 return;
             }
 
-            String rawToken = rotateVerificationLink(pending);
+            String verificationCode = rotateVerificationCode(pending);
             PendingRegistration saved = pendingRegistrationRepository.save(pending);
             eventPublisher.publishEvent(new PendingRegistrationVerificationRequestedEvent(
                     saved.getEmail(),
                     saved.getFullName(),
-                    buildVerifyEmailUrl(rawToken),
+                    verificationCode,
                     verificationCodeTtlMinutes));
             auditEventService.record(
                     "auth.verify_email.resend",
@@ -423,6 +566,7 @@ public class AuthService {
     @Transactional
     public void acceptStaffInvite(AcceptStaffInviteRequest request, RequestMetadata metadata) {
         String rawToken = request.token().trim();
+        String username = request.username().trim();
         StaffInvite invite = staffInviteRepository
                 .findByTokenHashAndUsedFalse(tokenHashService.hashSha256(rawToken))
                 .orElseThrow(() -> new BadRequestException("Invalid or expired invite token."));
@@ -433,17 +577,17 @@ public class AuthService {
             throw new BadRequestException("This invite has expired. Ask an admin to send a new one.");
         }
 
-        if (userRepository.existsByUsernameIgnoreCase(invite.getUsername())) {
-            throw new ConflictException("Username is already in use. Ask an admin to issue a new invite.");
+        if (userService.isUsernameUnavailable(username)) {
+            throw new ConflictException("Username is already in use. Choose a different username and try again.");
         }
         if (userRepository.existsByEmailIgnoreCase(invite.getEmail())) {
             throw new ConflictException("Email is already in use. Ask an admin to issue a new invite.");
         }
 
-        passwordPolicyService.enforce(request.password(), invite.getUsername(), invite.getEmail(), invite.getFullName());
+        passwordPolicyService.enforce(request.password(), username, invite.getEmail(), invite.getFullName());
 
         User user = new User();
-        user.setUsername(invite.getUsername());
+        user.setUsername(username);
         user.setEmail(invite.getEmail());
         user.setFullName(invite.getFullName());
         user.setRole(Role.MAINTENANCE);
@@ -451,6 +595,7 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         userRepository.save(user);
 
+        invite.setUsername(username);
         invite.setUsed(true);
         invite.setAcceptedAt(LocalDateTime.now());
         staffInviteRepository.save(invite);
@@ -473,7 +618,15 @@ public class AuthService {
     private AuthResponse buildAuthResponse(User user) {
         String token = jwtService.generateToken(user);
         Instant expiresAt = jwtService.resolveExpirationInstant();
-        return new AuthResponse(token, expiresAt.toString(), user.getUsername(), user.getFullName(), user.getRole().name());
+        return new AuthResponse(
+                token,
+                expiresAt.toString(),
+                user.getUsername(),
+                user.getFullName(),
+                user.getRole().name(),
+                false,
+                null,
+                null);
     }
 
     private String buildLoginUrl() {
@@ -488,15 +641,6 @@ public class AuthService {
         return UriComponentsBuilder
                 .fromUriString(frontendBaseUrl)
                 .path("/reset-password")
-                .queryParam("token", token)
-                .build()
-                .toUriString();
-    }
-
-    private String buildVerifyEmailUrl(String token) {
-        return UriComponentsBuilder
-                .fromUriString(frontendBaseUrl)
-                .path("/verify-email")
                 .queryParam("token", token)
                 .build()
                 .toUriString();
@@ -523,28 +667,63 @@ public class AuthService {
         }
     }
 
-    private String rotateVerificationLink(PendingRegistration pending) {
-        String rawToken = tokenHashService.generateUrlToken(32);
+    private String rotateVerificationCode(PendingRegistration pending) {
+        String verificationCode = generateNumericCode(6);
         LocalDateTime now = LocalDateTime.now();
-        pending.setVerificationTokenHash(tokenHashService.hashSha256(rawToken));
+        pending.setVerificationTokenHash(tokenHashService.hashSha256(verificationCode));
         pending.setVerificationTokenExpiresAt(now.plusMinutes(verificationCodeTtlMinutes));
         pending.setLastVerificationSentAt(now);
         pending.setResendAvailableAt(now.plusSeconds(verificationResendCooldownSeconds));
-        return rawToken;
+        return verificationCode;
     }
 
-    private void clearVerificationLink(PendingRegistration pending) {
+    private void clearVerificationCode(PendingRegistration pending) {
         pending.setVerificationTokenHash(null);
         pending.setVerificationTokenExpiresAt(null);
     }
 
-    private void clearVerificationLinkInNewTransaction(Long pendingRegistrationId) {
+    private void clearVerificationCodeInNewTransaction(Long pendingRegistrationId) {
         requiresNewTransactionTemplate.executeWithoutResult(status -> pendingRegistrationRepository
                 .findById(pendingRegistrationId)
                 .ifPresent(existing -> {
-                    clearVerificationLink(existing);
+                    clearVerificationCode(existing);
                     pendingRegistrationRepository.save(existing);
                 }));
+    }
+
+    private boolean requiresMfa(User user) {
+        if (user == null) {
+            return false;
+        }
+        if (user.isMfaEnabled()) {
+            return true;
+        }
+        return mfaRequiredRoles.contains(user.getRole().name().toUpperCase());
+    }
+
+    private IssuedMfaChallenge issueMfaChallenge(User user) {
+        String challengeId = tokenHashService.generateUrlToken(24);
+        String rawCode = generateNumericCode(6);
+        LocalDateTime now = LocalDateTime.now();
+
+        AuthMfaChallenge challenge = new AuthMfaChallenge();
+        challenge.setUser(user);
+        challenge.setChallengeId(challengeId);
+        challenge.setCodeHash(tokenHashService.hashSha256(rawCode));
+        challenge.setExpiresAt(now.plusMinutes(mfaCodeTtlMinutes));
+        challenge.setResendAvailableAt(now.plusSeconds(mfaResendCooldownSeconds));
+        challenge.setAttemptCount(0);
+        challenge.setConsumed(false);
+
+        mfaChallengeRepository.save(challenge);
+        return new IssuedMfaChallenge(challengeId, rawCode);
+    }
+
+    private String generateNumericCode(int length) {
+        int safeLength = Math.max(4, length);
+        int max = (int) Math.pow(10, safeLength);
+        int number = secureRandom.nextInt(max);
+        return String.format("%0" + safeLength + "d", number);
     }
 
     private boolean isResendCooldownActive(PendingRegistration pending) {
@@ -575,5 +754,8 @@ public class AuthService {
         } catch (Exception ex) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    private record IssuedMfaChallenge(String challengeId, String rawCode) {
     }
 }

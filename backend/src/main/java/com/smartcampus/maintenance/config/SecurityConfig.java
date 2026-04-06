@@ -101,6 +101,8 @@ public class SecurityConfig {
                         "/api/auth/register",
                         "/api/auth/verify-email",
                         "/api/auth/resend-verification",
+                        "/api/auth/verify-mfa",
+                        "/api/auth/resend-mfa",
                         "/api/auth/forgot-password",
                         "/api/auth/reset-password",
                         "/api/auth/accept-staff-invite",

@@ -15,7 +15,6 @@ CampusFix is a role-based campus maintenance platform for students, maintenance 
 - `database/` MySQL schema and seed scripts
 - `documentation/` setup, testing, deployment, and architecture docs
 - `devops/` Docker and Kubernetes manifests
-- `cpp-optimization/` optional JNI native module for assignment scoring and safe upload optimization (not required to run core app)
 - `uploads/` runtime upload storage
 
 ## Prerequisites

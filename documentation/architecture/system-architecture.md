@@ -34,9 +34,9 @@ CampusFix uses a standard three-layer web architecture.
 - Forgot password sends reset link email.
 - Successful reset triggers password-changed confirmation email.
 
-## Optional Modules
+## Optimization Approach
 
-- `cpp-optimization/` exists as an optional JNI native module for assignment scoring and safe image optimization. Backend startup and tests continue to work without it unless native strict mode is enabled.
+- Assignment scoring and safe upload optimization run in pure Java within the backend optimization package.
 
 ## Related Documents
 

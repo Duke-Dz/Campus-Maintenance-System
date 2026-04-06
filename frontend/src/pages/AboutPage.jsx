@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowRight, ClipboardList, Route, Users } from "lucide-react";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { BottomSocialSection, Footer, QuickLinksSection } from "../components/Landing/Footer";
+import { Footer } from "../components/Landing/Footer";
 import { Navbar } from "../components/Landing/Navbar";
 
 const PRODUCT_POINTS = [
@@ -60,6 +60,24 @@ const FAQS = [
 export const AboutPage = () => {
   useEffect(() => {
     document.title = "Learn More | CampusFix";
+
+    const applyHashOffset = () => {
+      const hash = window.location.hash;
+      if (!hash || !hash.startsWith("#")) return;
+      const target = document.getElementById(hash.slice(1));
+      if (!target) return;
+      const nav = document.querySelector("[data-landing-navbar='true']");
+      const navOffset = (nav?.getBoundingClientRect().height ?? 0) + 12;
+      const top = Math.max(0, window.scrollY + target.getBoundingClientRect().top - navOffset);
+      window.scrollTo({ top, behavior: "auto" });
+    };
+
+    const timer = window.setTimeout(applyHashOffset, 0);
+    window.addEventListener("hashchange", applyHashOffset);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("hashchange", applyHashOffset);
+    };
   }, []);
 
   return (
@@ -72,7 +90,7 @@ export const AboutPage = () => {
         ]}
       />
 
-      <main className="mx-auto w-full max-w-[1100px] px-5 pb-16 pt-28 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-[1100px] px-4 pb-14 pt-24 sm:px-6 sm:pb-16 sm:pt-28 lg:px-8">
         <Link
           to="/"
           className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white/90 px-3 py-2 text-sm font-semibold text-gray-700 no-underline shadow-sm transition hover:border-campus-300 hover:text-campus-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-gray-200 dark:hover:border-campus-500 dark:hover:text-campus-300"
@@ -81,12 +99,12 @@ export const AboutPage = () => {
           Back to Landing
         </Link>
 
-        <section id="product" className="mt-6 min-h-[52vh] rounded-3xl border border-gray-200 bg-white p-7 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-10">
+        <section id="product" className="mt-6 min-h-[52vh] scroll-mt-40 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-10">
           <div className="inline-flex items-center gap-2 rounded-full bg-campus-50 px-3 py-1 text-xs font-semibold text-campus-700 dark:bg-campus-900/30 dark:text-campus-300">
             <ClipboardList size={14} />
             Product
           </div>
-          <h1 className="mt-3 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">Built by students to solve real campus delays</h1>
+          <h1 className="mt-3 text-2xl font-bold text-gray-900 dark:text-white sm:text-4xl">Built by students to solve real campus delays</h1>
           <p className="mt-4 max-w-4xl text-base leading-relaxed text-gray-700 dark:text-gray-300 sm:text-lg">
             CampusFix exists because many campus issues were reported but not tracked clearly from start to finish. This system gives students, maintenance teams, and admins one shared workflow so problems are seen, assigned, and resolved without guesswork.
           </p>
@@ -100,12 +118,12 @@ export const AboutPage = () => {
           </ul>
         </section>
 
-        <section id="workflow" className="mt-8 min-h-[52vh] rounded-3xl border border-gray-200 bg-white p-7 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-10">
+        <section id="workflow" className="mt-8 min-h-[52vh] scroll-mt-40 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-10">
           <div className="inline-flex items-center gap-2 rounded-full bg-campus-50 px-3 py-1 text-xs font-semibold text-campus-700 dark:bg-campus-900/30 dark:text-campus-300">
             <Route size={14} />
             Workflow
           </div>
-          <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">How tickets move through the system</h2>
+          <h2 className="mt-3 text-xl font-bold text-gray-900 dark:text-white sm:text-3xl">How tickets move through the system</h2>
           <p className="mt-3 max-w-4xl text-base leading-relaxed text-gray-700 dark:text-gray-300">
             The workflow is structured so each person knows what to do next. Students report, maintenance accepts and resolves, and admins validate exceptions.
           </p>
@@ -119,12 +137,12 @@ export const AboutPage = () => {
           </div>
         </section>
 
-        <section id="faq" className="mt-8 rounded-3xl border border-gray-200 bg-white p-7 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-10">
+        <section id="faq" className="mt-8 scroll-mt-40 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 sm:p-10">
           <div className="inline-flex items-center gap-2 rounded-full bg-campus-50 px-3 py-1 text-xs font-semibold text-campus-700 dark:bg-campus-900/30 dark:text-campus-300">
             <Users size={14} />
             FAQ
           </div>
-          <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">Frequently asked questions</h2>
+          <h2 className="mt-3 text-xl font-bold text-gray-900 dark:text-white sm:text-3xl">Frequently asked questions</h2>
           <div className="mt-6 space-y-3">
             {FAQS.map((item) => (
               <details key={item.question} className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-slate-700 dark:bg-slate-950/70">
@@ -138,7 +156,7 @@ export const AboutPage = () => {
         <div className="mt-8 flex justify-center">
           <Link
             to="/register"
-            className="inline-flex items-center gap-2 rounded-2xl bg-gray-950 px-6 py-3.5 text-sm font-semibold text-white no-underline shadow-xl shadow-gray-950/15 transition hover:-translate-y-0.5 hover:bg-gray-900 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gray-950 px-6 py-3.5 text-sm font-semibold text-white no-underline shadow-xl shadow-gray-950/15 transition hover:-translate-y-0.5 hover:bg-gray-900 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 sm:w-auto"
           >
             Get Started
             <ArrowRight size={16} />
@@ -146,8 +164,6 @@ export const AboutPage = () => {
         </div>
       </main>
 
-      <QuickLinksSection config={{ supportPhone: "+254 747988030" }} useAboutLinks />
-      <BottomSocialSection />
       <Footer />
     </div>
   );

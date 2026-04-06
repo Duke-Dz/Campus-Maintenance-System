@@ -2,10 +2,8 @@ package com.smartcampus.maintenance.util;
 
 import com.smartcampus.maintenance.exception.BadRequestException;
 import com.smartcampus.maintenance.exception.NotFoundException;
-import com.smartcampus.maintenance.nativeopt.ImageOptimizationRequest;
-import com.smartcampus.maintenance.nativeopt.NativeOptimizationGateway;
-import com.smartcampus.maintenance.nativeopt.NoopNativeOptimizationGateway;
-import com.smartcampus.maintenance.nativeopt.OptimizedImageResult;
+import com.smartcampus.maintenance.optimization.JavaImageOptimizer;
+import com.smartcampus.maintenance.optimization.JavaImageOptimizer.OptimizedImageResult;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -28,16 +26,15 @@ public class FileStorageService {
     private final Path uploadPath;
     private final List<String> allowedContentTypes;
     private final long maxFileSizeBytes;
-    private final NativeOptimizationGateway nativeOptimizationGateway;
     private final int minSavingsPercent;
     private final int jpegQuality;
-    private final int webpQuality;
+    private final int pngCompressionQuality;
 
     public FileStorageService(
             String uploadDir,
             List<String> allowedContentTypes,
             long maxFileSizeBytes) {
-        this(uploadDir, allowedContentTypes, maxFileSizeBytes, NoopNativeOptimizationGateway.INSTANCE, 5, 85, 85);
+        this(uploadDir, allowedContentTypes, maxFileSizeBytes, 5, 85, 85);
     }
 
     @Autowired
@@ -45,10 +42,9 @@ public class FileStorageService {
             @Value("${app.upload.dir:uploads}") String uploadDir,
             @Value("${app.upload.allowed-content-types:image/jpeg,image/png,image/webp}") List<String> allowedContentTypes,
             @Value("${app.upload.max-file-size-bytes:5242880}") long maxFileSizeBytes,
-            NativeOptimizationGateway nativeOptimizationGateway,
-            @Value("${app.native.image.min-savings-percent:5}") int minSavingsPercent,
-            @Value("${app.native.image.jpeg-quality:85}") int jpegQuality,
-            @Value("${app.native.image.webp-quality:85}") int webpQuality) {
+            @Value("${app.image.optimization.min-savings-percent:5}") int minSavingsPercent,
+            @Value("${app.image.optimization.jpeg-quality:85}") int jpegQuality,
+            @Value("${app.image.optimization.png-compression-quality:85}") int pngCompressionQuality) {
         this.uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
         this.allowedContentTypes = allowedContentTypes == null ? List.of() : allowedContentTypes.stream()
                 .map(value -> value == null ? "" : value.trim().toLowerCase())
@@ -56,12 +52,9 @@ public class FileStorageService {
                 .distinct()
                 .toList();
         this.maxFileSizeBytes = maxFileSizeBytes;
-        this.nativeOptimizationGateway = nativeOptimizationGateway == null
-                ? NoopNativeOptimizationGateway.INSTANCE
-                : nativeOptimizationGateway;
         this.minSavingsPercent = Math.max(1, minSavingsPercent);
         this.jpegQuality = clampQuality(jpegQuality);
-        this.webpQuality = clampQuality(webpQuality);
+        this.pngCompressionQuality = clampQuality(pngCompressionQuality);
         try {
             Files.createDirectories(this.uploadPath);
         } catch (IOException ex) {
@@ -152,8 +145,12 @@ public class FileStorageService {
     }
 
     private byte[] maybeOptimizeImage(byte[] originalBytes, String contentType) {
-        return nativeOptimizationGateway.optimizeImage(
-                new ImageOptimizationRequest(contentType, originalBytes, minSavingsPercent, jpegQuality, webpQuality))
+        return JavaImageOptimizer.optimize(
+                        contentType,
+                        originalBytes,
+                        minSavingsPercent,
+                        jpegQuality,
+                        pngCompressionQuality)
                 .filter(result -> isOptimizationUsable(result, contentType, originalBytes.length))
                 .map(OptimizedImageResult::bytes)
                 .orElse(originalBytes);

@@ -96,23 +96,69 @@ export const DashboardShell = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const sections = Array.from(document.querySelectorAll("[data-dashboard-section='true']"));
-    if (sections.length === 0) return undefined;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (!visible) return;
-        const id = visible.target.id;
-        if (!id) return;
-        setActiveSection(id);
-        setActiveSectionLabel(sectionLabels[id] || "Overview");
-      },
-      { threshold: [0.25, 0.5, 0.75], rootMargin: "-20% 0px -55% 0px" }
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return undefined;
+    }
+
+    let frameId = null;
+    const getSections = () => Array.from(document.querySelectorAll("[data-dashboard-section='true']")).filter(
+      (section) => Boolean(section.id)
     );
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
+
+    const updateActiveSection = () => {
+      const sections = getSections();
+      if (sections.length === 0) {
+        return;
+      }
+
+      const topBarRect = document.querySelector(".command-topbar")?.getBoundingClientRect();
+      const stickyOffset = (topBarRect ? Math.max(0, topBarRect.bottom) : 0) + 20;
+      const reachedBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 8;
+
+      let candidate = sections[0];
+      for (const section of sections) {
+        if (section.getBoundingClientRect().top - stickyOffset <= 0) {
+          candidate = section;
+        } else {
+          break;
+        }
+      }
+      if (reachedBottom) {
+        candidate = sections[sections.length - 1];
+      }
+
+      const nextId = candidate.id;
+      if (!nextId) {
+        return;
+      }
+
+      setActiveSection((current) => (current === nextId ? current : nextId));
+      setActiveSectionLabel(sectionLabels[nextId] || "Overview");
+    };
+
+    const scheduleUpdate = () => {
+      if (frameId !== null) {
+        return;
+      }
+      frameId = window.requestAnimationFrame(() => {
+        frameId = null;
+        updateActiveSection();
+      });
+    };
+
+    scheduleUpdate();
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+    window.addEventListener("dashboard:navigate", scheduleUpdate);
+
+    return () => {
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+      }
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+      window.removeEventListener("dashboard:navigate", scheduleUpdate);
+    };
   }, [children]);
 
   useEffect(() => {
@@ -163,14 +209,18 @@ export const DashboardShell = ({ children }) => {
       />
 
       <div
-        className={`dashboard-content-shell relative z-10 transition-all duration-300 ease-in-out ${
+        className={`dashboard-content-shell relative z-10 overflow-x-clip transition-all duration-300 ease-in-out ${
           effectiveCollapsed ? "lg:pl-sidebar-collapsed" : "lg:pl-sidebar"
         }`}
       >
-        <TopBar onMenuClick={() => setSidebarOpen(true)} activeSectionLabel={activeSectionLabel} />
+        <TopBar
+          onMenuClick={() => setSidebarOpen((current) => !current)}
+          isMenuOpen={sidebarOpen}
+          activeSectionLabel={activeSectionLabel}
+        />
 
-        <main className="px-4 pb-8 pt-6 sm:px-6 lg:px-8 xl:px-10">
-          <div className="mx-auto max-w-[1480px]">{children}</div>
+        <main className="px-3 pb-8 pt-4 sm:px-5 sm:pt-6 lg:px-8 xl:px-10">
+          <div className="mx-auto w-full max-w-[1480px]">{children}</div>
         </main>
       </div>
     </div>

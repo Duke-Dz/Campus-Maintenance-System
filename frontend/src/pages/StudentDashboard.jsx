@@ -1,12 +1,14 @@
 import {
   ArrowRight,
   BadgeCheck,
+  ChevronDown,
   CheckCircle2,
   ClipboardList,
   Droplets,
   Hammer,
   Laptop,
   ReceiptText,
+  Search,
   ShieldAlert,
   Sparkles,
   Star,
@@ -241,7 +243,7 @@ const RecentActivityDetail = ({ tickets }) => (
 
 export const StudentDashboard = () => {
   const { auth } = useAuth();
-  const { tickets, loading, error, refresh } = useTickets(() => ticketService.getMyTickets(), [], { pollMs: 10000 });
+  const { tickets, loading, error, refresh } = useTickets(() => ticketService.getMyTickets(), [], { pollMs: 30000 });
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(() => createDefaultForm());
   const [imageFile, setImageFile] = useState(null);
@@ -254,6 +256,7 @@ export const StudentDashboard = () => {
   const [ratingLoading, setRatingLoading] = useState(false);
   const [ratingError, setRatingError] = useState("");
   const [dashboardSearch, setDashboardSearch] = useState("");
+  const [expandedRequestId, setExpandedRequestId] = useState(null);
   const activeBuildingsQuery = useActiveBuildingsQuery();
   const serviceDomainsQuery = useServiceDomainsQuery();
   const requestTypesQuery = useActiveRequestTypesQuery(form.serviceDomainKey);
@@ -412,6 +415,22 @@ export const StudentDashboard = () => {
     { key: "createdAt", header: "Submitted", accessor: (row) => formatDate(row.createdAt) },
   ], []);
 
+  const buildTicketSearchText = useCallback((ticket) => [
+    ticket.id,
+    ticket.title,
+    getTicketRequestTypeLabel(ticket),
+    getTicketBuildingName(ticket),
+    ticket.location,
+    ticket.status,
+    ticket.urgency,
+  ].join(" "), []);
+
+  const filteredTickets = useMemo(() => {
+    const query = dashboardSearch.trim().toLowerCase();
+    if (!query) return sortedTickets;
+    return sortedTickets.filter((ticket) => buildTicketSearchText(ticket).toLowerCase().includes(query));
+  }, [buildTicketSearchText, dashboardSearch, sortedTickets]);
+
   useEffect(() => {
     document.title = "Student Dashboard | CampusFix";
   }, []);
@@ -569,12 +588,22 @@ export const StudentDashboard = () => {
     return () => window.removeEventListener(OPEN_STUDENT_COMPOSER_EVENT, handleOpenComposer);
   }, [openComposer]);
 
+  useEffect(() => {
+    if (!expandedRequestId) {
+      return;
+    }
+    const existsInFilteredList = filteredTickets.some((ticket) => String(ticket.id) === expandedRequestId);
+    if (!existsInFilteredList) {
+      setExpandedRequestId(null);
+    }
+  }, [expandedRequestId, filteredTickets]);
+
   return (
     <div className="dashboard-shell dashboard-shell-student animate-fade-in">
       <DashboardHero id="dashboard" tone="student">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="space-y-5">
-            <div className="flex items-center gap-4">
+            <div className="flex items-start gap-3 sm:gap-4">
               <div className="dashboard-avatar-wrap">
                 <UserAvatar
                   fullName={auth?.fullName}
@@ -593,9 +622,9 @@ export const StudentDashboard = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={openComposer} className="btn-primary interactive-control"><TicketPlus size={16} />Submit Issue</button>
-            <button type="button" onClick={() => scrollToDashboardSection("tickets")} className="btn-ghost interactive-control">View Requests<ArrowRight size={15} /></button>
+          <div className="flex w-full flex-wrap gap-3 xl:w-auto">
+            <button type="button" onClick={openComposer} className="btn-primary interactive-control w-full sm:w-auto"><TicketPlus size={16} />Submit Issue</button>
+            <button type="button" onClick={() => scrollToDashboardSection("tickets")} className="btn-ghost interactive-control w-full sm:w-auto">View Requests<ArrowRight size={15} /></button>
           </div>
         </div>
       </DashboardHero>
@@ -615,11 +644,11 @@ export const StudentDashboard = () => {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Report a campus issue</h2>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Strong requests include a precise location, clear description, urgency, and a photo when visibility matters.</p>
             </div>
-            <button type="button" onClick={() => setShowForm(false)} className="btn-ghost interactive-control">Close composer</button>
+            <button type="button" onClick={() => setShowForm(false)} className="btn-ghost interactive-control w-full sm:w-auto">Close composer</button>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.8fr)]">
-            <form onSubmit={submitTicket} className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.8fr)]">
+            <form onSubmit={submitTicket} className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Title</label>
                 <input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" placeholder="Short summary of the issue" />
@@ -705,8 +734,8 @@ export const StudentDashboard = () => {
               </div>
               {submitError && <p className="md:col-span-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{submitError}</p>}
               <div className="md:col-span-2 flex flex-wrap items-center gap-3">
-                <button disabled={submitLoading} className="btn-primary interactive-control">{submitLoading ? "Submitting..." : "Submit Request"}</button>
-                <button type="button" onClick={() => setShowForm(false)} className="btn-ghost interactive-control">Cancel</button>
+                <button disabled={submitLoading} className="btn-primary interactive-control w-full sm:w-auto">{submitLoading ? "Submitting..." : "Submit Request"}</button>
+                <button type="button" onClick={() => setShowForm(false)} className="btn-ghost interactive-control w-full sm:w-auto">Cancel</button>
               </div>
             </form>
 
@@ -728,7 +757,7 @@ export const StudentDashboard = () => {
         </MotionCardSurface>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.95fr)]">
         <MotionCardSurface
           as="section"
           cardId="student-current-tracker"
@@ -796,29 +825,111 @@ export const StudentDashboard = () => {
         ) : sortedTickets.length === 0 ? (
           <EmptyState title="No requests yet" message="Submit your first campus issue to start building your request history." />
         ) : (
-          <DataTable
-            data={sortedTickets}
-            columns={ticketColumns}
-            pageSize={10}
-            onRowClick={(row) => openTicket(row.id)}
-            exportFilename="my-tickets"
-            exportTitle="My Tickets Report"
-            title="Request log"
-            emptyTitle="No requests match the current search"
-            emptyMessage="Try a different keyword or clear the search."
-            searchValue={dashboardSearch}
-            onSearchChange={setDashboardSearch}
-            searchPlaceholder="Search title, request type, building, status, or urgency"
-            searchAccessor={(ticket) => [
-              ticket.id,
-              ticket.title,
-              getTicketRequestTypeLabel(ticket),
-              getTicketBuildingName(ticket),
-              ticket.location,
-              ticket.status,
-              ticket.urgency,
-            ].join(" ")}
-          />
+          <div className="space-y-4">
+            <div className="space-y-3 sm:hidden">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Request log</h3>
+                <span className="pill-badge bg-white/80 text-gray-600 dark:bg-slate-900/80 dark:text-slate-200">
+                  {filteredTickets.length} requests
+                </span>
+              </div>
+
+              <label className="dashboard-table-search relative flex min-w-0 items-center rounded-xl px-3">
+                <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={dashboardSearch}
+                  onChange={(event) => setDashboardSearch(event.target.value)}
+                  placeholder="Search request log"
+                  className="w-full bg-transparent py-2.5 pl-8 text-sm outline-none dark:text-gray-200"
+                />
+              </label>
+
+              {filteredTickets.length === 0 ? (
+                <div className="rounded-[1.15rem] border border-dashed border-gray-200 bg-white/50 px-4 py-10 text-center dark:border-slate-700 dark:bg-slate-900/40">
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">No requests match the current search</p>
+                  <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Try a different keyword or clear the search.</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {filteredTickets.map((ticket) => {
+                    const ticketId = String(ticket.id);
+                    const expanded = expandedRequestId === ticketId;
+                    const serviceDomainKey = getTicketServiceDomainKey(ticket);
+                    const Icon = categoryIcon[serviceDomainKey] || ClipboardList;
+                    const colorClass = categoryColors[serviceDomainKey] || categoryColors.OTHER;
+                    return (
+                      <article key={ticket.id} className="overflow-hidden rounded-[1.15rem] border border-gray-200/80 bg-white/80 dark:border-slate-700/80 dark:bg-slate-900/70">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedRequestId((current) => (current === ticketId ? null : ticketId))}
+                          aria-expanded={expanded}
+                          className="flex w-full items-start gap-3 px-4 py-3 text-left"
+                        >
+                          <span className={`icon-wrap ${colorClass} mt-0.5 shrink-0`}><Icon size={16} /></span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-gray-800 dark:text-white">{ticket.title}</p>
+                            <p className="mt-1 text-[11px] text-gray-500 dark:text-slate-400">#{ticket.id} | {formatDate(ticket.createdAt)}</p>
+                          </div>
+                          <span className="flex items-center gap-2 pl-2">
+                            <StatusBadge status={ticket.status} />
+                            <ChevronDown
+                              size={16}
+                              className={`text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`}
+                            />
+                          </span>
+                        </button>
+
+                        {expanded && (
+                          <div className="border-t border-gray-100 px-4 py-3 dark:border-slate-800">
+                            <dl className="space-y-2.5 text-xs text-gray-600 dark:text-gray-300">
+                              <div className="flex items-start justify-between gap-3">
+                                <dt className="font-semibold uppercase tracking-[0.1em] text-gray-400 dark:text-slate-500">Type</dt>
+                                <dd className="text-right">{getTicketRequestTypeLabel(ticket)}</dd>
+                              </div>
+                              <div className="flex items-start justify-between gap-3">
+                                <dt className="font-semibold uppercase tracking-[0.1em] text-gray-400 dark:text-slate-500">Location</dt>
+                                <dd className="max-w-[60%] text-right">{getTicketLocationSummary(ticket)}</dd>
+                              </div>
+                              <div className="flex items-start justify-between gap-3">
+                                <dt className="font-semibold uppercase tracking-[0.1em] text-gray-400 dark:text-slate-500">Urgency</dt>
+                                <dd><UrgencyBadge urgency={ticket.urgency} /></dd>
+                              </div>
+                            </dl>
+                            <button
+                              type="button"
+                              onClick={() => openTicket(ticket.id)}
+                              className="btn-ghost interactive-control mt-3 w-full justify-center"
+                            >
+                              View full details
+                              <ArrowRight size={15} />
+                            </button>
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="hidden sm:block">
+              <DataTable
+                data={sortedTickets}
+                columns={ticketColumns}
+                pageSize={10}
+                onRowClick={(row) => openTicket(row.id)}
+                exportFilename="my-tickets"
+                exportTitle="My Tickets Report"
+                title="Request log"
+                emptyTitle="No requests match the current search"
+                emptyMessage="Try a different keyword or clear the search."
+                searchValue={dashboardSearch}
+                onSearchChange={setDashboardSearch}
+                searchPlaceholder="Search title, request type, building, status, or urgency"
+                searchAccessor={buildTicketSearchText}
+              />
+            </div>
+          </div>
         )}
       </MotionCardSurface>
 

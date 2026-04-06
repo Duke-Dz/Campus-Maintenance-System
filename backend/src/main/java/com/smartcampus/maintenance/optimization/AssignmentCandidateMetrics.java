@@ -1,4 +1,4 @@
-package com.smartcampus.maintenance.nativeopt;
+package com.smartcampus.maintenance.optimization;
 
 public record AssignmentCandidateMetrics(
         Long userId,

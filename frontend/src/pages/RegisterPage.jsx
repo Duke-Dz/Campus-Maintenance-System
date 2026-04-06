@@ -124,7 +124,7 @@ export const RegisterPage = () => {
   return (
     <AuthShell
       heading="Create your account"
-      description="Start with your sign-in details. We will send a secure verification link before your first login."
+      description="Start with your sign-in details. We will send a secure verification code before your first login."
       layout="single"
       documentTitle="Create account"
       footer={(
@@ -211,11 +211,13 @@ export const RegisterPage = () => {
           emphasizeInvalid={emphasizeChecklist}
         />
 
-        <div>
-          <p className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-200">Verification</p>
-          <TurnstileWidget onVerify={(token) => setValue("captchaToken", token || "", { shouldValidate: true })} />
-          {errors.captchaToken ? <p className="mt-2 text-sm font-medium text-rose-600 dark:text-rose-300">{errors.captchaToken.message}</p> : null}
-        </div>
+        {turnstileEnabled ? (
+          <div>
+            <p className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-200">Verification</p>
+            <TurnstileWidget onVerify={(token) => setValue("captchaToken", token || "", { shouldValidate: true })} />
+            {errors.captchaToken ? <p className="mt-2 text-sm font-medium text-rose-600 dark:text-rose-300">{errors.captchaToken.message}</p> : null}
+          </div>
+        ) : null}
 
         {submitError ? (
           <div className="rounded-[1.35rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">

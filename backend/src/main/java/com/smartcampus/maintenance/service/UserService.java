@@ -107,14 +107,9 @@ public class UserService {
     public StaffInviteResponse inviteStaffUser(User actor, StaffInviteRequest request) {
         requireAdmin(actor);
 
-        String username = request.username().trim();
         String email = request.email().trim().toLowerCase();
         String fullName = request.fullName().trim();
 
-        if (isUsernameUnavailable(username)) {
-            List<String> suggestions = suggestAvailableUsernames(username, fullName, 5);
-            throw new ConflictException("Username is already taken. Try: " + String.join(", ", suggestions));
-        }
         if (isEmailUnavailable(email)) {
             throw new ConflictException("Email is already registered or has a pending invitation.");
         }
@@ -122,7 +117,8 @@ public class UserService {
         String rawToken = tokenHashService.generateUrlToken(32);
         StaffInvite invite = new StaffInvite();
         invite.setTokenHash(tokenHashService.hashSha256(rawToken));
-        invite.setUsername(username);
+        // Username is selected by invited staff during acceptance; store a unique placeholder for now.
+        invite.setUsername("pending_" + tokenHashService.generateUrlToken(8).toLowerCase());
         invite.setEmail(email);
         invite.setFullName(fullName);
         invite.setInvitedBy(actor);
@@ -133,7 +129,6 @@ public class UserService {
 
         return new StaffInviteResponse(
                 invite.getId(),
-                invite.getUsername(),
                 invite.getEmail(),
                 invite.getFullName(),
                 invite.getExpiresAt());

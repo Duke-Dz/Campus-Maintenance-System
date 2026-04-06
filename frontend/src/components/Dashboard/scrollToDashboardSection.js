@@ -2,7 +2,8 @@ const MOBILE_SECTION_GUTTER = 14;
 const DESKTOP_SECTION_GUTTER = 20;
 
 const getDashboardTopOffset = () => {
-  const topBarHeight = document.querySelector(".command-topbar")?.getBoundingClientRect().height ?? 0;
+  const topBarRect = document.querySelector(".command-topbar")?.getBoundingClientRect();
+  const topBarHeight = topBarRect ? Math.max(0, topBarRect.bottom) : 0;
   const gutter = window.matchMedia("(min-width: 640px)").matches ? DESKTOP_SECTION_GUTTER : MOBILE_SECTION_GUTTER;
   return topBarHeight + gutter;
 };

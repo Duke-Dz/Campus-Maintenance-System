@@ -31,10 +31,8 @@ backend/smoke-*.log
 # backend/src/main/resources/application.properties
 
 # ==========================
-# C++ Optimization
+# Native Build Artifacts
 # ==========================
-cpp-optimization/build/
-cpp-optimization/bin/
 *.o
 *.obj
 *.exe

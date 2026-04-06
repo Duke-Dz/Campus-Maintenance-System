@@ -25,10 +25,10 @@ public class PendingRegistrationEmailListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onPendingRegistrationVerificationRequested(PendingRegistrationVerificationRequestedEvent event) {
         try {
-            emailService.sendVerificationLinkEmail(
+            emailService.sendVerificationCodeEmail(
                     event.fullName(),
                     event.email(),
-                    event.verifyUrl(),
+                    event.verificationCode(),
                     event.expiresInMinutes());
         } catch (RuntimeException ex) {
             log.error("Unable to queue verification email for {}", event.email(), ex);

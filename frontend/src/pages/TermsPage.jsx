@@ -1,7 +1,7 @@
 import { ArrowLeft, Shield } from "lucide-react";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { BottomSocialSection, Footer, QuickLinksSection } from "../components/Landing/Footer";
+import { Footer } from "../components/Landing/Footer";
 import { Navbar } from "../components/Landing/Navbar";
 
 const TERMS_POINTS = [
@@ -21,7 +21,7 @@ export const TermsPage = () => {
   return (
     <div className="landing-canvas min-h-screen bg-white dark:bg-slate-900">
       <Navbar />
-      <main className="mx-auto w-full max-w-6xl px-5 pb-16 pt-28 sm:px-6">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-14 pt-24 sm:px-6 sm:pb-16 sm:pt-28">
         <Link
           to="/about-us"
           className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white/90 px-3 py-2 text-sm font-semibold text-gray-700 no-underline shadow-sm transition hover:border-campus-300 hover:text-campus-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-gray-200 dark:hover:border-campus-500 dark:hover:text-campus-300"
@@ -46,8 +46,6 @@ export const TermsPage = () => {
           </ul>
         </section>
       </main>
-      <QuickLinksSection config={{ supportPhone: "+254 747988030" }} useAboutLinks />
-      <BottomSocialSection />
       <Footer />
     </div>
   );

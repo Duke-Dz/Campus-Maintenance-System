@@ -2,6 +2,7 @@ package com.smartcampus.maintenance.service;
 
 import com.smartcampus.maintenance.repository.EmailVerificationTokenRepository;
 import com.smartcampus.maintenance.repository.PasswordResetTokenRepository;
+import com.smartcampus.maintenance.repository.AuthMfaChallengeRepository;
 import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,16 +18,19 @@ public class AuthTokenCleanupScheduler {
 
     private final PasswordResetTokenRepository resetTokenRepository;
     private final EmailVerificationTokenRepository verificationTokenRepository;
+    private final AuthMfaChallengeRepository mfaChallengeRepository;
     private final AuthRefreshTokenService authRefreshTokenService;
     private final long usedTokenRetentionHours;
 
     public AuthTokenCleanupScheduler(
             PasswordResetTokenRepository resetTokenRepository,
             EmailVerificationTokenRepository verificationTokenRepository,
+            AuthMfaChallengeRepository mfaChallengeRepository,
             AuthRefreshTokenService authRefreshTokenService,
             @Value("${app.auth.used-token-retention-hours:24}") long usedTokenRetentionHours) {
         this.resetTokenRepository = resetTokenRepository;
         this.verificationTokenRepository = verificationTokenRepository;
+        this.mfaChallengeRepository = mfaChallengeRepository;
         this.authRefreshTokenService = authRefreshTokenService;
         this.usedTokenRetentionHours = usedTokenRetentionHours;
     }
@@ -41,13 +45,17 @@ public class AuthTokenCleanupScheduler {
         long removedUsedReset = resetTokenRepository.deleteByUsedTrueAndCreatedAtBefore(usedCutoff);
         long removedExpiredVerification = verificationTokenRepository.deleteByExpiresAtBefore(now);
         long removedUsedVerification = verificationTokenRepository.deleteByUsedTrueAndCreatedAtBefore(usedCutoff);
+        long removedExpiredMfaChallenges = mfaChallengeRepository.deleteByExpiresAtBefore(now);
+        long removedConsumedMfaChallenges = mfaChallengeRepository.deleteByConsumedTrueAndCreatedAtBefore(usedCutoff);
         long removedRefreshTokens = authRefreshTokenService.cleanupExpiredOrRevoked(now, usedCutoff);
 
         long totalRemoved = removedExpiredReset + removedUsedReset + removedExpiredVerification + removedUsedVerification
+                + removedExpiredMfaChallenges + removedConsumedMfaChallenges
                 + removedRefreshTokens;
         if (totalRemoved > 0) {
-            log.info("Auth token cleanup removed {} records (reset expired {}, reset used {}, verification expired {}, verification used {}, refresh {}).",
+            log.info("Auth token cleanup removed {} records (reset expired {}, reset used {}, verification expired {}, verification used {}, mfa expired {}, mfa consumed {}, refresh {}).",
                     totalRemoved, removedExpiredReset, removedUsedReset, removedExpiredVerification, removedUsedVerification,
+                    removedExpiredMfaChallenges, removedConsumedMfaChallenges,
                     removedRefreshTokens);
         }
     }

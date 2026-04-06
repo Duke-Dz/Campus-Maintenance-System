@@ -5,10 +5,12 @@ import com.smartcampus.maintenance.dto.auth.AuthResponse;
 import com.smartcampus.maintenance.dto.auth.CurrentUserResponse;
 import com.smartcampus.maintenance.dto.auth.ForgotPasswordRequest;
 import com.smartcampus.maintenance.dto.auth.LoginRequest;
+import com.smartcampus.maintenance.dto.auth.ResendMfaRequest;
 import com.smartcampus.maintenance.dto.auth.ResendVerificationRequest;
 import com.smartcampus.maintenance.dto.auth.RegisterRequest;
 import com.smartcampus.maintenance.dto.auth.ResetPasswordRequest;
 import com.smartcampus.maintenance.dto.auth.UsernameSuggestionsResponse;
+import com.smartcampus.maintenance.dto.auth.VerifyMfaRequest;
 import com.smartcampus.maintenance.dto.auth.VerifyEmailRequest;
 import com.smartcampus.maintenance.entity.User;
 import com.smartcampus.maintenance.service.AuthService;
@@ -96,12 +98,12 @@ public class AuthController {
         RequestMetadata metadata = requestMetadataResolver.resolve(servletRequest);
         publicEndpointSecurityService.guardRegistration(request.email(), request.captchaToken(), metadata);
         authService.registerStudent(request, metadata);
-        return Map.of("message", "If the details are eligible, check your email for a verification link.");
+        return Map.of("message", "If the details are eligible, check your email for a verification code.");
     }
 
     @PostMapping("/verify-email")
     public Map<String, String> verifyEmail(@Valid @RequestBody VerifyEmailRequest request, HttpServletRequest servletRequest) {
-        authService.verifyEmail(request.token(), requestMetadataResolver.resolve(servletRequest));
+        authService.verifyEmail(request.email(), request.code(), requestMetadataResolver.resolve(servletRequest));
         return Map.of("message", "Email verified successfully. You can now sign in.");
     }
 
@@ -111,7 +113,22 @@ public class AuthController {
         RequestMetadata metadata = requestMetadataResolver.resolve(servletRequest);
         publicEndpointSecurityService.guardResendVerification(request.email(), request.captchaToken(), metadata);
         authService.resendVerificationCode(request.email(), metadata);
-        return Map.of("message", "If a pending registration exists, a new verification link has been sent.");
+        return Map.of("message", "If a pending registration exists, a new verification code has been sent.");
+    }
+
+    @PostMapping("/verify-mfa")
+    public ResponseEntity<AuthResponse> verifyMfa(@Valid @RequestBody VerifyMfaRequest request,
+            HttpServletRequest servletRequest) {
+        RequestMetadata metadata = requestMetadataResolver.resolve(servletRequest);
+        HttpHeaders headers = new HttpHeaders();
+        AuthResponse response = authService.verifyMfa(request.challengeId(), request.code(), metadata, headers);
+        return ResponseEntity.ok().headers(headers).body(response);
+    }
+
+    @PostMapping("/resend-mfa")
+    public Map<String, String> resendMfa(@Valid @RequestBody ResendMfaRequest request, HttpServletRequest servletRequest) {
+        authService.resendMfaCode(request.challengeId(), requestMetadataResolver.resolve(servletRequest));
+        return Map.of("message", "If the challenge is still valid, a new sign-in code has been sent.");
     }
 
     @PostMapping("/forgot-password")

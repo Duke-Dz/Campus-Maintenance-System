@@ -12,15 +12,11 @@ import com.smartcampus.maintenance.entity.ServiceDomain;
 import com.smartcampus.maintenance.entity.Ticket;
 import com.smartcampus.maintenance.entity.User;
 import com.smartcampus.maintenance.entity.enums.Role;
-import com.smartcampus.maintenance.nativeopt.AssignmentCandidateMetrics;
-import com.smartcampus.maintenance.nativeopt.NativeOptimizationGateway;
-import com.smartcampus.maintenance.nativeopt.OptimizedImageResult;
 import com.smartcampus.maintenance.repository.TicketRepository;
 import com.smartcampus.maintenance.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -35,22 +31,17 @@ class AutoAssignmentServiceTest {
     @Mock
     private TicketRepository ticketRepository;
 
-    @Mock
-    private NativeOptimizationGateway nativeOptimizationGateway;
-
     @Test
-    void ranksCandidatesUsingFallbackJavaScoringWhenNativeScoresAreUnavailable() {
+    void ranksCandidatesUsingJavaScoring() {
         User lowLoad = maintenanceUser(31L, "casey", "Casey Technician");
         User specialist = maintenanceUser(32L, "miriam", "Miriam Specialist");
         when(userRepository.findByRoleOrderByFullNameAsc(Role.MAINTENANCE)).thenReturn(List.of(lowLoad, specialist));
         stubCandidateMetrics(lowLoad.getId(), 2L, 1L, 0L, 1L);
         stubCandidateMetrics(specialist.getId(), 5L, 6L, 3L, 4L);
-        when(nativeOptimizationGateway.scoreCandidates(any())).thenReturn(Optional.empty());
 
         AutoAssignmentService service = new AutoAssignmentService(
                 userRepository,
-                ticketRepository,
-                nativeOptimizationGateway);
+                ticketRepository);
 
         List<TicketAssignmentRecommendationResponse> recommendations = service.recommendAssignees(sampleTicket(), 3);
 
@@ -60,24 +51,22 @@ class AutoAssignmentServiceTest {
     }
 
     @Test
-    void prefersNativeScoresWhenAvailable() {
+    void prefersLowestWorkloadWhenSignalsAreOtherwiseEqual() {
         User alpha = maintenanceUser(31L, "alpha", "Alpha Crew");
         User bravo = maintenanceUser(32L, "bravo", "Bravo Crew");
         when(userRepository.findByRoleOrderByFullNameAsc(Role.MAINTENANCE)).thenReturn(List.of(alpha, bravo));
         stubCandidateMetrics(alpha.getId(), 1L, 0L, 0L, 0L);
         stubCandidateMetrics(bravo.getId(), 8L, 0L, 0L, 0L);
-        when(nativeOptimizationGateway.scoreCandidates(any())).thenReturn(Optional.of(new double[] { 10.0, 99.0 }));
 
         AutoAssignmentService service = new AutoAssignmentService(
                 userRepository,
-                ticketRepository,
-                nativeOptimizationGateway);
+                ticketRepository);
 
         List<TicketAssignmentRecommendationResponse> recommendations = service.recommendAssignees(sampleTicket(), 2);
 
         assertThat(recommendations).hasSize(2);
-        assertThat(recommendations.getFirst().userId()).isEqualTo(bravo.getId());
-        assertThat(recommendations.getFirst().score()).isEqualTo(99.0);
+        assertThat(recommendations.getFirst().userId()).isEqualTo(alpha.getId());
+        assertThat(recommendations.getFirst().score()).isGreaterThan(recommendations.get(1).score());
     }
 
     private void stubCandidateMetrics(Long userId, long activeOpen, long sameDomain, long sameBuilding, long recent) {

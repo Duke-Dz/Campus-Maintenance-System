@@ -66,11 +66,7 @@ export const TurnstileWidget = ({ onVerify, className = "" }) => {
   }, []);
 
   if (!turnstileEnabled) {
-    return (
-      <div className={`rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-500 ${className}`.trim()}>
-        Verification is not configured in this environment.
-      </div>
-    );
+    return null;
   }
 
   if (turnstileTestToken) {

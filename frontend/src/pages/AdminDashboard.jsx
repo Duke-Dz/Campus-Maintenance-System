@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
   ChevronDown,
@@ -38,7 +38,6 @@ import {
   useServiceDomainsQuery,
 } from "../queries/catalogQueries.js";
 import { analyticsService } from "../services/analyticsService";
-import { authService } from "../services/authService";
 import { ticketService } from "../services/ticketService";
 import { userService } from "../services/userService";
 import { exportToCSV, exportToPDF } from "../services/exportService";
@@ -111,10 +110,12 @@ export const AdminDashboard = () => {
   const [crewPerformance, setCrewPerformance] = useState([]);
   const [allTicketsForTrend, setAllTicketsForTrend] = useState([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const analyticsInitializedRef = useRef(false);
 
   /* ---- tickets state ---- */
   const [tickets, setTickets] = useState([]);
   const [ticketLoading, setTicketLoading] = useState(true);
+  const ticketsInitializedRef = useRef(false);
   const {
     data: configBuildings = [],
     isLoading: buildingsLoading,
@@ -161,8 +162,11 @@ export const AdminDashboard = () => {
   /* ================================================================ */
   /*  DATA FETCHERS                                                    */
   /* ================================================================ */
-  const refreshAnalytics = async () => {
-    setAnalyticsLoading(true);
+  const refreshAnalytics = useCallback(async ({ background = false } = {}) => {
+    const showLoading = !background || !analyticsInitializedRef.current;
+    if (showLoading) {
+      setAnalyticsLoading(true);
+    }
     try {
       const [summaryData, resolutionData, topBuildingsData, crewData, trendTickets] = await Promise.all([
         analyticsService.getSummary(),
@@ -176,17 +180,30 @@ export const AdminDashboard = () => {
       setTopBuildings(topBuildingsData);
       setCrewPerformance(crewData);
       setAllTicketsForTrend(trendTickets);
+      analyticsInitializedRef.current = true;
     } catch { /* handled by loading states */ }
-    finally { setAnalyticsLoading(false); }
-  };
+    finally {
+      if (showLoading) {
+        setAnalyticsLoading(false);
+      }
+    }
+  }, []);
 
-  const refreshTickets = useCallback(async () => {
-    setTicketLoading(true);
+  const refreshTickets = useCallback(async ({ background = false } = {}) => {
+    const showLoading = !background || !ticketsInitializedRef.current;
+    if (showLoading) {
+      setTicketLoading(true);
+    }
     try {
       const data = await ticketService.getAllTickets(filters);
       setTickets(data);
+      ticketsInitializedRef.current = true;
     } catch { /* handled by loading */ }
-    finally { setTicketLoading(false); }
+    finally {
+      if (showLoading) {
+        setTicketLoading(false);
+      }
+    }
   }, [filters]);
 
   const refreshUsers = async () => {
@@ -216,15 +233,15 @@ export const AdminDashboard = () => {
     [refetchConfigBuildings, refetchRequestTypes, refetchServiceDomains, refetchSupportCategories]
   );
 
-  useEffect(() => { refreshAnalytics(); refreshUsers(); refreshScheduledEvents(); }, []);
+  useEffect(() => { refreshAnalytics(); refreshUsers(); refreshScheduledEvents(); }, [refreshAnalytics]);
   useEffect(() => { refreshTickets(); }, [refreshTickets]);
   useEffect(() => {
     const timer = window.setInterval(() => {
-      refreshTickets();
-      refreshAnalytics();
-    }, 10000);
+      refreshTickets({ background: true });
+      refreshAnalytics({ background: true });
+    }, 30000);
     return () => window.clearInterval(timer);
-  }, [refreshTickets]);
+  }, [refreshAnalytics, refreshTickets]);
   useEffect(() => {
     if (!filters.requestTypeId) {
       return;
@@ -374,7 +391,6 @@ export const AdminDashboard = () => {
     await refreshUsers();
     return response;
   };
-  const handleFetchSuggestions = (username, fullName) => authService.getUsernameSuggestions(username, fullName);
 
   const handleBroadcast = async (form) => {
     const response = await userService.sendBroadcast(form);
@@ -571,7 +587,6 @@ export const AdminDashboard = () => {
       <StaffOnboarding
         maintenanceUsers={maintenanceUsers}
         onInviteStaff={handleInviteStaff}
-        onFetchSuggestions={handleFetchSuggestions}
         latestInvite={latestInvite}
       />
 
@@ -659,7 +674,7 @@ export const AdminDashboard = () => {
             <div className="rounded-2xl border border-gray-200 p-4 dark:border-slate-700">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{selectedTicket.ticket.title}</h3>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <StatusBadge status={selectedTicket.ticket.status} />
                   <UrgencyBadge urgency={selectedTicket.ticket.urgency} />
                 </div>
@@ -700,7 +715,7 @@ export const AdminDashboard = () => {
                 <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Admin Actions</h4>
 
                 {selectedTicket.ticket.status === "SUBMITTED" && (
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <button disabled={actionLoading} onClick={approveTicket} className="btn-primary interactive-control">
                       {actionLoading ? "Processing..." : "Approve"}
                     </button>
@@ -781,7 +796,7 @@ export const AdminDashboard = () => {
                 {/* Override */}
                 <div className="border-t border-gray-100 pt-3 dark:border-slate-700">
                   <p className="mb-2 text-xs text-gray-400">Admin Override</p>
-                  <div className="flex items-end gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
                     <select value={overrideForm.status}
                       onChange={(e) => setOverrideForm((p) => ({ ...p, status: e.target.value }))}
                       className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
@@ -791,7 +806,7 @@ export const AdminDashboard = () => {
                       onChange={(e) => setOverrideForm((p) => ({ ...p, note: e.target.value }))}
                       className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                       placeholder="Override reason..." />
-                    <button disabled={actionLoading} onClick={overrideStatus} className="btn-ghost interactive-control whitespace-nowrap">
+                    <button disabled={actionLoading} onClick={overrideStatus} className="btn-ghost interactive-control sm:whitespace-nowrap">
                       Override
                     </button>
                   </div>

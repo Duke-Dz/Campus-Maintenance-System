@@ -21,8 +21,8 @@ export const authService = {
     const { data } = await apiClient.post("/auth/register", payload);
     return data;
   },
-  async verifyEmail(token) {
-    const { data } = await apiClient.post("/auth/verify-email", { token });
+  async verifyEmail(email, code) {
+    const { data } = await apiClient.post("/auth/verify-email", { email, code });
     return data;
   },
   async resendVerification(payloadOrEmail, captchaToken = "") {
@@ -49,8 +49,16 @@ export const authService = {
     const { data } = await apiClient.post("/auth/reset-password", { token, newPassword });
     return data;
   },
-  async acceptStaffInvite(token, password) {
-    const { data } = await apiClient.post("/auth/accept-staff-invite", { token, password });
+  async acceptStaffInvite(token, username, password) {
+    const { data } = await apiClient.post("/auth/accept-staff-invite", { token, username, password });
+    return data;
+  },
+  async verifyMfa(challengeId, code) {
+    const { data } = await apiClient.post("/auth/verify-mfa", { challengeId, code });
+    return data;
+  },
+  async resendMfa(challengeId) {
+    const { data } = await apiClient.post("/auth/resend-mfa", { challengeId });
     return data;
   },
   async getUsernameSuggestions(username, fullName = "") {

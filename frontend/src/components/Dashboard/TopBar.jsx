@@ -30,7 +30,7 @@ const readReduceMotionPreference = () => {
   }
 };
 
-export const TopBar = ({ onMenuClick, activeSectionLabel }) => {
+export const TopBar = ({ onMenuClick, isMenuOpen = false, activeSectionLabel }) => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { auth, logout, updateAuth } = useAuth();
@@ -170,13 +170,15 @@ export const TopBar = ({ onMenuClick, activeSectionLabel }) => {
 
   return (
     <>
-      <header className="command-topbar sticky top-0 z-30">
+      <header className="command-topbar sticky top-0 z-40">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:flex-nowrap sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={onMenuClick}
-              aria-label="Open navigation menu"
+              aria-controls="dashboard-sidebar"
+              aria-expanded={isMenuOpen}
+              aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
               className="interactive-control rounded-xl border border-gray-200/80 bg-white/80 p-2 text-gray-600 dark:border-slate-700/80 dark:bg-slate-900/80 dark:text-gray-300 lg:hidden"
             >
               <Menu size={18} />
@@ -190,7 +192,7 @@ export const TopBar = ({ onMenuClick, activeSectionLabel }) => {
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="flex w-full flex-wrap items-center justify-start gap-1.5 sm:w-auto sm:shrink-0 sm:flex-nowrap sm:justify-end sm:gap-2">
             <div className="dashboard-topbar-chip hidden items-center gap-2 lg:flex">
               <CalendarDays size={14} className="text-campus-500" />
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{todayLabel}</span>
@@ -238,7 +240,7 @@ export const TopBar = ({ onMenuClick, activeSectionLabel }) => {
                 ref={userBtnRef}
                 type="button"
                 onClick={() => setShowUserMenu((current) => !current)}
-                className="dashboard-user-trigger interactive-control flex max-w-[calc(100vw-9rem)] items-center gap-2 rounded-xl border border-gray-200/80 bg-white/80 py-1.5 pl-1.5 pr-2 text-left dark:border-slate-700/80 dark:bg-slate-900/80 sm:max-w-none sm:pr-2.5"
+                className="dashboard-user-trigger interactive-control flex max-w-[calc(100vw-8.75rem)] items-center gap-2 rounded-xl border border-gray-200/80 bg-white/80 py-1.5 pl-1.5 pr-2 text-left dark:border-slate-700/80 dark:bg-slate-900/80 sm:max-w-none sm:pr-2.5"
               >
                 <UserAvatar
                   fullName={auth?.fullName}
@@ -248,9 +250,11 @@ export const TopBar = ({ onMenuClick, activeSectionLabel }) => {
                   avatarImage={profilePreferences.avatarImage}
                   size={32}
                 />
-                <div className="hidden sm:block">
-                  <p className="text-xs font-semibold text-gray-900 dark:text-white">{auth?.fullName || auth?.username || "User"}</p>
-                  <p className="text-[10px] uppercase tracking-[0.12em] text-campus-600 dark:text-campus-300">
+                <div className="min-w-0">
+                  <p className="max-w-[6.5rem] truncate text-xs font-semibold text-gray-900 dark:text-white sm:max-w-none">
+                    {auth?.fullName || auth?.username || "User"}
+                  </p>
+                  <p className="hidden text-[10px] uppercase tracking-[0.12em] text-campus-600 dark:text-campus-300 sm:block">
                     {titleCase(auth?.role || "student")}
                   </p>
                 </div>

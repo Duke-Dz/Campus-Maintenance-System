@@ -435,7 +435,7 @@ def build_markdown(file_docs: Iterable[dict], extension_counts: Counter, generat
         "- `backend/`: Spring Boot API, business logic, repositories, entities, security, schedulers.",
         "- `frontend/`: React + Vite web app, dashboards, hooks, services, utility modules.",
         "- `database/`: SQL schema and seed scripts.",
-        "- `cpp-optimization/`: Native optimization routines used for algorithm/compression support.",
+        "- `backend/src/main/java/com/smartcampus/maintenance/optimization/`: Java optimization routines used for scoring and safe image handling.",
         "- `tests/`: Integration and E2E flows.",
         "",
         "## Code Inventory",

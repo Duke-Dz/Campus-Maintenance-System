@@ -132,26 +132,26 @@ const WorkQueueCard = ({ ticket, note, afterPhoto, actionState, onNoteChange, on
           </div>
         )}
         {actionState.ticketId === ticket.id && actionState.error && <p className="text-sm text-red-600 dark:text-red-300">{actionState.error}</p>}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {ticket.status === "ASSIGNED" && (
             <>
-              <button disabled={actionState.loading && actionState.ticketId === ticket.id} onClick={() => onRespondAssignment(ticket, true)} className="btn-primary interactive-control">
+              <button disabled={actionState.loading && actionState.ticketId === ticket.id} onClick={() => onRespondAssignment(ticket, true)} className="btn-primary interactive-control w-full sm:w-auto">
                 <BadgeCheck size={16} />
                 {actionState.loading && actionState.ticketId === ticket.id ? "Updating..." : "Accept"}
               </button>
-              <button disabled={actionState.loading && actionState.ticketId === ticket.id} onClick={() => onRespondAssignment(ticket, false)} className="btn-ghost interactive-control">
+              <button disabled={actionState.loading && actionState.ticketId === ticket.id} onClick={() => onRespondAssignment(ticket, false)} className="btn-ghost interactive-control w-full sm:w-auto">
                 Decline
               </button>
             </>
           )}
           {ticket.status === "ACCEPTED" && (
-            <button disabled={actionState.loading && actionState.ticketId === ticket.id} onClick={() => onUpdateStatus(ticket, "IN_PROGRESS")} className="btn-primary interactive-control">
+            <button disabled={actionState.loading && actionState.ticketId === ticket.id} onClick={() => onUpdateStatus(ticket, "IN_PROGRESS")} className="btn-primary interactive-control w-full sm:w-auto">
               <PlayCircle size={16} />
               {actionState.loading && actionState.ticketId === ticket.id ? "Updating..." : "Start Work"}
             </button>
           )}
           {ticket.status === "IN_PROGRESS" && (
-            <button disabled={actionState.loading && actionState.ticketId === ticket.id} onClick={() => onUpdateStatus(ticket, "RESOLVED")} className="btn-success interactive-control">
+            <button disabled={actionState.loading && actionState.ticketId === ticket.id} onClick={() => onUpdateStatus(ticket, "RESOLVED")} className="btn-success interactive-control w-full sm:w-auto">
               <CheckCheck size={16} />
               {actionState.loading && actionState.ticketId === ticket.id ? "Updating..." : "Mark Resolved"}
             </button>
@@ -211,7 +211,7 @@ const OperationalBriefDetail = ({ queueHealth, avgRating, avgRatingLoading, aver
 
 export const MaintenanceDashboard = () => {
   const { auth } = useAuth();
-  const { tickets, loading, error, refresh } = useTickets(() => ticketService.getAssignedTickets(), [], { pollMs: 10000 });
+  const { tickets, loading, error, refresh } = useTickets(() => ticketService.getAssignedTickets(), [], { pollMs: 30000 });
   const [notes, setNotes] = useState({});
   const [actionState, setActionState] = useState({ ticketId: null, loading: false, error: "" });
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -508,7 +508,7 @@ export const MaintenanceDashboard = () => {
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Queue filters</h2>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Narrow assigned work by service domain, request type, or building before opening a work order.</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                 <span className="pill-badge bg-white/80 text-gray-600 dark:bg-slate-950/80 dark:text-slate-200">{activeFilterCount} active filters</span>
                 {(activeFilterCount > 0 || dashboardSearch.trim()) && (
                   <button
@@ -566,7 +566,7 @@ export const MaintenanceDashboard = () => {
             </div>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.92fr)]">
+          <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.92fr)]">
             <MotionCardSurface
               as="section"
               cardId="maintenance-work-queue"
@@ -580,7 +580,7 @@ export const MaintenanceDashboard = () => {
                   <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">Search here only narrows the live queue you are currently working.</p>
                 </div>
                 <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:justify-end">
-                  <label className="dashboard-table-search relative flex min-w-[240px] flex-1 items-center px-3 sm:flex-none">
+                  <label className="dashboard-table-search relative flex min-w-0 flex-1 items-center px-3 sm:min-w-[260px] sm:flex-none">
                     <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                       value={dashboardSearch}

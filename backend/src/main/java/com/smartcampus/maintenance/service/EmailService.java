@@ -47,26 +47,48 @@ public class EmailService {
                 "If you did not expect this email, contact CampusFix support immediately.");
     }
 
-    public void sendVerificationLinkEmail(String fullName, String toEmail, String verifyUrl, long expiresInMinutes) {
+    public void sendVerificationCodeEmail(String fullName, String toEmail, String verificationCode, long expiresInMinutes) {
         String text = """
                 Hi %s,
 
-                Open this secure link to activate your CampusFix account:
+                Use this verification code to activate your CampusFix account:
                 %s
 
-                This link expires in %d minutes.
-                """.formatted(displayName(fullName), verifyUrl, expiresInMinutes);
+                This code expires in %d minutes.
+                """.formatted(displayName(fullName), verificationCode, expiresInMinutes);
         sendBrandedEmail(
                 toEmail,
                 "CampusFix: Verify Your Email",
                 text,
                 "Verify account",
                 "Finish creating your CampusFix account.",
-                "Use the secure button below to verify your email address and finish creating your account.",
+                "Enter the verification code below in CampusFix to verify your email and finish creating your account.",
+                verificationCode,
                 null,
-                "Verify Email",
-                verifyUrl,
-                "This verification link expires in " + expiresInMinutes + " minutes.");
+                null,
+                "This verification code expires in " + expiresInMinutes + " minutes.");
+    }
+
+    public void sendMfaCodeEmail(String fullName, String toEmail, String verificationCode, long expiresInMinutes) {
+        String text = """
+                Hi %s,
+
+                Use this one-time code to complete your CampusFix sign-in:
+                %s
+
+                This code expires in %d minutes.
+                """.formatted(displayName(fullName), verificationCode, expiresInMinutes);
+        sendBrandedEmail(
+                toEmail,
+                "CampusFix: Your Sign-in Code",
+                text,
+                "Security check",
+                "Confirm your sign-in",
+                "Enter this one-time code in CampusFix to complete your sign-in.",
+                verificationCode,
+                null,
+                null,
+                "This code expires in " + expiresInMinutes + " minutes. If this wasn't you, reset your password.");
     }
 
     public void sendStaffInviteEmail(String fullName, String toEmail, String acceptUrl, long expiresInHours) {
@@ -84,7 +106,7 @@ public class EmailService {
                 text,
                 "Maintenance access",
                 "You have been invited to CampusFix.",
-                "Use the secure button below to set your password and activate your maintenance account.",
+                "Use the secure button below to choose your username and password, then activate your maintenance account.",
                 null,
                 "Accept Invitation",
                 acceptUrl,

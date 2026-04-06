@@ -5,6 +5,9 @@ public record AuthResponse(
     String expiresAt,
     String username,
     String fullName,
-    String role
+    String role,
+    Boolean mfaRequired,
+    String mfaChallengeId,
+    String message
 ) {
 }

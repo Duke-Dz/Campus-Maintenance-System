@@ -55,6 +55,13 @@
     text-rendering: optimizeLegibility;
   }
 
+  html,
+  body,
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   * {
     scrollbar-width: thin;
     scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
@@ -2989,5 +2996,71 @@ details[open] .faq-answer {
       linear-gradient(180deg, rgba(25, 16, 45, 0.92), rgba(13, 20, 40, 0.82)),
       radial-gradient(circle at 100% 0%, rgba(124, 58, 237, 0.14), transparent 44%);
     border-color: rgba(124, 58, 237, 0.34);
+  }
+}
+
+@layer components {
+  @media (max-width: 640px) {
+    .dashboard-shell {
+      gap: 0.85rem;
+    }
+
+    .dashboard-shell > .motion-section,
+    .dashboard-shell > .saas-card {
+      border-radius: 1rem;
+    }
+
+    .dashboard-shell .motion-grid {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .dashboard-toolbar {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .dashboard-toolbar > * {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .dashboard-segment-control {
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    .data-table-wrapper .dashboard-table-search {
+      width: 100%;
+    }
+
+    .dashboard-shell .overflow-x-auto,
+    .data-table-wrapper .dashboard-table-frame {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .dashboard-user-trigger {
+      max-width: calc(100vw - 2.4rem);
+    }
+
+    .landing-panel,
+    .landing-surface-card,
+    .landing-proof-strip {
+      border-radius: 1rem;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .command-topbar {
+      margin: 0.45rem 0.45rem 0;
+    }
+
+    .dashboard-content-shell main {
+      margin: 0 0.4rem 0.35rem;
+    }
+
+    .dashboard-sidebar {
+      width: min(94vw, var(--sidebar-width));
+    }
   }
 }

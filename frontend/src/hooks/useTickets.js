@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export const useTickets = (loader, deps = [], options = {}) => {
-  const pollMs = Number(options.pollMs ?? 10000);
+  const pollMs = Number(options.pollMs ?? 30000);
   const enabled = options.enabled !== false;
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
