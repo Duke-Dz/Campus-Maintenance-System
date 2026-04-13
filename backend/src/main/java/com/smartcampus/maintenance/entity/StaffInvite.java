@@ -23,7 +23,7 @@ public class StaffInvite {
     @Column(nullable = false, length = 64, unique = true)
     private String tokenHash;
 
-    @Column(length = 50)
+    @Column(nullable = false, length = 50)
     private String username;
 
     @Column(nullable = false, length = 120)

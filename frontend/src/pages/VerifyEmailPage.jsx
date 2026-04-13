@@ -12,7 +12,7 @@ import { authService } from "../services/authService";
 
 const verifySchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
-  code: z.string().trim().min(4, "Enter the verification code."),
+  code: z.string().trim().length(6, "Enter the 6-digit verification code."),
 });
 
 const fieldClass = (hasError) =>

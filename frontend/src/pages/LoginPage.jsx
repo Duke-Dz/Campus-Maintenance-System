@@ -31,7 +31,7 @@ const fieldClass = (hasError) =>
   }`;
 
 export const LoginPage = () => {
-  const { login, refreshSession } = useAuth();
+  const { login, hydrateSession } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [submitError, setSubmitError] = useState("");
@@ -84,8 +84,11 @@ export const LoginPage = () => {
     setMfaError("");
     setMfaSubmitting(true);
     try {
-      await authService.verifyMfa(mfaChallengeId, mfaCode.trim());
-      const session = await refreshSession();
+      const response = await authService.verifyMfa(mfaChallengeId, mfaCode.trim());
+      const session = hydrateSession(response);
+      if (!session?.accessToken) {
+        throw new Error("Unable to verify sign-in code.");
+      }
       const nextPath = location.state?.from?.pathname || destination(session.role);
       navigate(nextPath, { replace: true });
     } catch (error) {
