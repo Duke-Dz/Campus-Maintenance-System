@@ -116,6 +116,7 @@ export const MotionCardSurface = ({
         layoutId={canMorph && !reduceMotion ? cardId : undefined}
         className={`saas-card dashboard-motion-card ${className}`.trim()}
         data-motion-card="true"
+        data-has-affordance={canMorph ? "true" : undefined}
         data-dashboard-section={trackSection ? "true" : undefined}
         role={canMorph ? "button" : undefined}
         tabIndex={canMorph ? 0 : undefined}
@@ -129,7 +130,7 @@ export const MotionCardSurface = ({
         {...cardAnimation}
       >
         <motion.div
-          className={`dashboard-motion-card-content ${contentClassName}`.trim()}
+          className={`dashboard-motion-card-content ${canMorph ? "dashboard-motion-card-content-has-affordance" : ""} ${contentClassName}`.trim()}
           onHoverStart={canMorph ? () => setFocused(true) : undefined}
           onHoverEnd={canMorph ? () => setFocused(false) : undefined}
           {...contentAnimation}

@@ -53,7 +53,7 @@ export const NotificationDropdown = ({
   onOpenNotification,
   onMarkAllRead,
 }) => (
-  <div className="animate-slide-in-down absolute right-0 top-full mt-2 w-[min(390px,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-gray-200/70 bg-white/95 shadow-dropdown backdrop-blur dark:border-slate-700/60 dark:bg-slate-900/95">
+  <div className="animate-slide-in-down fixed left-2 right-2 top-[calc(env(safe-area-inset-top)+5rem)] z-[90] overflow-hidden rounded-2xl border border-gray-200/70 bg-white/95 shadow-dropdown backdrop-blur dark:border-slate-700/60 dark:bg-slate-900/95 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:z-[70] sm:mt-2 sm:w-[min(390px,calc(100vw-1rem))]">
     <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-slate-700/60">
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
@@ -67,7 +67,7 @@ export const NotificationDropdown = ({
       </button>
     </div>
 
-    <div className="max-h-[360px] overflow-y-auto">
+    <div className="max-h-[min(62vh,360px)] overflow-y-auto">
       {loading && (
         <p className="px-5 py-4 text-sm text-gray-500 dark:text-gray-400">Loading notifications...</p>
       )}

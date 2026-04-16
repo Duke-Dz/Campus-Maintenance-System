@@ -22,6 +22,8 @@ export const AuthShell = ({
   taskIcon: TaskIcon,
   layout = "immersive",
   heroBrand = false,
+  showHeaderBrand = false,
+  headerBrandSubtitle,
   brandTitle,
   brandSubtitle,
   brandIcon,
@@ -29,8 +31,8 @@ export const AuthShell = ({
   const headingId = useId();
   const singleColumn = layout === "single" || (layout !== "immersive" && !aside);
   const isImmersive = layout === "immersive" && !singleColumn;
-  const centeredHeader = heroBrand;
-  const sectionMarginClass = TaskIcon ? "mt-3" : "";
+  const centeredHeader = heroBrand || showHeaderBrand;
+  const sectionMarginClass = TaskIcon || showHeaderBrand ? "mt-3" : "";
   const headerTopClass = heroBrand ? "pt-8 sm:pt-9" : "";
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export const AuthShell = ({
       className={
         isImmersive
           ? "auth-form-enter auth-glass-card relative w-full max-w-lg px-6 py-7 sm:px-8 sm:py-8"
-          : "public-card-enter relative rounded-[1.8rem] border border-slate-200/80 bg-white/92 px-5 py-6 shadow-[0_28px_70px_-42px_rgba(16,32,51,0.35)] backdrop-blur sm:px-7 sm:py-7 dark:border-slate-700/80 dark:bg-slate-950/80"
+          : "public-card-enter auth-single-card relative mx-auto w-full max-w-[32rem] px-5 py-7 sm:px-7 sm:py-8"
       }
     >
       {heroBrand ? (
@@ -62,11 +64,22 @@ export const AuthShell = ({
       <header
         className={`${headerTopClass} ${centeredHeader ? "text-center" : ""}`.trim()}
       >
+        {showHeaderBrand ? (
+          <div className={`auth-shell-brand mb-4 flex ${centeredHeader ? "justify-center" : "justify-start"}`}>
+            <CampusFixLogo
+              variant="auth"
+              motion="subtle"
+              size="sm"
+              subtitle={headerBrandSubtitle || "Campus Maintenance System"}
+            />
+          </div>
+        ) : null}
+
         {TaskIcon ? (
           <div
             className={`flex ${centeredHeader ? "justify-center" : "justify-start"} gap-3`}
           >
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-campus-200/80 bg-campus-50 text-campus-700 shadow-sm dark:border-campus-500/25 dark:bg-campus-500/10 dark:text-campus-200">
+            <span className="auth-task-icon inline-flex h-12 w-12 items-center justify-center rounded-2xl">
               <TaskIcon size={20} />
             </span>
           </div>
@@ -81,13 +94,13 @@ export const AuthShell = ({
         ) : null}
         <h1
           id={headingId}
-          className="mt-2 text-[1.7rem] font-bold tracking-tight text-slate-950 dark:text-white sm:text-[1.85rem]"
+          className="auth-shell-heading mt-2 text-[1.7rem] font-bold tracking-tight text-slate-950 dark:text-white sm:text-[1.85rem]"
         >
           {heading}
         </h1>
         {description ? (
           <p
-            className={`mt-2 text-[0.95rem] leading-6 text-slate-600 dark:text-slate-300 sm:text-[0.9rem] ${centeredHeader ? "mx-auto max-w-xl" : "max-w-xl"}`}
+            className={`auth-shell-description mt-2 text-[0.95rem] leading-6 text-slate-600 dark:text-slate-300 sm:text-[0.9rem] ${centeredHeader ? "mx-auto max-w-xl" : "max-w-xl"}`}
           >
             {description}
           </p>
@@ -103,7 +116,7 @@ export const AuthShell = ({
 
       <div className="mt-6">{children}</div>
       {footer ? (
-        <div className="mt-5 border-t border-slate-200/80 pt-4 dark:border-slate-800/80">
+        <div className="auth-shell-footer mt-5 border-t border-slate-200/80 pt-4 dark:border-slate-800/80">
           {footer}
         </div>
       ) : null}
@@ -147,7 +160,7 @@ export const AuthShell = ({
       <div className="pointer-events-none absolute bottom-12 right-[6%] h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl dark:bg-emerald-400/10" />
 
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col px-5 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
-        <div className="public-page-enter grid flex-1 content-start gap-4 py-0 mx-auto w-full max-w-3xl">
+        <div className="public-page-enter grid flex-1 content-start gap-5 py-2 mx-auto w-full max-w-3xl sm:content-center">
           {formCard}
         </div>
       </div>

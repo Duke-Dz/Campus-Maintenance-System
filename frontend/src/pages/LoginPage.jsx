@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, KeyRound } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -24,10 +24,10 @@ const destination = (role) => {
 };
 
 const fieldClass = (hasError) =>
-  `mt-2 w-full rounded-[1.35rem] border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 dark:bg-slate-950 dark:text-white ${
+  `mt-2 w-full rounded-[1.05rem] border bg-white/90 px-4 py-3 text-[0.95rem] text-slate-900 outline-none transition placeholder:text-slate-400 dark:bg-slate-950/85 dark:text-white ${
     hasError
-      ? "border-rose-300 ring-4 ring-rose-100/80 dark:border-rose-500/60 dark:ring-rose-500/10"
-      : "border-slate-200 hover:border-campus-300 focus:border-campus-500 focus:ring-4 focus:ring-campus-100/80 dark:border-slate-700 dark:hover:border-campus-500/70 dark:focus:ring-campus-500/10"
+      ? "border-rose-300 ring-2 ring-rose-100/70 dark:border-rose-500/60 dark:ring-rose-500/10"
+      : "border-slate-200/85 hover:border-campus-300/70 focus:border-campus-500/80 focus:ring-2 focus:ring-campus-100/80 dark:border-slate-700/85 dark:hover:border-campus-500/60 dark:focus:ring-campus-500/10"
   }`;
 
 export const LoginPage = () => {
@@ -121,11 +121,12 @@ export const LoginPage = () => {
 
   return (
     <AuthShell
-      sectionLabel="Sign in"
-      heading="Sign in to CampusFix"
-      description="Use your username and password to continue."
+      heading="Welcome back"
+      description="Sign in with your name or username and password to continue."
       layout="single"
-      documentTitle="Sign in"
+      showHeaderBrand
+      headerBrandSubtitle="Campus Maintenance System"
+      documentTitle="Welcome back"
       footer={(
         <div className="flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
           <p>New to CampusFix?</p>
@@ -138,7 +139,7 @@ export const LoginPage = () => {
       {mfaChallengeId ? (
         <div className="space-y-5">
           {mfaMessage ? (
-            <div className="rounded-[1.35rem] border border-campus-200 bg-campus-50 px-4 py-3 text-sm font-medium text-campus-700 dark:border-campus-500/30 dark:bg-campus-500/10 dark:text-campus-200">
+            <div className="rounded-[1.05rem] border border-campus-200/70 bg-campus-50/85 px-4 py-3 text-sm font-medium text-campus-700 dark:border-campus-500/25 dark:bg-campus-500/10 dark:text-campus-200">
               {mfaMessage}
             </div>
           ) : null}
@@ -156,7 +157,7 @@ export const LoginPage = () => {
               type="button"
               onClick={verifyMfa}
               disabled={mfaSubmitting}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-[1.35rem] bg-[linear-gradient(135deg,#102033,#1d63ed)] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_20px_40px_-24px_rgba(16,32,51,0.55)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-[1.05rem] bg-[linear-gradient(135deg,#102033,#1d63ed)] px-4 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_-24px_rgba(16,32,51,0.5)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <KeyRound size={16} />
               {mfaSubmitting ? "Verifying..." : "Verify code"}
@@ -216,7 +217,7 @@ export const LoginPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.2 }}
-                className="rounded-[1.35rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
+                className="rounded-[1.05rem] border border-rose-200/80 bg-rose-50/90 px-4 py-3 text-sm font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"
               >
                 {submitError}
               </Motion.div>
@@ -226,11 +227,10 @@ export const LoginPage = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-[1.35rem] bg-[linear-gradient(135deg,#102033,#1d63ed)] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_20px_40px_-24px_rgba(16,32,51,0.55)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-[1.05rem] bg-[linear-gradient(135deg,#102033,#1d63ed)] px-4 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_-24px_rgba(16,32,51,0.5)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <KeyRound size={16} />
             {isSubmitting ? "Signing in..." : "Sign in"}
-            <ArrowRight size={16} />
           </button>
         </form>
       )}

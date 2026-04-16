@@ -30,7 +30,12 @@ const readReduceMotionPreference = () => {
   }
 };
 
-export const TopBar = ({ onMenuClick, isMenuOpen = false, activeSectionLabel }) => {
+export const TopBar = ({
+  onMenuClick,
+  isMenuOpen = false,
+  activeSectionLabel,
+  frameClassName = "px-4 sm:px-6 lg:px-8 xl:px-10",
+}) => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { auth, logout, updateAuth } = useAuth();
@@ -103,10 +108,12 @@ export const TopBar = ({ onMenuClick, isMenuOpen = false, activeSectionLabel }) 
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
     window.addEventListener("dashboard:navigate", handleDashboardNavigate);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
       window.removeEventListener("dashboard:navigate", handleDashboardNavigate);
     };
   }, []);
@@ -171,128 +178,130 @@ export const TopBar = ({ onMenuClick, isMenuOpen = false, activeSectionLabel }) 
   return (
     <>
       <header className="command-topbar sticky top-0 z-40">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:flex-nowrap sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <button
-              type="button"
-              onClick={onMenuClick}
-              aria-controls="dashboard-sidebar"
-              aria-expanded={isMenuOpen}
-              aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-              className="interactive-control rounded-xl border border-gray-200/80 bg-white/80 p-2 text-gray-600 dark:border-slate-700/80 dark:bg-slate-900/80 dark:text-gray-300 lg:hidden"
-            >
-              <Menu size={18} />
-            </button>
-
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-gray-500 dark:text-gray-400">
-                {titleCase(role.toLowerCase())}
-              </p>
-              <p className="truncate text-lg font-semibold text-gray-900 dark:text-white">{sectionLabel}</p>
-            </div>
-          </div>
-
-          <div className="flex w-full flex-wrap items-center justify-start gap-1.5 sm:w-auto sm:shrink-0 sm:flex-nowrap sm:justify-end sm:gap-2">
-            <div className="dashboard-topbar-chip hidden items-center gap-2 lg:flex">
-              <CalendarDays size={14} className="text-campus-500" />
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{todayLabel}</span>
-              <span className="text-xs font-bold text-gray-900 dark:text-white">{timeLabel}</span>
-            </div>
-
-            <div className="relative">
+        <div className={`mx-auto w-full max-w-[1480px] ${frameClassName}`}>
+          <div className="flex flex-wrap items-center justify-between gap-3 py-3 sm:flex-nowrap">
+            <div className="flex min-w-0 items-center gap-3">
               <button
-                ref={bellRef}
                 type="button"
-                onClick={() => setShowNotifications((current) => !current)}
-                className="dashboard-topbar-btn interactive-control relative rounded-xl border border-gray-200/80 bg-white/80 p-2 text-gray-600 dark:border-slate-700/80 dark:bg-slate-900/80 dark:text-gray-300"
+                onClick={onMenuClick}
+                aria-controls="dashboard-sidebar"
+                aria-expanded={isMenuOpen}
+                aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+                className="interactive-control rounded-xl border border-gray-200/80 bg-white/80 p-2 text-gray-600 dark:border-slate-700/80 dark:bg-slate-900/80 dark:text-gray-300 lg:hidden"
               >
-                <Bell size={18} />
-                {unreadCount > 0 && (
-                  <span className="absolute right-1 top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-ember px-1 text-[10px] font-bold text-white">
-                    {unreadCount}
-                  </span>
-                )}
+                <Menu size={18} />
               </button>
 
-              {showNotifications && (
-                <div ref={dropdownRef}>
-                  <NotificationDropdown
-                    notifications={notifications}
-                    unreadCount={unreadCount}
-                    loading={notificationsLoading}
-                    error={notificationsError}
-                    onOpenNotification={openNotification}
-                    onMarkAllRead={markAllRead}
-                    onClose={() => setShowNotifications(false)}
-                  />
-                </div>
-              )}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-gray-500 dark:text-gray-400">
+                  {titleCase(role.toLowerCase())}
+                </p>
+                <p className="truncate text-lg font-semibold text-gray-900 dark:text-white">{sectionLabel}</p>
+              </div>
             </div>
 
-            <ThemeToggle
-              isDark={theme === "dark"}
-              onToggle={() => toggleTheme()}
-              className="dashboard-topbar-btn interactive-control"
-            />
+            <div className="flex w-full flex-wrap items-center justify-start gap-1.5 sm:w-auto sm:shrink-0 sm:flex-nowrap sm:justify-end sm:gap-2">
+              <div className="dashboard-topbar-chip hidden items-center gap-2 lg:flex">
+                <CalendarDays size={14} className="text-campus-500" />
+                <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{todayLabel}</span>
+                <span className="text-xs font-bold text-gray-900 dark:text-white">{timeLabel}</span>
+              </div>
 
-            <div className="relative">
-              <button
-                ref={userBtnRef}
-                type="button"
-                onClick={() => setShowUserMenu((current) => !current)}
-                className="dashboard-user-trigger interactive-control flex max-w-[calc(100vw-8.75rem)] items-center gap-2 rounded-xl border border-gray-200/80 bg-white/80 py-1.5 pl-1.5 pr-2 text-left dark:border-slate-700/80 dark:bg-slate-900/80 sm:max-w-none sm:pr-2.5"
-              >
-                <UserAvatar
-                  fullName={auth?.fullName}
-                  username={auth?.username}
-                  avatarType={profilePreferences.avatarType}
-                  avatarPreset={profilePreferences.avatarPreset}
-                  avatarImage={profilePreferences.avatarImage}
-                  size={32}
-                />
-                <div className="min-w-0">
-                  <p className="max-w-[6.5rem] truncate text-xs font-semibold text-gray-900 dark:text-white sm:max-w-none">
-                    {auth?.fullName || auth?.username || "User"}
-                  </p>
-                  <p className="hidden text-[10px] uppercase tracking-[0.12em] text-campus-600 dark:text-campus-300 sm:block">
-                    {titleCase(auth?.role || "student")}
-                  </p>
-                </div>
-                <ChevronDown size={14} className={`text-gray-400 transition-transform ${showUserMenu ? "rotate-180" : ""}`} />
-              </button>
-
-              {showUserMenu && (
-                <div
-                  ref={userMenuRef}
-                  className="dashboard-user-menu absolute right-0 top-full mt-2 w-[min(15rem,calc(100vw-1.5rem))] rounded-2xl border border-gray-200 bg-white p-2 shadow-dropdown dark:border-slate-700 dark:bg-slate-900"
+              <div className="relative">
+                <button
+                  ref={bellRef}
+                  type="button"
+                  onClick={() => setShowNotifications((current) => !current)}
+                  className="dashboard-topbar-btn interactive-control relative p-2 text-gray-600 dark:text-gray-300"
                 >
-                  <button
-                    type="button"
-                    onClick={() => openProfileModal("profile")}
-                    className="interactive-control flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
+                  <Bell size={18} />
+                  {unreadCount > 0 && (
+                    <span className="absolute right-1 top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-ember px-1 text-[10px] font-bold text-white">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div ref={dropdownRef}>
+                    <NotificationDropdown
+                      notifications={notifications}
+                      unreadCount={unreadCount}
+                      loading={notificationsLoading}
+                      error={notificationsError}
+                      onOpenNotification={openNotification}
+                      onMarkAllRead={markAllRead}
+                      onClose={() => setShowNotifications(false)}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <ThemeToggle
+                isDark={theme === "dark"}
+                onToggle={() => toggleTheme()}
+                className="dashboard-topbar-btn interactive-control"
+              />
+
+              <div className="relative">
+                <button
+                  ref={userBtnRef}
+                  type="button"
+                  onClick={() => setShowUserMenu((current) => !current)}
+                  className="dashboard-user-trigger interactive-control flex max-w-[calc(100vw-8.75rem)] items-center gap-2 py-1.5 pl-1.5 pr-2 text-left sm:max-w-none sm:pr-2.5"
+                >
+                  <UserAvatar
+                    fullName={auth?.fullName}
+                    username={auth?.username}
+                    avatarType={profilePreferences.avatarType}
+                    avatarPreset={profilePreferences.avatarPreset}
+                    avatarImage={profilePreferences.avatarImage}
+                    size={32}
+                  />
+                  <div className="min-w-0">
+                    <p className="max-w-[6.5rem] truncate text-xs font-semibold text-gray-900 dark:text-white sm:max-w-none">
+                      {auth?.fullName || auth?.username || "User"}
+                    </p>
+                    <p className="hidden text-[10px] uppercase tracking-[0.12em] text-campus-600 dark:text-campus-300 sm:block">
+                      {titleCase(auth?.role || "student")}
+                    </p>
+                  </div>
+                  <ChevronDown size={14} className={`text-gray-400 transition-transform ${showUserMenu ? "rotate-180" : ""}`} />
+                </button>
+
+                {showUserMenu && (
+                  <div
+                    ref={userMenuRef}
+                    className="dashboard-user-menu absolute right-0 top-full mt-2 w-[min(15rem,calc(100vw-1.5rem))] rounded-2xl p-2 shadow-dropdown"
                   >
-                    <User size={15} />
-                    Profile
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openProfileModal("settings")}
-                    className="interactive-control flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
-                  >
-                    <Settings size={15} />
-                    Settings
-                  </button>
-                  <div className="my-1 h-px bg-gray-100 dark:bg-slate-700" />
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="interactive-control flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
-                  >
-                    <LogOut size={15} />
-                    Sign Out
-                  </button>
-                </div>
-              )}
+                    <button
+                      type="button"
+                      onClick={() => openProfileModal("profile")}
+                      className="interactive-control flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
+                    >
+                      <User size={15} />
+                      Profile
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openProfileModal("settings")}
+                      className="interactive-control flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
+                    >
+                      <Settings size={15} />
+                      Settings
+                    </button>
+                    <div className="my-1 h-px bg-gray-100 dark:bg-slate-700" />
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="interactive-control flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                    >
+                      <LogOut size={15} />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

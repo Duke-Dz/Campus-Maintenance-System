@@ -2034,13 +2034,13 @@ details[open] .faq-answer {
 
   .dashboard-shell .saas-card .rounded-2xl.border,
   .dashboard-shell .saas-card .rounded-xl.border {
-    border-color: color-mix(in srgb, var(--role-accent) 18%, rgba(148, 163, 184, 0.38));
-    background: color-mix(in srgb, var(--role-accent) 3%, rgba(255, 255, 255, 0.8));
+    border-color: color-mix(in srgb, var(--role-accent) 10%, rgba(148, 163, 184, 0.24));
+    background: color-mix(in srgb, var(--role-accent) 2%, rgba(255, 255, 255, 0.8));
   }
 
   .dark .dashboard-shell .saas-card .rounded-2xl.border,
   .dark .dashboard-shell .saas-card .rounded-xl.border {
-    background: color-mix(in srgb, var(--role-accent) 7%, rgba(9, 20, 32, 0.86));
+    background: color-mix(in srgb, var(--role-accent) 5%, rgba(9, 20, 32, 0.86));
   }
 
   .dashboard-shell :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]), select, textarea) {
@@ -2422,7 +2422,7 @@ details[open] .faq-answer {
     --dash-bg-3: #dfe8e6;
     --dash-panel: rgba(255, 255, 255, 0.84);
     --dash-panel-strong: rgba(255, 255, 255, 0.94);
-    --dash-border: rgba(119, 138, 151, 0.24);
+    --dash-border: rgba(119, 138, 151, 0.16);
     --dash-text: #12212c;
     --dash-muted: #5c6f7f;
     --dash-shadow:
@@ -2437,7 +2437,7 @@ details[open] .faq-answer {
     --dash-bg-3: #081018;
     --dash-panel: rgba(9, 20, 31, 0.82);
     --dash-panel-strong: rgba(10, 24, 36, 0.92);
-    --dash-border: rgba(72, 93, 109, 0.46);
+    --dash-border: rgba(72, 93, 109, 0.34);
     --dash-text: #e5edf1;
     --dash-muted: #8ca0ae;
     --dash-shadow:
@@ -2484,7 +2484,7 @@ details[open] .faq-answer {
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 248, 247, 0.88)),
       radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--role-accent) 12%, transparent), transparent 40%);
-    border-right: 1px solid rgba(119, 138, 151, 0.22);
+    border-right: 1px solid rgba(119, 138, 151, 0.14);
     box-shadow: 22px 0 46px -38px rgba(15, 23, 42, 0.22);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
@@ -2494,7 +2494,7 @@ details[open] .faq-answer {
     background:
       linear-gradient(180deg, rgba(6, 15, 24, 0.96), rgba(8, 18, 28, 0.92)),
       radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--role-accent) 16%, transparent), transparent 42%);
-    border-right-color: rgba(72, 93, 109, 0.42);
+    border-right-color: rgba(72, 93, 109, 0.32);
     box-shadow: 22px 0 56px -34px rgba(2, 6, 23, 0.84);
   }
 
@@ -2606,7 +2606,7 @@ details[open] .faq-answer {
 
   .command-topbar {
     margin: 0.85rem 0.8rem 0;
-    border: 1px solid color-mix(in srgb, var(--role-accent) 10%, var(--dash-border)) !important;
+    border: 1px solid color-mix(in srgb, var(--role-accent) 7%, var(--dash-border)) !important;
     border-radius: 1.25rem;
     background: var(--dash-panel-strong) !important;
     box-shadow: 0 22px 42px -34px rgba(15, 23, 42, 0.24);
@@ -2670,7 +2670,7 @@ details[open] .faq-answer {
   .dashboard-user-trigger,
   .dashboard-search-popover,
   .dashboard-user-menu {
-    border-color: rgba(148, 163, 184, 0.18) !important;
+    border-color: rgba(148, 163, 184, 0.12) !important;
     background: rgba(255, 255, 255, 0.8) !important;
     box-shadow: 0 14px 28px -28px rgba(15, 23, 42, 0.22);
   }
@@ -2681,7 +2681,7 @@ details[open] .faq-answer {
   .dark .dashboard-search-popover,
   .dark .dashboard-user-menu {
     background: rgba(11, 24, 36, 0.84) !important;
-    border-color: rgba(72, 93, 109, 0.3) !important;
+    border-color: rgba(72, 93, 109, 0.24) !important;
   }
 
   .dashboard-shell {
@@ -2746,7 +2746,7 @@ details[open] .faq-answer {
 
   .saas-card {
     background: var(--dash-panel);
-    border: 1px solid var(--dash-border);
+    border: 1px solid color-mix(in srgb, var(--dash-border) 72%, transparent);
     border-radius: 1.45rem;
     padding: 1.3rem;
     box-shadow: var(--dash-shadow);
@@ -2755,7 +2755,7 @@ details[open] .faq-answer {
   }
 
   .saas-card:not([data-motion-card="true"]):hover {
-    border-color: color-mix(in srgb, var(--role-accent) 24%, rgba(148, 163, 184, 0.22));
+    border-color: color-mix(in srgb, var(--role-accent) 16%, rgba(148, 163, 184, 0.2));
     box-shadow:
       0 24px 44px -34px rgba(15, 23, 42, 0.26),
       0 10px 30px -34px color-mix(in srgb, var(--role-accent) 32%, transparent);
@@ -2792,7 +2792,7 @@ details[open] .faq-answer {
   .dashboard-metric-tile,
   .dashboard-chart-card {
     border-radius: 1.15rem;
-    border: 1px solid rgba(148, 163, 184, 0.16);
+    border: 1px solid rgba(148, 163, 184, 0.11);
     background: rgba(255, 255, 255, 0.72);
   }
 
@@ -2800,7 +2800,7 @@ details[open] .faq-answer {
   .dark .dashboard-metric-tile,
   .dark .dashboard-chart-card {
     background: rgba(15, 23, 42, 0.58);
-    border-color: rgba(72, 93, 109, 0.24);
+    border-color: rgba(72, 93, 109, 0.18);
   }
 
   .dashboard-rank-chip {
@@ -2810,7 +2810,7 @@ details[open] .faq-answer {
 
   .dashboard-toolbar {
     border-radius: 1.2rem;
-    border: 1px solid rgba(148, 163, 184, 0.16);
+    border: 1px solid rgba(148, 163, 184, 0.11);
     background: rgba(255, 255, 255, 0.68);
     padding: 1rem;
   }
@@ -2821,14 +2821,14 @@ details[open] .faq-answer {
 
   .dashboard-segment-control {
     border-radius: 0.95rem;
-    border: 1px solid rgba(148, 163, 184, 0.18);
+    border: 1px solid rgba(148, 163, 184, 0.12);
     background: rgba(255, 255, 255, 0.8);
     padding: 0.25rem;
   }
 
   .dark .dashboard-segment-control {
     background: rgba(11, 24, 36, 0.78);
-    border-color: rgba(72, 93, 109, 0.28);
+    border-color: rgba(72, 93, 109, 0.2);
   }
 
   .dashboard-segment-btn {
@@ -2844,24 +2844,24 @@ details[open] .faq-answer {
   .data-table-wrapper .dashboard-table-search {
     min-height: 2.9rem;
     border-radius: 0.95rem;
-    border: 1px solid rgba(148, 163, 184, 0.18);
+    border: 1px solid rgba(148, 163, 184, 0.12);
     background: rgba(255, 255, 255, 0.8);
   }
 
   .dark .data-table-wrapper .dashboard-table-search {
     background: rgba(11, 24, 36, 0.8);
-    border-color: rgba(72, 93, 109, 0.28);
+    border-color: rgba(72, 93, 109, 0.2);
   }
 
   .data-table-wrapper .dashboard-table-frame {
     border-radius: 1.2rem;
-    border: 1px solid rgba(148, 163, 184, 0.16);
+    border: 1px solid rgba(148, 163, 184, 0.1);
     background: rgba(255, 255, 255, 0.74);
   }
 
   .dark .data-table-wrapper .dashboard-table-frame {
     background: rgba(8, 20, 31, 0.76);
-    border-color: rgba(72, 93, 109, 0.22);
+    border-color: rgba(72, 93, 109, 0.16);
   }
 
   .dashboard-shell .btn-primary,
@@ -2879,7 +2879,7 @@ details[open] .faq-answer {
   }
 
   .dashboard-shell .btn-ghost {
-    border-color: rgba(148, 163, 184, 0.22);
+    border-color: rgba(148, 163, 184, 0.14);
     background: rgba(255, 255, 255, 0.72);
   }
 
@@ -2935,7 +2935,7 @@ details[open] .faq-answer {
 @layer components {
   .dashboard-app {
     --sidebar-width: 256px;
-    --sidebar-collapsed-width: 72px;
+    --sidebar-collapsed-width: 84px;
   }
 
   .dashboard-sidebar {
@@ -2947,8 +2947,18 @@ details[open] .faq-answer {
 
   .dashboard-sidebar nav {
     overscroll-behavior: contain;
-    scrollbar-gutter: stable both-edges;
+    scrollbar-gutter: stable;
     scroll-behavior: smooth;
+  }
+
+  .dashboard-sidebar[data-collapsed="true"] nav {
+    scrollbar-gutter: auto;
+    scrollbar-width: none;
+  }
+
+  .dashboard-sidebar[data-collapsed="true"] nav::-webkit-scrollbar {
+    width: 0;
+    height: 0;
   }
 
   .dashboard-content-shell {
@@ -2959,10 +2969,14 @@ details[open] .faq-answer {
 
   .dashboard-shell > .motion-section,
   .dashboard-shell > .saas-card {
-    border: 1px solid color-mix(in srgb, var(--role-accent) 16%, var(--dash-border));
+    border: 1px solid color-mix(in srgb, var(--dash-border) 72%, transparent);
     box-shadow:
-      0 16px 28px -24px rgba(15, 23, 42, 0.34),
-      0 0 0 1px color-mix(in srgb, var(--role-accent) 8%, transparent);
+      0 14px 30px -26px rgba(15, 23, 42, 0.28),
+      0 8px 22px -28px color-mix(in srgb, var(--role-accent) 22%, transparent);
+  }
+
+  .dashboard-panel::before {
+    display: none;
   }
 
   .dashboard-panel,
@@ -3061,6 +3075,428 @@ details[open] .faq-answer {
 
     .dashboard-sidebar {
       width: min(94vw, var(--sidebar-width));
+    }
+  }
+}
+
+@layer components {
+  /* ------------------------------------------------------------------ */
+  /* UX v2 refinement pass: smoother surfaces, clearer hierarchy          */
+  /* ------------------------------------------------------------------ */
+
+  .dashboard-shell {
+    gap: 1.2rem;
+  }
+
+  .dashboard-shell > .motion-section,
+  .dashboard-shell > .saas-card {
+    border: 1px solid color-mix(in srgb, var(--dash-border) 60%, transparent);
+    box-shadow:
+      0 10px 24px -26px rgba(15, 23, 42, 0.26),
+      0 4px 12px -18px color-mix(in srgb, var(--role-accent) 14%, transparent);
+    background: color-mix(in srgb, var(--dash-panel) 96%, transparent);
+  }
+
+  .dashboard-shell h1.text-xl {
+    font-size: clamp(1.32rem, 1.8vw, 1.55rem);
+    letter-spacing: -0.015em;
+    line-height: 1.22;
+  }
+
+  .dashboard-shell h2.text-xl {
+    font-size: clamp(1.14rem, 1.5vw, 1.3rem);
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+
+  .dashboard-shell h3.text-lg {
+    font-size: 1.08rem;
+    line-height: 1.28;
+  }
+
+  .dashboard-shell .dashboard-list-item,
+  .dashboard-shell .dashboard-metric-tile {
+    border-color: color-mix(in srgb, var(--dash-border) 56%, transparent);
+    background: color-mix(in srgb, var(--dash-panel-strong) 72%, transparent);
+    box-shadow: none;
+  }
+
+  .dashboard-shell .dashboard-toolbar,
+  .dashboard-shell .dashboard-segment-control,
+  .dashboard-shell .data-table-wrapper .dashboard-table-search,
+  .dashboard-shell .data-table-wrapper .dashboard-table-frame {
+    border-color: color-mix(in srgb, var(--dash-border) 54%, transparent);
+    box-shadow: none;
+  }
+
+  .dashboard-shell .dashboard-stat-card {
+    min-height: 150px;
+  }
+
+  .dashboard-shell .dashboard-stat-label {
+    letter-spacing: 0.1em;
+    font-size: 0.72rem;
+  }
+
+  .dashboard-shell .dashboard-stat-value {
+    line-height: 1.05;
+  }
+
+  .dashboard-shell .dashboard-stat-helper {
+    margin-top: 0.45rem;
+    line-height: 1.5;
+  }
+
+  .dashboard-shell .dashboard-stat-icon {
+    height: 2.8rem;
+    width: 2.8rem;
+    border-radius: 0.8rem;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dash-border) 58%, transparent);
+  }
+
+  .dashboard-shell .dashboard-stat-trend {
+    border: 1px solid color-mix(in srgb, var(--dash-border) 52%, transparent);
+    background: color-mix(in srgb, var(--dash-panel-strong) 62%, transparent);
+  }
+
+  .dashboard-shell .dashboard-stat-card-clickable::after {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--role-accent) 8%, transparent);
+  }
+
+  .dashboard-topbar-chip,
+  .dashboard-topbar-btn,
+  .dashboard-user-trigger {
+    min-height: 2.5rem;
+    border-radius: 0.92rem !important;
+    box-shadow: none;
+  }
+
+  .dashboard-topbar-chip {
+    padding: 0 0.82rem;
+  }
+
+  .dashboard-topbar-btn {
+    height: 2.5rem;
+    width: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+  }
+
+  .dashboard-user-trigger {
+    padding: 0.32rem 0.65rem 0.32rem 0.32rem !important;
+    gap: 0.55rem;
+  }
+
+  .dashboard-topbar-chip,
+  .dashboard-topbar-btn,
+  .dashboard-user-trigger,
+  .dashboard-search-popover,
+  .dashboard-user-menu {
+    border-color: color-mix(in srgb, var(--dash-border) 56%, transparent) !important;
+  }
+
+  .command-topbar {
+    box-shadow: 0 16px 30px -34px rgba(15, 23, 42, 0.28);
+  }
+
+  .dashboard-chart-card {
+    padding: 1.05rem 1.1rem 1.15rem;
+  }
+
+  .dashboard-chart-card::after {
+    display: none;
+  }
+
+  .dashboard-chart-canvas {
+    border-radius: 1rem;
+    border: 1px solid color-mix(in srgb, var(--dash-border) 52%, transparent);
+    background: color-mix(in srgb, var(--dash-panel-strong) 66%, transparent);
+    padding: 0.45rem 0.5rem 0.2rem;
+  }
+
+  .dark .dashboard-chart-canvas {
+    border-color: color-mix(in srgb, var(--dash-border) 56%, transparent);
+    background: color-mix(in srgb, var(--dash-panel) 68%, transparent);
+  }
+
+  .dashboard-chart-card .recharts-legend-item-text {
+    color: color-mix(in srgb, var(--dash-muted) 88%, transparent) !important;
+    font-size: 0.78rem !important;
+  }
+
+  .dashboard-chart-card .recharts-cartesian-axis-tick-value {
+    fill: color-mix(in srgb, var(--dash-muted) 88%, transparent);
+  }
+
+  .dashboard-subtle-tile {
+    border-color: color-mix(in srgb, var(--dash-border) 50%, transparent) !important;
+    background: color-mix(in srgb, var(--dash-panel-strong) 64%, transparent) !important;
+    box-shadow: none !important;
+  }
+
+  .dark .dashboard-subtle-tile {
+    border-color: color-mix(in srgb, var(--dash-border) 54%, transparent) !important;
+    background: color-mix(in srgb, var(--dash-panel) 68%, transparent) !important;
+  }
+
+  .auth-single-card {
+    border-radius: 1.35rem;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 20px 46px -34px rgba(16, 32, 51, 0.26);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .dark .auth-single-card {
+    border-color: rgba(71, 85, 105, 0.4);
+    background: rgba(9, 16, 29, 0.86);
+    box-shadow: 0 22px 52px -36px rgba(2, 6, 23, 0.76);
+  }
+
+  .auth-shell-heading {
+    font-size: clamp(1.95rem, 3.2vw, 2.22rem) !important;
+    letter-spacing: -0.02em;
+    line-height: 1.12;
+  }
+
+  .auth-shell-description {
+    font-size: 1rem !important;
+    line-height: 1.52 !important;
+    color: #5f6f7e;
+  }
+
+  .dark .auth-shell-description {
+    color: #a8bac8;
+  }
+
+  .auth-task-icon {
+    border: 1px solid color-mix(in srgb, var(--role-accent) 20%, rgba(148, 163, 184, 0.25));
+    background: color-mix(in srgb, var(--role-accent) 8%, rgba(255, 255, 255, 0.82));
+    color: color-mix(in srgb, var(--role-accent-strong) 76%, #0f172a);
+    box-shadow: none;
+  }
+
+  .dark .auth-task-icon {
+    background: color-mix(in srgb, var(--role-accent) 14%, rgba(9, 16, 29, 0.84));
+    color: #dce8f5;
+    border-color: color-mix(in srgb, var(--role-accent) 24%, rgba(71, 85, 105, 0.45));
+  }
+
+  .auth-shell-footer {
+    border-top-color: color-mix(in srgb, var(--dash-border) 58%, transparent) !important;
+  }
+}
+
+@layer components {
+  /* Stronger refinement override (explicitly less partitioning) */
+
+  .dashboard-shell {
+    gap: 1.35rem;
+  }
+
+  .dashboard-shell > .motion-section,
+  .dashboard-shell > .saas-card {
+    border-color: color-mix(in srgb, var(--dash-border) 38%, transparent) !important;
+    box-shadow: 0 12px 28px -34px rgba(15, 23, 42, 0.24) !important;
+    background: color-mix(in srgb, var(--dash-panel) 98%, transparent) !important;
+  }
+
+  .dashboard-shell .dashboard-toolbar,
+  .dashboard-shell .dashboard-segment-control,
+  .dashboard-shell .dashboard-list-item,
+  .dashboard-shell .dashboard-metric-tile,
+  .dashboard-shell .dashboard-chart-canvas,
+  .dashboard-shell .dashboard-table-search,
+  .dashboard-shell .dashboard-table-frame,
+  .dashboard-shell .dashboard-subtle-tile {
+    border-color: color-mix(in srgb, var(--dash-border) 34%, transparent) !important;
+    background: color-mix(in srgb, var(--dash-panel-strong) 58%, transparent) !important;
+    box-shadow: none !important;
+  }
+
+  .dark .dashboard-shell .dashboard-toolbar,
+  .dark .dashboard-shell .dashboard-segment-control,
+  .dark .dashboard-shell .dashboard-list-item,
+  .dark .dashboard-shell .dashboard-metric-tile,
+  .dark .dashboard-shell .dashboard-chart-canvas,
+  .dark .dashboard-shell .dashboard-table-search,
+  .dark .dashboard-shell .dashboard-table-frame,
+  .dark .dashboard-shell .dashboard-subtle-tile {
+    border-color: color-mix(in srgb, var(--dash-border) 38%, transparent) !important;
+    background: color-mix(in srgb, var(--dash-panel) 62%, transparent) !important;
+  }
+
+  .dashboard-shell [class*="rounded-[1"][class*="border"][class*="bg-white/"] {
+    border-color: color-mix(in srgb, var(--dash-border) 34%, transparent) !important;
+    background: color-mix(in srgb, var(--dash-panel-strong) 56%, transparent) !important;
+    box-shadow: none !important;
+  }
+
+  .dark .dashboard-shell [class*="rounded-[1"][class*="dark:bg-slate-9"] {
+    border-color: color-mix(in srgb, var(--dash-border) 38%, transparent) !important;
+    background: color-mix(in srgb, var(--dash-panel) 62%, transparent) !important;
+    box-shadow: none !important;
+  }
+
+  .dashboard-shell .dashboard-chart-card {
+    padding: 1.15rem 1.2rem 1.25rem;
+  }
+
+  .dashboard-shell .dashboard-chart-card .recharts-cartesian-grid-horizontal line,
+  .dashboard-shell .dashboard-chart-card .recharts-cartesian-grid-vertical line {
+    stroke-opacity: 0.3;
+  }
+
+  .dashboard-shell h1.text-xl {
+    font-size: clamp(1.42rem, 1.95vw, 1.66rem);
+    margin-bottom: 0.08rem;
+  }
+
+  .dashboard-shell h2.text-xl {
+    font-size: clamp(1.2rem, 1.62vw, 1.36rem);
+  }
+
+  .dashboard-shell .dashboard-topbar-chip,
+  .dashboard-shell .dashboard-topbar-btn,
+  .dashboard-shell .dashboard-user-trigger,
+  .dashboard-shell .dashboard-user-menu {
+    border-color: color-mix(in srgb, var(--dash-border) 36%, transparent) !important;
+    background: color-mix(in srgb, var(--dash-panel-strong) 72%, transparent) !important;
+    box-shadow: none !important;
+  }
+
+  .dark .dashboard-shell .dashboard-topbar-chip,
+  .dark .dashboard-shell .dashboard-topbar-btn,
+  .dark .dashboard-shell .dashboard-user-trigger,
+  .dark .dashboard-shell .dashboard-user-menu {
+    background: color-mix(in srgb, var(--dash-panel) 74%, transparent) !important;
+  }
+
+  .command-topbar {
+    border-color: color-mix(in srgb, var(--dash-border) 42%, transparent) !important;
+  }
+
+  .auth-single-card {
+    border-color: rgba(148, 163, 184, 0.16) !important;
+    box-shadow: 0 16px 34px -36px rgba(16, 32, 51, 0.22) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+  }
+
+  .dark .auth-single-card {
+    border-color: rgba(71, 85, 105, 0.34) !important;
+    background: rgba(9, 16, 29, 0.9) !important;
+  }
+
+  .auth-task-icon {
+    border-color: color-mix(in srgb, var(--dash-border) 40%, transparent) !important;
+    background: color-mix(in srgb, var(--dash-panel-strong) 70%, transparent) !important;
+  }
+
+  @media (max-width: 1024px) {
+    .dashboard-role-student .command-topbar {
+      top: env(safe-area-inset-top, 0px);
+      z-index: 85;
+    }
+  }
+}
+
+@layer components {
+  /* Final-pass guardrails: keep cards calm, clipped, and readable across modes. */
+  .dashboard-shell .dashboard-motion-card,
+  .dashboard-shell .dashboard-motion-card-content,
+  .dashboard-shell .dashboard-stat-card,
+  .dashboard-shell .dashboard-stat-card-head,
+  .dashboard-shell .dashboard-stat-label,
+  .dashboard-shell .dashboard-stat-value,
+  .dashboard-shell .dashboard-stat-helper {
+    min-width: 0;
+  }
+
+  .dashboard-shell .dashboard-stat-label,
+  .dashboard-shell .dashboard-stat-helper,
+  .dashboard-shell .dashboard-stat-value,
+  .dashboard-shell .dashboard-motion-card-content p,
+  .dashboard-shell .dashboard-motion-card-content h1,
+  .dashboard-shell .dashboard-motion-card-content h2,
+  .dashboard-shell .dashboard-motion-card-content h3,
+  .dashboard-shell .dashboard-motion-card-content h4 {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .dashboard-shell .dashboard-motion-card[data-has-affordance="true"] .dashboard-motion-card-content,
+  .dashboard-shell .dashboard-motion-card-content-has-affordance {
+    padding-inline-end: clamp(4rem, 7vw, 5rem);
+  }
+
+  .dashboard-shell .dashboard-motion-card-affordance {
+    top: 0.78rem;
+    right: 0.8rem;
+    padding: 0.24rem 0.5rem;
+    font-size: 0.59rem;
+    line-height: 1;
+    letter-spacing: 0.07em;
+    max-width: calc(100% - 1.6rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-color: color-mix(in srgb, var(--dash-border) 54%, transparent);
+    box-shadow: none;
+  }
+
+  .dashboard-shell .dashboard-stat-card-head {
+    align-items: flex-start;
+    gap: 0.7rem;
+  }
+
+  .dashboard-shell > .motion-section,
+  .dashboard-shell > .saas-card,
+  .dashboard-shell .dashboard-motion-card,
+  .dashboard-shell .dashboard-stat-card,
+  .dashboard-shell .dashboard-metric-tile,
+  .dashboard-shell .dashboard-chart-card,
+  .dashboard-shell .dashboard-list-item {
+    background-clip: padding-box !important;
+    box-shadow: 0 10px 24px -32px rgba(15, 23, 42, 0.24) !important;
+  }
+
+  .dashboard-shell .dashboard-motion-card,
+  .dashboard-shell .dashboard-stat-card {
+    overflow: hidden !important;
+    isolation: isolate;
+  }
+
+  .dashboard-shell .dashboard-panel::before {
+    display: none !important;
+  }
+
+  .dashboard-background {
+    background:
+      radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--role-accent) 15%, transparent), transparent 34%),
+      radial-gradient(circle at 96% 0%, rgba(56, 189, 248, 0.1), transparent 28%),
+      linear-gradient(180deg, var(--dash-bg-1), var(--dash-bg-2) 50%, var(--dash-bg-3)) !important;
+  }
+
+  .dark .dashboard-background {
+    background:
+      radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--role-accent) 20%, transparent), transparent 36%),
+      radial-gradient(circle at 94% 2%, rgba(14, 165, 233, 0.1), transparent 30%),
+      linear-gradient(180deg, var(--dash-bg-1), var(--dash-bg-2) 52%, var(--dash-bg-3)) !important;
+    opacity: 1 !important;
+  }
+
+  @media (max-width: 640px) {
+    .dashboard-shell .dashboard-motion-card[data-has-affordance="true"] .dashboard-motion-card-content,
+    .dashboard-shell .dashboard-motion-card-content-has-affordance {
+      padding-inline-end: 3.65rem;
+    }
+
+    .dashboard-shell .dashboard-motion-card-affordance {
+      top: 0.66rem;
+      right: 0.66rem;
     }
   }
 }

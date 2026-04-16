@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, Mail, RefreshCcw } from "lucide-react";
+import { CheckCircle2, RefreshCcw } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -94,10 +94,11 @@ export const VerifyEmailPage = () => {
 
   return (
     <AuthShell
-      sectionLabel="Verify email"
-      heading="Verify your email"
-      description="Enter the verification code from your inbox to activate your account."
-      taskIcon={Mail}
+      heading="Check your email"
+      description="Enter the 6-digit verification code from your inbox to activate your account and continue."
+      layout="single"
+      showHeaderBrand
+      headerBrandSubtitle="Campus Maintenance System"
       documentTitle="Verify email"
       footer={(
         <div className="flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">

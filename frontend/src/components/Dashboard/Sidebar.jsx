@@ -60,7 +60,7 @@ const NavItem = ({ item, collapsed, active, onSelect }) => {
         data-dashboard-nav-id={item.id}
         className={`nav-item overflow-hidden ${collapsed ? "justify-center px-0 py-2.5" : "justify-between px-3 py-2.5"} ${active ? "nav-item-active" : ""}`}
       >
-        <span className="flex min-w-0 flex-1 items-center gap-3">
+        <span className={`flex min-w-0 items-center ${collapsed ? "justify-center" : "flex-1 gap-3"}`}>
           <span className="nav-item-icon">
             <Icon size={17} />
           </span>
@@ -116,6 +116,7 @@ export const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, activeSe
         id="dashboard-sidebar"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
+        data-collapsed={collapsed ? "true" : "false"}
         className={`dashboard-sidebar glass-sidebar fixed left-0 top-0 z-50 flex h-screen w-[min(90vw,var(--sidebar-width))] max-w-[320px] flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:max-w-none lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"
           } ${collapsed ? "lg:w-sidebar-collapsed" : "lg:w-sidebar"}`}
       >
@@ -149,7 +150,7 @@ export const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, activeSe
         </div>
 
         {collapsed && (
-          <div className="px-2 pb-2">
+          <div className="px-1.5 pb-2">
             <button
               type="button"
               onClick={() => window.location.assign("/")}
@@ -163,7 +164,7 @@ export const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, activeSe
           </div>
         )}
 
-        <nav className={`flex-1 min-h-0 space-y-1.5 overflow-y-auto ${collapsed ? "px-2" : "px-3"} pb-4`}>
+        <nav className={`flex-1 min-h-0 space-y-1.5 overflow-y-auto ${collapsed ? "px-1.5" : "px-3"} pb-4`}>
           {!collapsed && (
             <p className="px-3 text-xs font-semibold text-gray-500 dark:text-slate-400">
               Workspace
@@ -180,7 +181,7 @@ export const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse, activeSe
           ))}
         </nav>
 
-        <div className={`border-t border-gray-200/70 pt-3 dark:border-slate-700/60 ${collapsed ? "px-2 pb-3" : "px-3 pb-3"}`}>
+        <div className={`border-t border-gray-200/70 pt-3 dark:border-slate-700/60 ${collapsed ? "px-1.5 pb-3" : "px-3 pb-3"}`}>
           <button
             type="button"
             onClick={handleLogout}

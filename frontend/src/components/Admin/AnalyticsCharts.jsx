@@ -60,10 +60,10 @@ const ChartCard = ({ cardId, title, description, detailTitle, detailContent, chi
     modalWidth="max-w-4xl"
   >
     <div className="mb-4">
-      <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+      <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
         {title}
       </h3>
-      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{description}</p>
+      <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">{description}</p>
     </div>
 
     {children}
@@ -110,7 +110,7 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
   const topCategory = scopedData.categoryData[0]?.name || "No category";
 
   const renderCategoryChart = (heightClass) => (
-    <div className={heightClass}>
+    <div className={`dashboard-chart-canvas ${heightClass}`}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={scopedData.categoryData}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--dash-border)" />
@@ -124,7 +124,7 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
   );
 
   const renderStatusChart = (heightClass) => (
-    <div className={heightClass}>
+    <div className={`dashboard-chart-canvas ${heightClass}`}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={scopedData.statusData} layout="vertical" margin={{ left: 18, right: 12 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--dash-border)" />
@@ -143,7 +143,7 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
   );
 
   const renderResolutionChart = (heightClass) => (
-    <div className={heightClass}>
+    <div className={`dashboard-chart-canvas ${heightClass}`}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={scopedData.resolutionTrend}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--dash-border)" />
@@ -197,15 +197,15 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
           detailContent={(
             <div className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Leading category</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{topCategory}</p>
                 </div>
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Created in range</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.totalTickets}</p>
                 </div>
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Categories shown</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.categoryData.length}</p>
                 </div>
@@ -225,15 +225,15 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
           detailContent={(
             <div className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Dominant status</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{dominantStatus}</p>
                 </div>
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Statuses shown</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.statusData.length}</p>
                 </div>
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Window</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.label}</p>
                 </div>
@@ -253,15 +253,15 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
           detailContent={(
             <div className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Buckets tracked</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.resolutionTrend.length}</p>
                 </div>
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Current window</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.label}</p>
                 </div>
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Latest average</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.resolutionTrend.at(-1)?.averageHours ?? "-"}h</p>
                 </div>
