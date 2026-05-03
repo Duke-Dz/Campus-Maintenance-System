@@ -2,6 +2,7 @@ import { MotionCardSurface } from "../Dashboard/MotionCardSurface.jsx";
 
 const BuildingsContent = ({ topBuildings = [], detail = false }) => {
   const maxIssues = Math.max(...topBuildings.map((item) => item.totalIssues), 1);
+  const visibleBuildings = detail ? topBuildings : topBuildings.slice(0, 4);
 
   return (
     <>
@@ -16,7 +17,7 @@ const BuildingsContent = ({ topBuildings = [], detail = false }) => {
 
       <div className="space-y-3">
         {topBuildings.length === 0 && <p className="text-sm text-gray-400">No data yet.</p>}
-        {topBuildings.map((item, index) => {
+        {visibleBuildings.map((item, index) => {
           const width = `${Math.max(14, (item.totalIssues / maxIssues) * 100)}%`;
           return (
             <div key={item.building} className="dashboard-list-item px-4 py-3">
@@ -38,6 +39,11 @@ const BuildingsContent = ({ topBuildings = [], detail = false }) => {
             </div>
           );
         })}
+        {!detail && topBuildings.length > visibleBuildings.length && (
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Showing top {visibleBuildings.length}. Open detail for full ranking.
+          </p>
+        )}
       </div>
 
       {detail && topBuildings.length > 0 && (

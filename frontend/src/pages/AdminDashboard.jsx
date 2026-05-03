@@ -558,7 +558,7 @@ export const AdminDashboard = () => {
       {analyticsLoading ? <SkeletonLoader variant="stat" count={4} /> : <AdminStatCards items={statCards} />}
 
       {!analyticsLoading && (
-        <div className="motion-grid grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-[1.3fr_0.8fr_0.8fr]">
+        <div className="motion-grid grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           <SLAComplianceCard slaOverview={slaOverview} resolution={resolution} />
           <BuildingsRanking topBuildings={topBuildings} />
           <CrewPerformance crewPerformance={crewPerformance} resolution={resolution} />

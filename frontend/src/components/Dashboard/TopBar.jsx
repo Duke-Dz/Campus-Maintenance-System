@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Bell,
   CalendarDays,
@@ -36,7 +35,6 @@ export const TopBar = ({
   activeSectionLabel,
   frameClassName = "px-4 sm:px-6 lg:px-8 xl:px-10",
 }) => {
-  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { auth, logout, updateAuth } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -51,7 +49,6 @@ export const TopBar = ({
   const userBtnRef = useRef(null);
 
   const role = auth?.role?.toUpperCase() || "STUDENT";
-  const dashboardPath = role === "ADMIN" ? "/admin" : role === "MAINTENANCE" ? "/maintenance" : "/student";
   const sectionLabel = activeSectionLabel || "Overview";
   const todayLabel = useMemo(
     () => now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
@@ -144,35 +141,13 @@ export const TopBar = ({
     setProfilePreferences(nextPreferences);
   };
 
-  const openNotificationLink = (rawUrl) => {
-    if (!rawUrl) return;
-    if (/^https?:\/\//i.test(rawUrl)) {
-      window.location.href = rawUrl;
-      return;
-    }
-
-    const ticketMatch = rawUrl.match(/^\/tickets\/(\d+)/i);
-    if (ticketMatch) {
-      const section = role === "MAINTENANCE" ? "work-queue" : "tickets";
-      navigate(dashboardPath);
-      window.setTimeout(() => {
-        window.dispatchEvent(new CustomEvent("dashboard:navigate", { detail: { id: section } }));
-      }, 120);
-      return;
-    }
-
-    navigate(rawUrl);
-  };
-
-  const openNotification = async (notification) => {
+  const markNotificationRead = async (notification) => {
     if (!notification) return;
     try {
       if (!notification.read) await markRead(notification.id);
     } catch {
-      // Ignore and continue navigation.
+      // Ignore and keep dropdown interaction responsive.
     }
-    setShowNotifications(false);
-    openNotificationLink(notification.linkUrl);
   };
 
   return (
@@ -229,7 +204,7 @@ export const TopBar = ({
                       unreadCount={unreadCount}
                       loading={notificationsLoading}
                       error={notificationsError}
-                      onOpenNotification={openNotification}
+                      onReadNotification={markNotificationRead}
                       onMarkAllRead={markAllRead}
                       onClose={() => setShowNotifications(false)}
                     />

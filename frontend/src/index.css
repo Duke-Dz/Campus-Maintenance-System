@@ -2967,7 +2967,7 @@ details[open] .faq-answer {
       margin 240ms ease !important;
   }
 
-  .dashboard-shell > .motion-section,
+  .dashboard-shell > .motion-section:not(.dashboard-hero):not(.dashboard-stat-grid):not(.dashboard-chart-grid),
   .dashboard-shell > .saas-card {
     border: 1px solid color-mix(in srgb, var(--dash-border) 72%, transparent);
     box-shadow:
@@ -3088,7 +3088,7 @@ details[open] .faq-answer {
     gap: 1.2rem;
   }
 
-  .dashboard-shell > .motion-section,
+  .dashboard-shell > .motion-section:not(.dashboard-hero):not(.dashboard-stat-grid):not(.dashboard-chart-grid),
   .dashboard-shell > .saas-card {
     border: 1px solid color-mix(in srgb, var(--dash-border) 60%, transparent);
     box-shadow:
@@ -3297,11 +3297,15 @@ details[open] .faq-answer {
     gap: 1.35rem;
   }
 
-  .dashboard-shell > .motion-section,
+  .dashboard-shell > .motion-section:not(.dashboard-hero):not(.dashboard-stat-grid):not(.dashboard-chart-grid),
   .dashboard-shell > .saas-card {
     border-color: color-mix(in srgb, var(--dash-border) 38%, transparent) !important;
     box-shadow: 0 12px 28px -34px rgba(15, 23, 42, 0.24) !important;
     background: color-mix(in srgb, var(--dash-panel) 98%, transparent) !important;
+  }
+
+  .dashboard-shell .dashboard-stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   }
 
   .dashboard-shell .dashboard-toolbar,
@@ -3423,8 +3427,15 @@ details[open] .faq-answer {
   .dashboard-shell .dashboard-motion-card-content h2,
   .dashboard-shell .dashboard-motion-card-content h3,
   .dashboard-shell .dashboard-motion-card-content h4 {
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  .dashboard-shell .dashboard-metric-tile p,
+  .dashboard-shell .dashboard-list-item p,
+  .dashboard-shell .dashboard-list-item span {
+    overflow-wrap: normal;
+    word-break: normal;
   }
 
   .dashboard-shell .dashboard-motion-card[data-has-affordance="true"] .dashboard-motion-card-content,
@@ -3452,7 +3463,7 @@ details[open] .faq-answer {
     gap: 0.7rem;
   }
 
-  .dashboard-shell > .motion-section,
+  .dashboard-shell > .motion-section:not(.dashboard-hero):not(.dashboard-stat-grid):not(.dashboard-chart-grid),
   .dashboard-shell > .saas-card,
   .dashboard-shell .dashboard-motion-card,
   .dashboard-shell .dashboard-stat-card,
@@ -3467,6 +3478,18 @@ details[open] .faq-answer {
   .dashboard-shell .dashboard-stat-card {
     overflow: hidden !important;
     isolation: isolate;
+  }
+
+  .dashboard-shell .dashboard-chart-card.dashboard-motion-card[data-has-affordance="true"] .dashboard-motion-card-content,
+  .dashboard-shell .dashboard-chart-card .dashboard-motion-card-content-has-affordance {
+    padding-inline-end: clamp(2.2rem, 4vw, 2.8rem);
+  }
+
+  .dashboard-shell .dashboard-chart-card .dashboard-motion-card-affordance {
+    top: 0.68rem;
+    right: 0.7rem;
+    padding: 0.2rem 0.45rem;
+    font-size: 0.56rem;
   }
 
   .dashboard-shell .dashboard-panel::before {

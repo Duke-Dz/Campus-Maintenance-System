@@ -2,6 +2,7 @@ import { MotionCardSurface } from "../Dashboard/MotionCardSurface.jsx";
 
 const CrewContent = ({ crewPerformance = [], resolution, detail = false }) => {
   const maxResolved = Math.max(...crewPerformance.map((item) => item.resolvedTickets), 1);
+  const visibleCrew = detail ? crewPerformance : crewPerformance.slice(0, 4);
 
   return (
     <>
@@ -16,7 +17,7 @@ const CrewContent = ({ crewPerformance = [], resolution, detail = false }) => {
 
       <div className="space-y-3">
         {crewPerformance.length === 0 && <p className="text-sm text-gray-400">No data yet.</p>}
-        {crewPerformance.map((item, index) => {
+        {visibleCrew.map((item, index) => {
           const width = `${Math.max(14, (item.resolvedTickets / maxResolved) * 100)}%`;
           return (
             <div key={item.userId ?? item.fullName ?? index} className="dashboard-list-item px-4 py-3">
@@ -38,6 +39,11 @@ const CrewContent = ({ crewPerformance = [], resolution, detail = false }) => {
             </div>
           );
         })}
+        {!detail && crewPerformance.length > visibleCrew.length && (
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Showing top {visibleCrew.length}. Open detail for full ranking.
+          </p>
+        )}
       </div>
 
       {resolution && (
