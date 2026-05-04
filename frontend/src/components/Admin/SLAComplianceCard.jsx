@@ -26,7 +26,7 @@ const SLAContent = ({ slaOverview, resolution, detail = false }) => {
         </span>
       </div>
 
-      <div className={`flex gap-5 ${detail ? "flex-col xl:flex-row xl:items-center" : "flex-col xl:flex-row xl:items-center"}`}>
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-center">
         <div className="relative h-32 w-32 flex-shrink-0">
           <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
             <circle
@@ -56,29 +56,29 @@ const SLAContent = ({ slaOverview, resolution, detail = false }) => {
           </div>
         </div>
 
-        <div className={`grid flex-1 gap-3 ${detail ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
-          <div className="dashboard-metric-tile min-w-0 text-center">
+        <div className="flex flex-1 flex-wrap gap-3">
+          <div className="dashboard-metric-tile min-w-[90px] flex-1 text-center">
             <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{slaOverview.onTrack}</p>
-            <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.08em] leading-tight text-emerald-600/70 dark:text-emerald-400/70 sm:text-[10px]">
+            <p className="mt-1 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.06em] leading-snug text-emerald-600/70 dark:text-emerald-400/70">
               On track
             </p>
           </div>
-          <div className="dashboard-metric-tile min-w-0 text-center">
+          <div className="dashboard-metric-tile min-w-[90px] flex-1 text-center">
             <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{slaOverview.atRisk}</p>
-            <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.08em] leading-tight text-amber-600/70 dark:text-amber-400/70 sm:text-[10px]">
+            <p className="mt-1 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.06em] leading-snug text-amber-600/70 dark:text-amber-400/70">
               At risk
             </p>
           </div>
-          <div className="dashboard-metric-tile min-w-0 text-center">
+          <div className="dashboard-metric-tile min-w-[90px] flex-1 text-center">
             <p className="text-xl font-bold text-red-600 dark:text-red-400">{slaOverview.breached}</p>
-            <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.08em] leading-tight text-red-600/70 dark:text-red-400/70 sm:text-[10px]">
+            <p className="mt-1 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.06em] leading-snug text-red-600/70 dark:text-red-400/70">
               Breached
             </p>
           </div>
           {detail && (
-            <div className="dashboard-metric-tile min-w-0 text-center">
+            <div className="dashboard-metric-tile min-w-[90px] flex-1 text-center">
               <p className="text-xl font-bold text-campus-600 dark:text-campus-400">{resolution?.overallAverageHours ?? "-"}</p>
-              <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.08em] leading-tight text-campus-600/70 dark:text-campus-400/70 sm:text-[10px]">
+              <p className="mt-1 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.06em] leading-snug text-campus-600/70 dark:text-campus-400/70">
                 Avg hours
               </p>
             </div>
