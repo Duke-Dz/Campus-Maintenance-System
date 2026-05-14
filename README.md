@@ -31,6 +31,15 @@ CampusFix delivers an end-to-end maintenance workflow with:
 
 ## Getting Started
 
+### Prerequisites
+
+- Java 21+
+- Maven 3.9+
+- Node.js 18+
+- MySQL 8.0+
+
+### Setup Sequence
+
 1. Review `documentation/guides/setup-guide.md`.
 2. Configure and run the backend from `backend/README.md`.
 3. Configure and run the frontend from `frontend/README.md`.
@@ -38,13 +47,13 @@ CampusFix delivers an end-to-end maintenance workflow with:
 
 ## Documentation
 
-- `documentation/README.md`
-- `documentation/guides/setup-guide.md`
-- `documentation/guides/testing-guide.md`
-- `documentation/guides/troubleshooting.md`
-- `documentation/guides/deployment-guide.md`
-- `documentation/guides/admin-credentials-setup.md`
-- `documentation/guides/email-production-checklist.md`
+- `documentation/README.md` - complete documentation index
+- `documentation/guides/setup-guide.md` - first-time local environment setup
+- `documentation/guides/testing-guide.md` - test execution and verification workflows
+- `documentation/guides/troubleshooting.md` - diagnostics and issue resolution guidance
+- `documentation/guides/deployment-guide.md` - deployment process and environment expectations
+- `documentation/guides/admin-credentials-setup.md` - secure admin bootstrapping instructions
+- `documentation/guides/email-production-checklist.md` - production email readiness checklist
 
 ## Verification Commands
 
