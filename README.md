@@ -1,108 +1,42 @@
-# CampusFix Maintenance System
+# CampusFix
 
-CampusFix is a role-based campus maintenance platform for students, maintenance staff, and administrators.
+CampusFix is a professional campus maintenance management platform designed to streamline issue reporting, assignment workflows, service execution, and administrative oversight across university environments.
 
-## Start Here
+This project was architected, implemented, and maintained as a solo initiative by **Duke-Dz**.
 
-1. Read `documentation/guides/setup-guide.md` for first-time setup.
-2. Use `backend/README.md` and `frontend/README.md` for service-specific details.
-3. Use `database/README.md` for schema + seed data setup.
+## Platform Overview
 
-## Project Structure
+CampusFix delivers an end-to-end maintenance workflow with:
 
-- `backend/` Spring Boot API (Java 21, Maven)
-- `frontend/` React + Vite web app (Node 18+)
-- `database/` MySQL schema and seed scripts
-- `documentation/` setup, testing, deployment, and architecture docs
-- `devops/` Docker and Kubernetes manifests
-- `uploads/` runtime upload storage
+- Role-based access for students, maintenance personnel, and administrators
+- Ticket lifecycle management with assignment and status tracking
+- Analytics and operational visibility for campus maintenance performance
+- Secure authentication, email verification, and password recovery flows
+- RESTful backend services and a modern React-based web interface
 
-## Prerequisites
+## Technology Stack
 
-- Java 21+
-- Maven 3.9+
-- Node.js 18+
-- MySQL 8.0+
+- **Backend:** Spring Boot (Java 21, Maven)
+- **Frontend:** React + Vite (Node.js 18+)
+- **Database:** MySQL 8.0
+- **Infrastructure:** Docker Compose and Kubernetes manifests
 
-## Quick Start (Local)
+## Repository Structure
 
-### 1. Database
+- `backend/` Spring Boot API and business logic
+- `frontend/` React application and UI components
+- `database/` schema and seed scripts
+- `documentation/` setup guides, API references, architecture, testing, and deployment notes
+- `devops/` container and orchestration resources
 
-From project root:
+## Getting Started
 
-```bash
-mysql -u root -p < database/schemas/schema.sql
-mysql -u root -p < database/seed_data.sql
-```
+1. Review `documentation/guides/setup-guide.md`.
+2. Configure and run the backend from `backend/README.md`.
+3. Configure and run the frontend from `frontend/README.md`.
+4. Initialize the database using `database/README.md`.
 
-This creates and uses database `Campus_Fix`.
-
-### 2. Backend
-
-```bash
-cd backend
-cp .env.example .env
-# Windows PowerShell: copy .env.example .env
-# Edit .env values (DB, admin, SMTP)
-mvn spring-boot:run
-```
-
-Backend URL: `http://localhost:8080`
-
-### 3. Frontend
-
-Open a second terminal:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend URL: `http://localhost:5173`
-
-## Default Seed Accounts
-
-`database/seed_data.sql` inserts these demo users (password: `password`):
-
-- `admin_seed` (ADMIN)
-- `maintenance_seed` (MAINTENANCE)
-- `student_seed` (STUDENT)
-
-Note: The backend can also bootstrap an admin user from `backend/.env` values.
-
-## Email and Password Recovery
-
-- Email verification code is required after registration.
-- Forgot password sends a reset link.
-- Successful reset sends a confirmation email.
-- Configure SMTP in `backend/.env`.
-- Recommended production provider: Resend via SMTP with a verified custom sender domain.
-
-If SMTP is not configured, set `APP_EMAIL_ENABLED=false` for local testing.
-
-## Docker (Optional)
-
-```bash
-copy backend/.env.example backend/.env
-# set strong secrets before starting
-docker compose up --build
-```
-
-Services:
-
-- MySQL: `localhost:3306`
-- Backend: `localhost:8080`
-- Frontend: `localhost:3000`
-
-For production-style deployments:
-
-- Set `SPRING_PROFILES_ACTIVE=prod`
-- Replace all placeholder secrets
-- Set `APP_CORS_ALLOWED_ORIGINS` and `FRONTEND_BASE_URL` to real public hosts
-- Mount persistent storage for uploads
-
-## Documentation Index
+## Documentation
 
 - `documentation/README.md`
 - `documentation/guides/setup-guide.md`
@@ -125,16 +59,3 @@ cd ../frontend
 npm run lint
 npm run build
 ```
-
-## Fast Local Backend Startup (Dev)
-
-Use the `fast` Spring profile while developing to reduce startup overhead:
-
-```bash
-cd backend
-mvn -q -DskipTests spring-boot:run "-Dspring-boot.run.profiles=fast"
-```
-
-Notes:
-- This profile sets lazy initialization and disables JPA auto schema update.
-- Make sure your database schema is already up to date before using it.
