@@ -2,7 +2,7 @@
 
 CampusFix is a professional campus maintenance management platform designed to streamline issue reporting, assignment workflows, service execution, and administrative oversight across university environments.
 
-This project was architected, implemented, and maintained as a solo initiative by **Duke-Dz**.
+This project was architected, implemented, and maintained as a solo initiative by **Duke-Dz**. It represents a comprehensive full-stack system designed entirely by me, managing everything from the database schema and robust backend services to the modern frontend interface. Note: Earlier iterations included C++ optimizations, which have since been removed to streamline the architecture around a pure Java/React stack.
 
 ## Platform Overview
 
