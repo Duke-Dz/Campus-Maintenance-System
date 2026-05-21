@@ -8,7 +8,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -27,12 +26,10 @@ public class EmailOutbox {
     @Column(nullable = false, length = 200)
     private String subject;
 
-    @Lob
-    @Column(name = "plain_text_body", nullable = false)
+    @Column(name = "plain_text_body", nullable = false, columnDefinition = "LONGTEXT")
     private String plainTextBody;
 
-    @Lob
-    @Column(name = "html_body")
+    @Column(name = "html_body", columnDefinition = "LONGTEXT")
     private String htmlBody;
 
     @Enumerated(EnumType.STRING)

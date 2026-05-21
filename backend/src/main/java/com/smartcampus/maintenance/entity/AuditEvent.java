@@ -7,7 +7,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -46,8 +45,7 @@ public class AuditEvent {
     @Column(name = "user_agent", length = 255)
     private String userAgent;
 
-    @Lob
-    @Column(name = "details_json")
+    @Column(name = "details_json", columnDefinition = "TEXT")
     private String detailsJson;
 
     @Column(name = "created_at", nullable = false, updatable = false)

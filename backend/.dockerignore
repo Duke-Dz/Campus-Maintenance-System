@@ -1,0 +1,7 @@
+target
+uploads
+data
+*.log
+.git
+.env
+.DS_Store

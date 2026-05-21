@@ -34,6 +34,7 @@ public class ProductionDeploymentValidator implements ApplicationRunner {
     private final String captchaSecretKey;
     private final boolean rateLimitRedisEnabled;
     private final boolean refreshCookieSecure;
+    private final boolean allowLocalhostInProd;
 
     public ProductionDeploymentValidator(
         @Value("${jwt.secret}") String jwtSecret,
@@ -52,7 +53,8 @@ public class ProductionDeploymentValidator implements ApplicationRunner {
         @Value("${app.security.captcha.enabled:false}") boolean captchaEnabled,
         @Value("${app.security.captcha.turnstile.secret-key:}") String captchaSecretKey,
         @Value("${app.security.rate-limit.redis-enabled:false}") boolean rateLimitRedisEnabled,
-        @Value("${app.auth.refresh-cookie-secure:false}") boolean refreshCookieSecure
+        @Value("${app.auth.refresh-cookie-secure:false}") boolean refreshCookieSecure,
+        @Value("${app.prod.allow-localhost:false}") boolean allowLocalhostInProd
     ) {
         this.jwtSecret = jwtSecret;
         this.h2ConsoleEnabled = h2ConsoleEnabled;
@@ -76,6 +78,7 @@ public class ProductionDeploymentValidator implements ApplicationRunner {
         this.captchaSecretKey = captchaSecretKey;
         this.rateLimitRedisEnabled = rateLimitRedisEnabled;
         this.refreshCookieSecure = refreshCookieSecure;
+        this.allowLocalhostInProd = allowLocalhostInProd;
     }
 
     @Override
@@ -92,7 +95,7 @@ public class ProductionDeploymentValidator implements ApplicationRunner {
         if (h2ConsoleEnabled) {
             issues.add("H2 console must stay disabled in the prod profile.");
         }
-        if (syncExistingAdmin) {
+        if (!allowLocalhostInProd && syncExistingAdmin) {
             issues.add("Bootstrap admin sync must stay disabled in the prod profile.");
         }
         if (seedDemoData) {
@@ -104,12 +107,12 @@ public class ProductionDeploymentValidator implements ApplicationRunner {
         if (!StringUtils.hasText(datasourceUrl) || datasourceUrl.startsWith("jdbc:h2:")) {
             issues.add("A production deployment must use a managed MySQL datasource, not the H2 fallback.");
         }
-        if (!StringUtils.hasText(frontendBaseUrl)
+        if (!allowLocalhostInProd && (!StringUtils.hasText(frontendBaseUrl)
                 || frontendBaseUrl.contains("localhost")
-                || frontendBaseUrl.contains("127.0.0.1")) {
+                || frontendBaseUrl.contains("127.0.0.1"))) {
             issues.add("FRONTEND_BASE_URL must point to the public frontend host in production.");
         }
-        if (corsAllowedOrigins.stream().anyMatch(this::isLocalhostOrigin)) {
+        if (!allowLocalhostInProd && corsAllowedOrigins.stream().anyMatch(this::isLocalhostOrigin)) {
             issues.add("APP_CORS_ALLOWED_ORIGINS must not include localhost in production.");
         }
         if (emailEnabled

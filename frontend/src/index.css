@@ -1996,19 +1996,6 @@ details[open] .faq-answer {
     position: relative;
   }
 
-  .dashboard-panel::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto;
-    height: 1px;
-    border-radius: inherit;
-    background: linear-gradient(90deg,
-        color-mix(in srgb, var(--role-accent) 34%, transparent),
-        rgba(255, 255, 255, 0.44),
-        color-mix(in srgb, var(--role-accent) 34%, transparent));
-    pointer-events: none;
-  }
-
   .saas-card {
     background:
       linear-gradient(180deg, color-mix(in srgb, var(--dash-panel-strong) 92%, white), var(--dash-panel)),
@@ -2775,6 +2762,27 @@ details[open] .faq-answer {
     align-items: center;
     justify-content: space-between;
     gap: 0.8rem;
+  }
+
+  .admin-stat-card .dashboard-motion-card-content {
+    min-height: 100%;
+  }
+
+  .admin-stat-card-head {
+    align-items: flex-start;
+    min-height: 3rem;
+    padding-right: 6.5rem;
+  }
+
+  .admin-stat-card-meta {
+    display: flex;
+    min-height: 3rem;
+    align-items: flex-end;
+    justify-content: flex-start;
+  }
+
+  .admin-stat-card-copy {
+    margin-top: 1rem;
   }
 
   .dashboard-stat-helper {

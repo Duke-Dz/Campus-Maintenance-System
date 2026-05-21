@@ -1,0 +1,32 @@
+<svg width="338" height="94" viewBox="0 0 338 94" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tileBlueTransparent" x1="17" y1="12" x2="83" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F6BFF"/>
+      <stop offset="1" stop-color="#1947D1"/>
+    </linearGradient>
+    <filter id="tileShadowTransparent" x="3" y="1" width="99" height="93" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#1D4ED8" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <path d="M1 30C5 9 27 2 49 6C70 10 88 22 95 43C100 59 94 78 78 84C59 91 37 94 20 85C5 76 -4 55 1 30Z" stroke="#8AB4FF" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.9"/>
+
+  <g filter="url(#tileShadowTransparent)">
+    <rect x="17" y="12" width="66" height="66" rx="16" fill="url(#tileBlueTransparent)"/>
+  </g>
+
+  <path d="M44.849 32.741C47.086 30.504 50.717 30.504 52.954 32.741L54.551 34.338C55.324 35.111 55.324 36.365 54.551 37.138L50.869 40.82L46.516 36.467L44.929 38.054L49.282 42.407L39.002 52.687C37.353 54.336 34.761 54.497 32.929 53.168L25.379 60.718C24.186 61.911 22.251 61.911 21.058 60.718C19.865 59.525 19.865 57.59 21.058 56.397L28.608 48.847C27.279 47.015 27.44 44.423 29.089 42.774L39.369 32.494L43.722 36.847L45.309 35.26L40.956 30.907L44.638 27.225C45.411 26.452 46.665 26.452 47.438 27.225L49.035 28.822C51.272 31.059 51.272 34.69 49.035 36.927L46.396 34.288L44.849 32.741Z" fill="white"/>
+
+  <circle cx="83" cy="14" r="15" fill="#FFB000"/>
+  <path d="M84.267 5L77.334 16.533H85.133L81.667 24L89.734 12.467H81.934L84.267 5Z" fill="white"/>
+
+  <circle cx="13" cy="83" r="12" fill="#1FCF7A"/>
+  <path d="M13 77L17.8 78.95V82.55C17.8 85.55 15.88 88.37 13 89.15C10.12 88.37 8.2 85.55 8.2 82.55V78.95L13 77Z" fill="white"/>
+
+  <text x="107" y="59" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.5">
+    Campus
+  </text>
+  <text x="229" y="59" fill="#2563FF" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.5">
+    Fix
+  </text>
+</svg>

@@ -81,19 +81,21 @@ const StatCard = ({ label, value, icon, tone = "info", trend, helper, detailRows
   const isInteractive = Boolean(detailNote || detailRows?.length);
   const content = (
     <>
-      <div className="dashboard-stat-card-head">
+      <div className="dashboard-stat-card-head admin-stat-card-head">
         <div className={`dashboard-stat-icon ${toneClasses[tone] || toneClasses.info}`}>
           <Icon size={20} />
         </div>
-        {trend !== null && trend !== undefined && (
-          <span className={`dashboard-stat-trend ${trendPositive ? "dashboard-stat-trend-positive" : "dashboard-stat-trend-negative"}`}>
-            {trendPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-            {Math.abs(trend)}%
-          </span>
-        )}
+        <div className="admin-stat-card-meta">
+          {trend !== null && trend !== undefined && (
+            <span className={`dashboard-stat-trend ${trendPositive ? "dashboard-stat-trend-positive" : "dashboard-stat-trend-negative"}`}>
+              {trendPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+              {Math.abs(trend)}%
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="mt-4">
+      <div className="admin-stat-card-copy">
         <p className="dashboard-stat-label">{label}</p>
         <p className="dashboard-stat-value animate-count-up">{animatedValue}</p>
         {helper && <p className="dashboard-stat-helper">{helper}</p>}
@@ -105,7 +107,7 @@ const StatCard = ({ label, value, icon, tone = "info", trend, helper, detailRows
   return (
     <MotionCardSurface
       cardId={toMotionId(label, motionId)}
-      className={`dashboard-stat-card text-left ${isInteractive ? "dashboard-stat-card-clickable" : ""}`}
+      className={`admin-stat-card dashboard-stat-card text-left ${isInteractive ? "dashboard-stat-card-clickable" : ""}`}
       morphOnClick={isInteractive}
       detailTitle={detailTitle || label || "Metric detail"}
       detailContent={<StatDetail item={{ label, value, helper, detailRows, detailNote }} />}

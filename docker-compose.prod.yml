@@ -8,7 +8,7 @@ services:
       MYSQL_USER: ${MYSQL_USER:?Set MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -47,7 +47,7 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
       H2_CONSOLE_ENABLED: "false"
       APP_SEED_BOOTSTRAP_ADMIN: ${APP_SEED_BOOTSTRAP_ADMIN:-false}
-      APP_SEED_ADMIN_SYNC_EXISTING: "false"
+      APP_SEED_ADMIN_SYNC_EXISTING: ${APP_SEED_ADMIN_SYNC_EXISTING:-false}
       APP_SEED_DEMO_DATA: "false"
       APP_ADMIN_USERNAME: ${APP_ADMIN_USERNAME:-admin}
       APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL:-admin@example.com}
@@ -68,6 +68,7 @@ services:
       APP_AUTH_REFRESH_COOKIE_SECURE: "true"
       APP_SECURITY_RATE_LIMIT_REDIS_ENABLED: "true"
       APP_SECURITY_TRUSTED_PROXIES: ${APP_SECURITY_TRUSTED_PROXIES:-}
+      APP_PROD_ALLOW_LOCALHOST: ${APP_PROD_ALLOW_LOCALHOST:-false}
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
     depends_on:

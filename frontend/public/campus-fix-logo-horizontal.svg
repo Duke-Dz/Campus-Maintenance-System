@@ -1,0 +1,45 @@
+<svg width="338" height="153" viewBox="0 0 338 153" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgFade" x1="0" y1="0" x2="338" y2="153" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EAF6FF"/>
+      <stop offset="1" stop-color="#F9FCFF"/>
+    </linearGradient>
+    <linearGradient id="tileBlue" x1="40" y1="29" x2="106" y2="97" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F6BFF"/>
+      <stop offset="1" stop-color="#1947D1"/>
+    </linearGradient>
+    <filter id="softShadow" x="12" y="6" width="131" height="129" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#7CB8FF" flood-opacity="0.22"/>
+    </filter>
+    <filter id="tileShadow" x="26" y="18" width="94" height="98" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#1D4ED8" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <rect width="338" height="153" rx="20" fill="url(#bgFade)"/>
+
+  <g filter="url(#softShadow)">
+    <ellipse cx="78" cy="71" rx="55" ry="49" fill="#CFE5FF" opacity="0.42"/>
+  </g>
+
+  <path d="M24 47C28 26 50 19 72 23C93 27 111 39 118 60C123 76 117 95 101 101C82 108 60 111 43 102C28 93 19 72 24 47Z" stroke="#8AB4FF" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.9"/>
+
+  <g filter="url(#tileShadow)">
+    <rect x="40" y="29" width="66" height="66" rx="16" fill="url(#tileBlue)"/>
+  </g>
+
+  <path d="M67.849 49.741C70.086 47.504 73.717 47.504 75.954 49.741L77.551 51.338C78.324 52.111 78.324 53.365 77.551 54.138L73.869 57.82L69.516 53.467L67.929 55.054L72.282 59.407L62.002 69.687C60.353 71.336 57.761 71.497 55.929 70.168L48.379 77.718C47.186 78.911 45.251 78.911 44.058 77.718C42.865 76.525 42.865 74.59 44.058 73.397L51.608 65.847C50.279 64.015 50.44 61.423 52.089 59.774L62.369 49.494L66.722 53.847L68.309 52.26L63.956 47.907L67.638 44.225C68.411 43.452 69.665 43.452 70.438 44.225L72.035 45.822C74.272 48.059 74.272 51.69 72.035 53.927L69.396 51.288L67.849 49.741Z" fill="white"/>
+
+  <circle cx="106" cy="31" r="15" fill="#FFB000"/>
+  <path d="M107.267 22L100.334 33.533H108.133L104.667 41L112.734 29.467H104.934L107.267 22Z" fill="white"/>
+
+  <circle cx="36" cy="100" r="12" fill="#1FCF7A"/>
+  <path d="M36 94L40.8 95.95V99.55C40.8 102.55 38.88 105.37 36 106.15C33.12 105.37 31.2 102.55 31.2 99.55V95.95L36 94Z" fill="white"/>
+
+  <text x="130" y="76" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.5">
+    Campus
+  </text>
+  <text x="252" y="76" fill="#2563FF" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.5">
+    Fix
+  </text>
+</svg>
