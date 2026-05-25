@@ -1,4 +1,4 @@
-# CampusFix — Campus Maintenance System
+# CampusFix >> Campus Maintenance System
 
 A role-based campus maintenance platform for students, maintenance staff, and administrators.
 
