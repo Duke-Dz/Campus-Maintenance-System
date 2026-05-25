@@ -39,7 +39,7 @@ export const DashboardHero = ({ id = "dashboard", tone = "campus", className = "
 
 const StatCardDetail = ({ item }) => (
   <div className="space-y-5">
-    <div className="rounded-[1.3rem] border border-gray-100 bg-white/70 p-5 dark:border-slate-800 dark:bg-slate-900/55">
+    <div className="dashboard-subtle-tile rounded-[1.3rem] border border-gray-100 bg-white/70 p-5 dark:border-slate-800 dark:bg-slate-900/55">
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{item.helper || "Snapshot"}</p>
       <p className="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">{item.value}</p>
       {item.detailNote && <p className="mt-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300">{item.detailNote}</p>}
@@ -48,7 +48,7 @@ const StatCardDetail = ({ item }) => (
     {item.detailRows?.length > 0 && (
       <div className="grid gap-3 sm:grid-cols-2">
         {item.detailRows.map((detail) => (
-          <div key={detail.label} className="rounded-[1.1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/55">
+          <div key={detail.label} className="dashboard-subtle-tile rounded-[1.1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/55">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{detail.label}</p>
             <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{detail.value}</p>
           </div>

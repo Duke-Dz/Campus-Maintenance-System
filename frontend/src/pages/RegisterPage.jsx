@@ -123,10 +123,12 @@ export const RegisterPage = () => {
 
   return (
     <AuthShell
-      heading="Create your account"
-      description="Start with your sign-in details. We will send a secure verification code before your first login."
+      heading="Get started"
+      description="Create your account with your name, email, and password. We will send a verification code before your first sign-in."
       layout="single"
-      documentTitle="Create account"
+      showHeaderBrand
+      headerBrandSubtitle="Campus Maintenance System"
+      documentTitle="Get started"
       footer={(
         <div className="flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
           <p>Already have an account?</p>
@@ -137,7 +139,7 @@ export const RegisterPage = () => {
       )}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4">
           <label className="block">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Username</span>
             <input

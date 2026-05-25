@@ -7,8 +7,8 @@ export const CampusFixLogo = ({ size = "md" }) => {
     const glowInset = isLarge ? "inset-1 rounded-xl" : "inset-[3px] rounded-lg";
     const innerSize = isLarge ? "h-16 w-16 rounded-2xl" : "h-11 w-11 rounded-xl";
     const wrenchSize = isLarge ? 28 : 20;
-    const topBadge = isLarge ? "-top-1.5 -right-1.5 h-6 w-6" : "-top-1 -right-1 h-5 w-5";
-    const bottomBadge = isLarge ? "-bottom-1 -left-1 h-5 w-5" : "-bottom-1 -left-1 h-4 w-4";
+    const topBadge = isLarge ? "-top-1.5 -right-1.5 h-6 w-6" : "top-0 right-0 h-4 w-4";
+    const bottomBadge = isLarge ? "-bottom-1 -left-1 h-5 w-5" : "bottom-0 left-0 h-3.5 w-3.5";
     const zapSize = isLarge ? 12 : 9;
     const shieldSize = isLarge ? 10 : 8;
 

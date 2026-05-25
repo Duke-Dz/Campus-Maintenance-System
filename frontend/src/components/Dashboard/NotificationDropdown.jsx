@@ -1,6 +1,8 @@
+import { useState } from "react";
 import {
   AlertCircle,
   Bell,
+  ChevronDown,
   ClipboardCheck,
   MessageCircle,
   Megaphone,
@@ -50,10 +52,25 @@ export const NotificationDropdown = ({
   loading = false,
   error = "",
   onClose,
-  onOpenNotification,
+  onReadNotification,
   onMarkAllRead,
-}) => (
-  <div className="animate-slide-in-down absolute right-0 top-full mt-2 w-[min(390px,calc(100vw-1rem))] overflow-hidden rounded-2xl border border-gray-200/70 bg-white/95 shadow-dropdown backdrop-blur dark:border-slate-700/60 dark:bg-slate-900/95">
+}) => {
+  const [expandedId, setExpandedId] = useState(null);
+
+  const toggleExpanded = async (notification) => {
+    if (!notification) return;
+    setExpandedId((current) => (current === notification.id ? null : notification.id));
+    if (!notification.read) {
+      try {
+        await onReadNotification?.(notification);
+      } catch {
+        // Ignore read errors in the dropdown interaction.
+      }
+    }
+  };
+
+  return (
+    <div className="animate-slide-in-down fixed left-2 right-2 top-[calc(env(safe-area-inset-top)+5rem)] z-[90] overflow-hidden rounded-2xl border border-gray-200/70 bg-white/95 shadow-dropdown backdrop-blur dark:border-slate-700/60 dark:bg-slate-900/95 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:z-[70] sm:mt-2 sm:w-[min(390px,calc(100vw-1rem))]">
     <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-slate-700/60">
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
@@ -67,7 +84,7 @@ export const NotificationDropdown = ({
       </button>
     </div>
 
-    <div className="max-h-[360px] overflow-y-auto">
+    <div className="max-h-[min(62vh,360px)] overflow-y-auto">
       {loading && (
         <p className="px-5 py-4 text-sm text-gray-500 dark:text-gray-400">Loading notifications...</p>
       )}
@@ -88,36 +105,44 @@ export const NotificationDropdown = ({
         notifications.map((notification) => {
           const config = configFor(notification.type);
           const Icon = config.icon;
+          const expanded = expandedId === notification.id;
           return (
-            <button
-              type="button"
+            <div
               key={notification.id}
-              onClick={() => onOpenNotification?.(notification)}
-              className={`interactive-row flex w-full gap-3.5 border-b border-gray-50 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:border-slate-800/50 dark:hover:bg-slate-800/50 ${
+              className={`border-b border-gray-50 transition-colors dark:border-slate-800/50 ${
                 !notification.read ? "bg-campus-50/40 dark:bg-campus-900/5" : ""
               }`}
             >
-              <div className={`mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${config.iconBg}`}>
-                <Icon size={18} className={config.iconColor} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{notification.title}</p>
-                  {!notification.read && (
-                    <span className="mt-0.5 flex-shrink-0 rounded-full bg-campus-500 px-2 py-0.5 text-[10px] font-bold text-white">
-                      New
+              <button
+                type="button"
+                onClick={() => toggleExpanded(notification)}
+                className="interactive-row flex w-full gap-3.5 px-5 py-4 text-left hover:bg-gray-50 dark:hover:bg-slate-800/50"
+              >
+                <div className={`mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${config.iconBg}`}>
+                  <Icon size={18} className={config.iconColor} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{notification.title}</p>
+                    {!notification.read && (
+                      <span className="mt-0.5 flex-shrink-0 rounded-full bg-campus-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                        New
+                      </span>
+                    )}
+                  </div>
+                  <p className={`mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400 ${expanded ? "whitespace-pre-wrap" : "truncate"}`}>
+                    {notification.message}
+                  </p>
+                  <div className="mt-1.5 flex items-center gap-3">
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500">{formatDate(notification.createdAt)}</span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-campus-500">
+                      {expanded ? "Collapse" : "Expand"}
+                      <ChevronDown size={12} className={expanded ? "rotate-180 transition-transform" : "transition-transform"} />
                     </span>
-                  )}
+                  </div>
                 </div>
-                <p className="mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400">{notification.message}</p>
-                <div className="mt-1.5 flex items-center gap-3">
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500">{formatDate(notification.createdAt)}</span>
-                  {notification.linkUrl && (
-                    <span className="text-[11px] font-semibold text-campus-500">Open</span>
-                  )}
-                </div>
-              </div>
-            </button>
+              </button>
+            </div>
           );
         })}
     </div>
@@ -136,5 +161,6 @@ export const NotificationDropdown = ({
         Close
       </button>
     </div>
-  </div>
-);
+    </div>
+  );
+};

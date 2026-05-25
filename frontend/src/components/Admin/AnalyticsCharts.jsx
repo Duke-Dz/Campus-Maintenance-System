@@ -6,7 +6,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -42,6 +41,19 @@ const bucketLabel = (value, mode) => {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
+const bucketStart = (value, mode) => {
+  const date = new Date(value);
+  date.setHours(0, 0, 0, 0);
+  if (mode === "month") {
+    date.setDate(1);
+    return date;
+  }
+  if (mode === "week") {
+    return startOfWeek(date);
+  }
+  return date;
+};
+
 const aggregateByKey = (tickets, key) => Object.entries(
   tickets.reduce((accumulator, ticket) => {
     const nextKey = titleCase(ticket[key]);
@@ -60,10 +72,10 @@ const ChartCard = ({ cardId, title, description, detailTitle, detailContent, chi
     modalWidth="max-w-4xl"
   >
     <div className="mb-4">
-      <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+      <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
         {title}
       </h3>
-      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{description}</p>
+      <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">{description}</p>
     </div>
 
     {children}
@@ -86,16 +98,25 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
     const resolvedTrend = tickets
       .filter((ticket) => ticket.resolvedAt && new Date(ticket.resolvedAt) >= start)
       .reduce((accumulator, ticket) => {
-        const label = bucketLabel(ticket.resolvedAt, config.mode);
-        if (!accumulator[label]) accumulator[label] = [];
-        accumulator[label].push(toHours(ticket.createdAt, ticket.resolvedAt));
+        const bucket = bucketStart(ticket.resolvedAt, config.mode);
+        const bucketTime = bucket.getTime();
+        if (!accumulator[bucketTime]) {
+          accumulator[bucketTime] = {
+            time: bucketTime,
+            label: bucketLabel(bucket, config.mode),
+            values: [],
+          };
+        }
+        accumulator[bucketTime].values.push(toHours(ticket.createdAt, ticket.resolvedAt));
         return accumulator;
       }, {});
 
-    const resolutionTrend = Object.entries(resolvedTrend).map(([label, values]) => ({
-      label,
-      averageHours: Math.round((values.reduce((sum, current) => sum + current, 0) / values.length) * 100) / 100,
-    }));
+    const resolutionTrend = Object.values(resolvedTrend)
+      .sort((left, right) => left.time - right.time)
+      .map((entry) => ({
+        label: entry.label,
+        averageHours: Math.round((entry.values.reduce((sum, current) => sum + current, 0) / entry.values.length) * 100) / 100,
+      }));
 
     return {
       totalTickets: createdTickets.length,
@@ -110,29 +131,32 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
   const topCategory = scopedData.categoryData[0]?.name || "No category";
 
   const renderCategoryChart = (heightClass) => (
-    <div className={heightClass}>
+    <div className={`dashboard-chart-canvas ${heightClass}`}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={scopedData.categoryData}>
+        <BarChart data={scopedData.categoryData} layout="vertical" margin={{ top: 6, right: 8, left: 8, bottom: 6 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--dash-border)" />
-          <XAxis dataKey="name" interval={0} angle={-20} textAnchor="end" height={60} tick={{ fontSize: 11 }} />
-          <YAxis tick={{ fontSize: 11 }} />
+          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+          <YAxis type="category" dataKey="name" width={96} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
           <Tooltip contentStyle={{ borderRadius: 16, border: "1px solid rgba(148,163,184,0.15)", boxShadow: "0 18px 40px -28px rgba(15,23,42,0.35)" }} />
-          <Bar dataKey="value" fill="var(--role-accent)" radius={[8, 8, 0, 0]} />
+          <Bar dataKey="value" maxBarSize={20} radius={[0, 8, 8, 0]}>
+            {scopedData.categoryData.map((entry, index) => (
+              <Cell key={entry.name} fill={barColors[index % barColors.length]} />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
   );
 
   const renderStatusChart = (heightClass) => (
-    <div className={heightClass}>
+    <div className={`dashboard-chart-canvas ${heightClass}`}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={scopedData.statusData} layout="vertical" margin={{ left: 18, right: 12 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--dash-border)" />
-          <XAxis type="number" tick={{ fontSize: 11 }} />
-          <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
+          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+          <YAxis type="category" dataKey="name" width={88} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
           <Tooltip contentStyle={{ borderRadius: 16, border: "1px solid rgba(148,163,184,0.15)", boxShadow: "0 18px 40px -28px rgba(15,23,42,0.35)" }} />
-          <Legend />
-          <Bar dataKey="value" name="Tickets" radius={[0, 8, 8, 0]}>
+          <Bar dataKey="value" name="Tickets" maxBarSize={20} radius={[0, 8, 8, 0]}>
             {scopedData.statusData.map((entry, index) => (
               <Cell key={entry.name} fill={barColors[index % barColors.length]} />
             ))}
@@ -143,12 +167,12 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
   );
 
   const renderResolutionChart = (heightClass) => (
-    <div className={heightClass}>
+    <div className={`dashboard-chart-canvas ${heightClass}`}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={scopedData.resolutionTrend}>
+        <AreaChart data={scopedData.resolutionTrend} margin={{ top: 8, right: 10, left: 2, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--dash-border)" />
-          <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-          <YAxis tick={{ fontSize: 11 }} />
+          <XAxis dataKey="label" minTickGap={20} tickMargin={8} tick={{ fontSize: 11 }} />
+          <YAxis width={38} tick={{ fontSize: 11 }} tickFormatter={(value) => `${Math.round(value)}h`} />
           <Tooltip contentStyle={{ borderRadius: 16, border: "1px solid rgba(148,163,184,0.15)", boxShadow: "0 18px 40px -28px rgba(15,23,42,0.35)" }} />
           <Area
             type="monotone"
@@ -188,7 +212,7 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
         </div>
       </div>
 
-      <section id="analytics" data-dashboard-section="true" className="motion-section motion-grid grid gap-4 xl:grid-cols-3">
+      <section id="analytics" data-dashboard-section="true" className="motion-section motion-grid dashboard-chart-grid grid gap-4 xl:grid-cols-3">
         <ChartCard
           cardId="admin-chart-category"
           title="Tickets by Category"
@@ -197,15 +221,15 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
           detailContent={(
             <div className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Leading category</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{topCategory}</p>
                 </div>
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Created in range</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.totalTickets}</p>
                 </div>
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Categories shown</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.categoryData.length}</p>
                 </div>
@@ -225,15 +249,15 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
           detailContent={(
             <div className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Dominant status</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{dominantStatus}</p>
                 </div>
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Statuses shown</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.statusData.length}</p>
                 </div>
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Window</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.label}</p>
                 </div>
@@ -253,15 +277,15 @@ export const AnalyticsCharts = ({ tickets = [] }) => {
           detailContent={(
             <div className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Buckets tracked</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.resolutionTrend.length}</p>
                 </div>
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Current window</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.label}</p>
                 </div>
-                <div className="rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="dashboard-subtle-tile rounded-[1rem] border border-gray-100 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Latest average</p>
                   <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{scopedData.resolutionTrend.at(-1)?.averageHours ?? "-"}h</p>
                 </div>

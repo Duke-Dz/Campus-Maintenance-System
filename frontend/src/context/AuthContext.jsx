@@ -45,12 +45,19 @@ export const AuthProvider = ({ children }) => {
     setAuth(null);
   }, [clearRefreshTimer]);
 
-  const refreshSession = useCallback(async () => {
-    const data = await authService.refresh();
+  const hydrateSession = useCallback((data) => {
+    if (!data?.accessToken) {
+      return null;
+    }
     const next = normalizeSession(data);
     setAuth(next);
     return next;
   }, []);
+
+  const refreshSession = useCallback(async () => {
+    const data = await authService.refresh();
+    return hydrateSession(data);
+  }, [hydrateSession]);
 
   const login = useCallback(async (payload) => {
     try {
@@ -68,13 +75,11 @@ export const AuthProvider = ({ children }) => {
       if (!data?.accessToken) {
         throw new Error("Unable to sign in.");
       }
-      const next = normalizeSession(data);
-      setAuth(next);
-      return next;
+      return hydrateSession(data);
     } catch (error) {
       throw new Error(parseError(error, "Unable to sign in."));
     }
-  }, []);
+  }, [hydrateSession]);
 
   const register = useCallback(async (payload) => {
     try {
@@ -171,9 +176,10 @@ export const AuthProvider = ({ children }) => {
       register,
       logout,
       refreshSession,
+      hydrateSession,
       updateAuth,
     }),
-    [auth, initializing, login, logout, refreshSession, register, updateAuth]
+    [auth, hydrateSession, initializing, login, logout, refreshSession, register, updateAuth]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

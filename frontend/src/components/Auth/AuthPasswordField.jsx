@@ -14,14 +14,14 @@ export const AuthPasswordField = ({
   return (
     <label className="block">
       <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{label}</span>
-      <div className={`mt-2 flex items-center rounded-2xl border bg-white px-4 py-1 transition dark:bg-slate-950 ${error ? "border-rose-300 ring-4 ring-rose-100/80 dark:border-rose-500/60 dark:ring-rose-500/10" : "border-slate-200 hover:border-campus-300 focus-within:border-campus-500 focus-within:ring-4 focus-within:ring-campus-100/80 dark:border-slate-700 dark:hover:border-campus-500/70 dark:focus-within:ring-campus-500/10"}`}>
+      <div className={`mt-2 flex items-center rounded-[1.05rem] border bg-white/90 px-4 py-0.5 transition dark:bg-slate-950/85 ${error ? "border-rose-300 ring-2 ring-rose-100/70 dark:border-rose-500/60 dark:ring-rose-500/10" : "border-slate-200/85 hover:border-campus-300/70 focus-within:border-campus-500/80 focus-within:ring-2 focus-within:ring-campus-100/80 dark:border-slate-700/85 dark:hover:border-campus-500/60 dark:focus-within:ring-campus-500/10"}`}>
         <input
           type={visible ? "text" : "password"}
           autoComplete={autoComplete}
           placeholder={placeholder}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : undefined}
-          className="w-full bg-transparent py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+          className="w-full bg-transparent py-3 text-[0.95rem] text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
           {...registration}
         />
         <button

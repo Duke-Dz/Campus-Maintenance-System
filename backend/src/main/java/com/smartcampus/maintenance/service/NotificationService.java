@@ -7,6 +7,7 @@ import com.smartcampus.maintenance.entity.enums.NotificationType;
 import com.smartcampus.maintenance.exception.ForbiddenException;
 import com.smartcampus.maintenance.exception.NotFoundException;
 import com.smartcampus.maintenance.repository.NotificationRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class NotificationService {
 
+    private static final long RETENTION_DAYS = 3;
     private final NotificationRepository notificationRepository;
 
     public NotificationService(NotificationRepository notificationRepository) {
@@ -34,14 +36,16 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public List<NotificationResponse> getNotifications(User actor) {
-        return notificationRepository.findByUserIdOrderByCreatedAtDesc(actor.getId()).stream()
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(RETENTION_DAYS);
+        return notificationRepository.findByUserIdAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(actor.getId(), cutoff).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public long getUnreadCount(User actor) {
-        return notificationRepository.countByUserIdAndReadFalse(actor.getId());
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(RETENTION_DAYS);
+        return notificationRepository.countByUserIdAndReadFalseAndCreatedAtGreaterThanEqual(actor.getId(), cutoff);
     }
 
     @Transactional

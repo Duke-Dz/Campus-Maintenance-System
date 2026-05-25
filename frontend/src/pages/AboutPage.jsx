@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, ClipboardList, Route, Users } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Footer } from "../components/Landing/Footer";
 import { Navbar } from "../components/Landing/Navbar";
@@ -58,8 +58,16 @@ const FAQS = [
 ];
 
 export const AboutPage = () => {
+  const [navOffset, setNavOffset] = useState(108);
+
   useEffect(() => {
     document.title = "Learn More | CampusFix";
+
+    const resolveNavOffset = () => {
+      const nav = document.querySelector("[data-landing-navbar='true']");
+      const navHeight = nav?.getBoundingClientRect().height ?? 0;
+      setNavOffset(Math.max(96, Math.round(navHeight + 14)));
+    };
 
     const applyHashOffset = () => {
       const hash = window.location.hash;
@@ -72,11 +80,26 @@ export const AboutPage = () => {
       window.scrollTo({ top, behavior: "auto" });
     };
 
+    resolveNavOffset();
+    window.addEventListener("resize", resolveNavOffset);
+    window.addEventListener("orientationchange", resolveNavOffset);
+
     const timer = window.setTimeout(applyHashOffset, 0);
     window.addEventListener("hashchange", applyHashOffset);
+
+    let resizeObserver;
+    const nav = document.querySelector("[data-landing-navbar='true']");
+    if (nav && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(resolveNavOffset);
+      resizeObserver.observe(nav);
+    }
+
     return () => {
+      window.removeEventListener("resize", resolveNavOffset);
+      window.removeEventListener("orientationchange", resolveNavOffset);
       window.clearTimeout(timer);
       window.removeEventListener("hashchange", applyHashOffset);
+      resizeObserver?.disconnect();
     };
   }, []);
 
@@ -90,9 +113,13 @@ export const AboutPage = () => {
         ]}
       />
 
-      <main className="mx-auto w-full max-w-[1100px] px-4 pb-14 pt-24 sm:px-6 sm:pb-16 sm:pt-28 lg:px-8">
+      <main
+        className="mx-auto w-full max-w-[1100px] px-4 pb-14 sm:px-6 sm:pb-16 lg:px-8"
+        style={{ paddingTop: `calc(env(safe-area-inset-top, 0px) + ${navOffset}px)` }}
+      >
         <Link
           to="/"
+          onClick={() => window.scrollTo({ top: 0, behavior: "auto" })}
           className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white/90 px-3 py-2 text-sm font-semibold text-gray-700 no-underline shadow-sm transition hover:border-campus-300 hover:text-campus-600 dark:border-slate-700 dark:bg-slate-900/80 dark:text-gray-200 dark:hover:border-campus-500 dark:hover:text-campus-300"
         >
           <ArrowLeft size={15} />

@@ -41,6 +41,7 @@ export const DashboardShell = ({ children }) => {
   const role = auth?.role?.toUpperCase() || "STUDENT";
   const effectiveCollapsed = collapsed && isDesktop;
   const roleLabel = role === "ADMIN" ? "Admin" : role === "MAINTENANCE" ? "Maintenance" : "Student";
+  const contentFrameClassName = "px-3 sm:px-5 lg:px-8 xl:px-10";
 
   const toggleCollapse = () => {
     setCollapsed((prev) => {
@@ -209,7 +210,7 @@ export const DashboardShell = ({ children }) => {
       />
 
       <div
-        className={`dashboard-content-shell relative z-10 overflow-x-clip transition-all duration-300 ease-in-out ${
+        className={`dashboard-content-shell relative z-10 transition-all duration-300 ease-in-out ${
           effectiveCollapsed ? "lg:pl-sidebar-collapsed" : "lg:pl-sidebar"
         }`}
       >
@@ -217,10 +218,11 @@ export const DashboardShell = ({ children }) => {
           onMenuClick={() => setSidebarOpen((current) => !current)}
           isMenuOpen={sidebarOpen}
           activeSectionLabel={activeSectionLabel}
+          frameClassName={contentFrameClassName}
         />
 
-        <main className="px-3 pb-8 pt-4 sm:px-5 sm:pt-6 lg:px-8 xl:px-10">
-          <div className="mx-auto w-full max-w-[1480px]">{children}</div>
+        <main className="overflow-x-clip pb-8 pt-4 sm:pt-6">
+          <div className={`mx-auto w-full max-w-[1480px] ${contentFrameClassName}`}>{children}</div>
         </main>
       </div>
     </div>

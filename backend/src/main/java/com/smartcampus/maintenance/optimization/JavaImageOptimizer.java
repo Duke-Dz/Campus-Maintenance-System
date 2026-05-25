@@ -79,18 +79,17 @@ public final class JavaImageOptimizer {
 
     private static Optional<byte[]> encodeJpeg(BufferedImage source, int quality) {
         BufferedImage rgbSource = ensureRgb(source);
-        return encodeWithWriter(rgbSource, "jpeg", quality, true);
+        return encodeWithWriter(rgbSource, "jpeg", quality);
     }
 
     private static Optional<byte[]> encodePng(BufferedImage source, int quality) {
-        return encodeWithWriter(source, "png", quality, false);
+        return encodeWithWriter(source, "png", quality);
     }
 
     private static Optional<byte[]> encodeWithWriter(
             BufferedImage source,
             String formatName,
-            int quality,
-            boolean directQualityScale) {
+            int quality) {
         Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(formatName);
         if (!writers.hasNext()) {
             return Optional.empty();
@@ -105,8 +104,7 @@ public final class JavaImageOptimizer {
             if (writeParam.canWriteCompressed()) {
                 writeParam.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
                 float normalizedQuality = clampQuality(quality) / 100.0f;
-                float compressionQuality = directQualityScale ? normalizedQuality : 1.0f - normalizedQuality;
-                writeParam.setCompressionQuality(compressionQuality);
+                writeParam.setCompressionQuality(normalizedQuality);
             }
 
             writer.write(null, new IIOImage(source, null, null), writeParam);
