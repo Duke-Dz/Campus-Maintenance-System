@@ -12,6 +12,7 @@ import com.smartcampus.maintenance.repository.UserRepository;
 import com.smartcampus.maintenance.service.AuthService;
 import com.smartcampus.maintenance.service.EmailService;
 import com.smartcampus.maintenance.service.RequestMetadata;
+import com.smartcampus.maintenance.service.TokenHashService;
 import java.util.Comparator;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -38,16 +39,19 @@ class RegistrationEmailOutboxIntegrationTest {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private TokenHashService tokenHashService;
+
     @Test
     void directEmailServiceCallQueuesMessage() {
         String email = "direct_" + UUID.randomUUID().toString().substring(0, 8) + "@example.com";
 
-        emailService.sendVerificationLinkEmail("Direct Queue", email, "http://localhost:5173/verify-email?token=test", 15);
+        emailService.sendVerificationCodeEmail("Direct Queue", email, "123456", 15);
 
         EmailOutbox queuedMessage = latestMessageFor(email);
 
         assertThat(queuedMessage.getSubject()).contains("Verify Your Email");
-        assertThat(queuedMessage.getPlainTextBody()).contains("/verify-email?token=test");
+        assertThat(queuedMessage.getPlainTextBody()).contains("123456");
     }
 
     @Test
@@ -69,8 +73,8 @@ class RegistrationEmailOutboxIntegrationTest {
         assertThat(pending.getUsername()).isEqualTo(request.username());
         assertThat(pending.getVerificationTokenHash()).isNotBlank();
         assertThat(queuedMessage.getSubject()).contains("Verify Your Email");
-        assertThat(queuedMessage.getPlainTextBody()).contains("/verify-email?token=");
-        assertThat(queuedMessage.getHtmlBody()).contains("Verify Email");
+        assertThat(queuedMessage.getPlainTextBody()).isNotBlank();
+        assertThat(queuedMessage.getHtmlBody()).contains("Verify");
     }
 
     @Test
@@ -84,9 +88,11 @@ class RegistrationEmailOutboxIntegrationTest {
                 "");
 
         authService.registerStudent(request, TEST_METADATA);
-        String rawToken = extractToken(latestMessageFor(request.email()).getPlainTextBody());
 
-        authService.verifyEmail(rawToken, TEST_METADATA);
+        PendingRegistration pending = pendingRegistrationRepository.findByEmailIgnoreCase(request.email()).orElseThrow();
+        String rawCode = extractVerificationCode(pending, tokenHashService);
+
+        authService.verifyEmail(request.email(), rawCode, TEST_METADATA);
 
         User user = userRepository.findByEmail(request.email()).orElseThrow();
         EmailOutbox latestMessage = latestMessageFor(request.email());
@@ -118,17 +124,16 @@ class RegistrationEmailOutboxIntegrationTest {
                 .orElseThrow();
     }
 
-    private String extractToken(String body) {
-        String marker = "token=";
-        int start = body.indexOf(marker);
-        if (start < 0) {
-            throw new IllegalStateException("Verification token URL was not found in email body.");
+    private String extractVerificationCode(PendingRegistration pending, TokenHashService hashService) {
+        // Brute-force a numeric code whose SHA-256 matches the stored hash (for test only).
+        // Codes are 6-digit numeric: 000000–999999.
+        String storedHash = pending.getVerificationTokenHash();
+        for (int i = 0; i <= 999999; i++) {
+            String candidate = String.format("%06d", i);
+            if (hashService.hashSha256(candidate).equals(storedHash)) {
+                return candidate;
+            }
         }
-        int tokenStart = start + marker.length();
-        int tokenEnd = body.indexOf('\n', tokenStart);
-        if (tokenEnd < 0) {
-            tokenEnd = body.length();
-        }
-        return body.substring(tokenStart, tokenEnd).trim();
+        throw new IllegalStateException("Could not reverse verification code from hash");
     }
 }

@@ -78,7 +78,7 @@ From root:
 docker compose up --build
 ```
 
-Use this if your team wants a containerized local environment.
+Use this for a fully containerised local environment.
 
 ## Related Docs
 

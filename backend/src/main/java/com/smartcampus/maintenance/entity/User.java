@@ -1,16 +1,22 @@
 package com.smartcampus.maintenance.entity;
 
 import com.smartcampus.maintenance.entity.enums.Role;
+import com.smartcampus.maintenance.entity.enums.TechnicianSpecialty;
 import jakarta.persistence.Column;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -44,6 +50,12 @@ public class User {
 
     @Column(name = "mfa_enabled", nullable = false)
     private boolean mfaEnabled = false;
+
+    @ElementCollection(targetClass = TechnicianSpecialty.class)
+    @CollectionTable(name = "user_specialties", joinColumns = @JoinColumn(name = "user_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "specialty", nullable = false, length = 40)
+    private Set<TechnicianSpecialty> specialties = EnumSet.noneOf(TechnicianSpecialty.class);
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -127,5 +139,20 @@ public class User {
 
     public void setMfaEnabled(boolean mfaEnabled) {
         this.mfaEnabled = mfaEnabled;
+    }
+
+    public Set<TechnicianSpecialty> getSpecialties() {
+        if (specialties == null || specialties.isEmpty()) {
+            return EnumSet.noneOf(TechnicianSpecialty.class);
+        }
+        return EnumSet.copyOf(specialties);
+    }
+
+    public void setSpecialties(Set<TechnicianSpecialty> specialties) {
+        if (specialties == null || specialties.isEmpty()) {
+            this.specialties = EnumSet.noneOf(TechnicianSpecialty.class);
+            return;
+        }
+        this.specialties = EnumSet.copyOf(specialties);
     }
 }

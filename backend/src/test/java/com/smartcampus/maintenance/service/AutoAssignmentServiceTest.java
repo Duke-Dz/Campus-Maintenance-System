@@ -12,6 +12,7 @@ import com.smartcampus.maintenance.entity.ServiceDomain;
 import com.smartcampus.maintenance.entity.Ticket;
 import com.smartcampus.maintenance.entity.User;
 import com.smartcampus.maintenance.entity.enums.Role;
+import com.smartcampus.maintenance.entity.enums.TechnicianSpecialty;
 import com.smartcampus.maintenance.repository.TicketRepository;
 import com.smartcampus.maintenance.repository.UserRepository;
 import java.time.LocalDateTime;
@@ -35,6 +36,8 @@ class AutoAssignmentServiceTest {
     void ranksCandidatesUsingJavaScoring() {
         User lowLoad = maintenanceUser(31L, "casey", "Casey Technician");
         User specialist = maintenanceUser(32L, "miriam", "Miriam Specialist");
+        lowLoad.setSpecialties(EnumSet.of(TechnicianSpecialty.GENERAL_MAINTENANCE));
+        specialist.setSpecialties(EnumSet.of(TechnicianSpecialty.NETWORK));
         when(userRepository.findByRoleOrderByFullNameAsc(Role.MAINTENANCE)).thenReturn(List.of(lowLoad, specialist));
         stubCandidateMetrics(lowLoad.getId(), 2L, 1L, 0L, 1L);
         stubCandidateMetrics(specialist.getId(), 5L, 6L, 3L, 4L);
@@ -54,6 +57,8 @@ class AutoAssignmentServiceTest {
     void prefersLowestWorkloadWhenSignalsAreOtherwiseEqual() {
         User alpha = maintenanceUser(31L, "alpha", "Alpha Crew");
         User bravo = maintenanceUser(32L, "bravo", "Bravo Crew");
+        alpha.setSpecialties(EnumSet.of(TechnicianSpecialty.NETWORK));
+        bravo.setSpecialties(EnumSet.of(TechnicianSpecialty.NETWORK));
         when(userRepository.findByRoleOrderByFullNameAsc(Role.MAINTENANCE)).thenReturn(List.of(alpha, bravo));
         stubCandidateMetrics(alpha.getId(), 1L, 0L, 0L, 0L);
         stubCandidateMetrics(bravo.getId(), 8L, 0L, 0L, 0L);
@@ -67,6 +72,20 @@ class AutoAssignmentServiceTest {
         assertThat(recommendations).hasSize(2);
         assertThat(recommendations.getFirst().userId()).isEqualTo(alpha.getId());
         assertThat(recommendations.getFirst().score()).isGreaterThan(recommendations.get(1).score());
+    }
+
+    @Test
+    void returnsNoBestAssigneeWhenNoSpecialistMatchesTicket() {
+        User electrician = maintenanceUser(31L, "casey", "Casey Technician");
+        electrician.setSpecialties(EnumSet.of(TechnicianSpecialty.ELECTRICAL));
+        when(userRepository.findByRoleOrderByFullNameAsc(Role.MAINTENANCE)).thenReturn(List.of(electrician));
+        stubCandidateMetrics(electrician.getId(), 1L, 0L, 0L, 0L);
+
+        AutoAssignmentService service = new AutoAssignmentService(userRepository, ticketRepository);
+
+        assertThat(service.findBestAssigneeWithinCapacity(sampleTicket(), 4)).isEmpty();
+        assertThat(service.recommendAssignees(sampleTicket(), 3)).singleElement()
+                .satisfies(recommendation -> assertThat(recommendation.specializationMatch()).isFalse());
     }
 
     private void stubCandidateMetrics(Long userId, long activeOpen, long sameDomain, long sameBuilding, long recent) {

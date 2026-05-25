@@ -4,17 +4,20 @@ import com.smartcampus.maintenance.dto.ticket.TicketAssignmentRecommendationResp
 import com.smartcampus.maintenance.entity.Ticket;
 import com.smartcampus.maintenance.entity.User;
 import com.smartcampus.maintenance.entity.enums.Role;
+import com.smartcampus.maintenance.entity.enums.TechnicianSpecialty;
 import com.smartcampus.maintenance.entity.enums.TicketStatus;
 import com.smartcampus.maintenance.mapper.TicketMapper;
 import com.smartcampus.maintenance.optimization.AssignmentCandidateMetrics;
 import com.smartcampus.maintenance.optimization.AssignmentScorer;
 import com.smartcampus.maintenance.repository.TicketRepository;
 import com.smartcampus.maintenance.repository.UserRepository;
+import com.smartcampus.maintenance.util.TechnicianSpecialtyCatalog;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -53,12 +56,13 @@ public class AutoAssignmentService {
         }
 
         int safeLimit = Math.max(1, limit);
+        boolean hasSpecialistMatches = candidates.stream().anyMatch(AssignmentCandidateMetrics::specializationMatch);
         int lowestActiveWorkload = candidates.stream()
                 .mapToInt(AssignmentCandidateMetrics::activeOpenTickets)
                 .min()
                 .orElse(0);
 
-        return candidates.stream()
+        return prioritizedCandidates(candidates, hasSpecialistMatches).stream()
                 .map(candidate -> toRecommendation(
                         candidate,
                         AssignmentScorer.scoreCandidate(candidate),
@@ -94,7 +98,12 @@ public class AutoAssignmentService {
             return Optional.empty();
         }
 
+        if (candidates.stream().noneMatch(AssignmentCandidateMetrics::specializationMatch)) {
+            return Optional.empty();
+        }
+
         return candidates.stream()
+                .filter(AssignmentCandidateMetrics::specializationMatch)
                 .filter(candidate -> candidate.activeOpenTickets() <= maxActiveOpenTickets)
                 .sorted(Comparator
                         .comparingDouble(AssignmentScorer::scoreCandidate)
@@ -107,6 +116,7 @@ public class AutoAssignmentService {
 
     private AssignmentCandidateMetrics buildCandidateMetrics(Ticket ticket, User user) {
         String serviceDomainKey = TicketMapper.resolveServiceDomainKey(ticket);
+        Set<TechnicianSpecialty> requiredSpecialties = TechnicianSpecialtyCatalog.specialtiesForServiceDomainKey(serviceDomainKey);
         LocalDateTime recentThreshold = LocalDateTime.now().minusDays(RECENT_RESOLUTION_WINDOW_DAYS);
 
         long totalAssigned = ticketRepository.countByAssignedToId(user.getId());
@@ -132,6 +142,9 @@ public class AutoAssignmentService {
                 recentThreshold,
                 RESOLVED_OR_CLOSED));
 
+        boolean specializationMatch = !requiredSpecialties.isEmpty()
+                && user.getSpecialties().stream().anyMatch(requiredSpecialties::contains);
+
         return new AssignmentCandidateMetrics(
                 user.getId(),
                 user.getUsername(),
@@ -139,7 +152,9 @@ public class AutoAssignmentService {
                 activeOpenTickets,
                 sameDomainResolvedTickets,
                 sameBuildingResolvedTickets,
-                recentResolvedTickets);
+                recentResolvedTickets,
+                specializationMatch,
+                user.getSpecialties().stream().map(Enum::name).sorted().toList());
     }
 
     private TicketAssignmentRecommendationResponse toRecommendation(
@@ -151,11 +166,16 @@ public class AutoAssignmentService {
                 candidate.username(),
                 candidate.fullName(),
                 Math.round(score * 100.0) / 100.0,
+                candidate.specializationMatch(),
+                candidate.specialties(),
                 buildReasons(candidate, lowestActiveWorkload));
     }
 
     private List<String> buildReasons(AssignmentCandidateMetrics candidate, int lowestActiveWorkload) {
         java.util.ArrayList<String> reasons = new java.util.ArrayList<>();
+        if (candidate.specializationMatch()) {
+            reasons.add("Matches the required specialization for this ticket.");
+        }
         if (candidate.activeOpenTickets() == lowestActiveWorkload) {
             reasons.add("Lowest active workload in the current maintenance pool.");
         }
@@ -176,5 +196,19 @@ public class AutoAssignmentService {
             reasons.add("Available maintenance crew member with no negative workload signal.");
         }
         return List.copyOf(reasons);
+    }
+
+    private List<AssignmentCandidateMetrics> prioritizedCandidates(
+            List<AssignmentCandidateMetrics> candidates,
+            boolean hasSpecialistMatches) {
+        return candidates.stream()
+                .sorted(Comparator
+                        .comparingInt((AssignmentCandidateMetrics candidate) ->
+                                hasSpecialistMatches && candidate.specializationMatch() ? 1 : 0)
+                        .reversed()
+                        .thenComparing(Comparator.comparingDouble(AssignmentScorer::scoreCandidate).reversed())
+                        .thenComparing(AssignmentCandidateMetrics::fullName, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(AssignmentCandidateMetrics::userId))
+                .toList();
     }
 }

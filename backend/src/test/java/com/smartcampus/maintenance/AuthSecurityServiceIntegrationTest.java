@@ -18,6 +18,7 @@ import com.smartcampus.maintenance.security.CustomUserDetailsService;
 import com.smartcampus.maintenance.security.JwtService;
 import com.smartcampus.maintenance.service.AuthService;
 import com.smartcampus.maintenance.service.RequestMetadata;
+import com.smartcampus.maintenance.service.TokenHashService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -104,16 +105,15 @@ class AuthSecurityServiceIntegrationTest {
     }
 
     @Test
-    void verifyEmailRejectsExpiredVerificationLink() {
+    void verifyEmailRejectsExpiredVerificationCode() {
         RegisterRequest request = pendingRegistrationRequest();
 
         authService.registerStudent(request, TEST_METADATA);
-        String rawToken = latestVerificationToken(request.email());
         PendingRegistration pending = pendingRegistrationRepository.findByEmailIgnoreCase(request.email()).orElseThrow();
         pending.setVerificationTokenExpiresAt(LocalDateTime.now().minusMinutes(1));
         pendingRegistrationRepository.save(pending);
 
-        assertThatThrownBy(() -> authService.verifyEmail(rawToken, TEST_METADATA))
+        assertThatThrownBy(() -> authService.verifyEmail(request.email(), "000000", TEST_METADATA))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("expired");
 
@@ -163,28 +163,6 @@ class AuthSecurityServiceIntegrationTest {
                 "Pending " + suffix,
                 "StrongPass#123",
                 "");
-    }
-
-    private String latestVerificationToken(String email) {
-        EmailOutbox queuedMessage = emailOutboxRepository.findAll().stream()
-                .filter(message -> email.equalsIgnoreCase(message.getToEmail()))
-                .max(Comparator.comparing(EmailOutbox::getId))
-                .orElseThrow();
-        return extractToken(queuedMessage.getPlainTextBody());
-    }
-
-    private String extractToken(String body) {
-        String marker = "token=";
-        int start = body.indexOf(marker);
-        if (start < 0) {
-            throw new IllegalStateException("Verification token URL was not found in email body.");
-        }
-        int tokenStart = start + marker.length();
-        int tokenEnd = body.indexOf('\n', tokenStart);
-        if (tokenEnd < 0) {
-            tokenEnd = body.length();
-        }
-        return body.substring(tokenStart, tokenEnd).trim();
     }
 
     private User createUser(boolean emailVerified, String rawPassword) {

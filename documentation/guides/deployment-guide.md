@@ -1,6 +1,6 @@
 # Deployment Guide
 
-## Option A: Docker Compose (recommended for local team parity)
+## Option A: Docker Compose (recommended for local development)
 
 From repository root:
 

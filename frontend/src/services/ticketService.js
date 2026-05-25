@@ -41,6 +41,7 @@ export const ticketService = {
       buildingId: filters?.buildingId,
       urgency: filters?.urgency,
       assignee: filters?.assignee,
+      reviewRequired: filters?.reviewRequired,
       search: filters?.search,
     });
     const { data } = await apiClient.get(`/tickets${query ? `?${query}` : ""}`);

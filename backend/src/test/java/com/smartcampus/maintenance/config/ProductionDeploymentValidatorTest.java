@@ -27,6 +27,7 @@ class ProductionDeploymentValidatorTest {
             false,
             "",
             false,
+            false,
             false
         );
 
@@ -62,7 +63,8 @@ class ProductionDeploymentValidatorTest {
             false,
             "",
             true,
-            true
+            true,
+            false
         );
 
         assertThatThrownBy(validator::validate)
@@ -89,7 +91,8 @@ class ProductionDeploymentValidatorTest {
             true,
             "turnstile-secret",
             true,
-            true
+            true,
+            false
         );
 
         assertThatCode(validator::validate).doesNotThrowAnyException();

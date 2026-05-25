@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { MotionCardSurface } from "../Dashboard/MotionCardSurface.jsx";
 import { DataTable } from "../Common/DataTable";
 import { titleCase } from "../../utils/helpers";
+import { formatSpecialtyLabel } from "../../utils/technicianSpecialties.js";
 
 /**
  * User Management Table — DataTable with role filter and export
@@ -49,6 +50,24 @@ export const UserManagementTable = ({ users = [] }) => {
             header: "Tickets",
             render: (row) => <span className="font-bold text-campus-600 dark:text-campus-400">{row.ticketCount}</span>,
             accessor: (row) => row.ticketCount,
+        },
+        {
+            key: "specialties",
+            header: "Specialties",
+            render: (row) => row.role !== "MAINTENANCE"
+                ? <span className="text-gray-300 dark:text-gray-600">-</span>
+                : (
+                    <div className="flex flex-wrap gap-1.5">
+                        {(row.specialties || []).length > 0
+                            ? row.specialties.map((specialty) => (
+                                <span key={specialty} className="pill-badge bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+                                    {formatSpecialtyLabel(specialty)}
+                                </span>
+                            ))
+                            : <span className="text-gray-300 dark:text-gray-600">Unspecified</span>}
+                    </div>
+                ),
+            accessor: (row) => (row.specialties || []).join(", "),
         },
     ], []);
 

@@ -23,6 +23,7 @@ import com.smartcampus.maintenance.entity.TicketRating;
 import com.smartcampus.maintenance.entity.User;
 import com.smartcampus.maintenance.entity.enums.NotificationType;
 import com.smartcampus.maintenance.entity.enums.Role;
+import com.smartcampus.maintenance.entity.enums.TicketAssignmentReviewReason;
 import com.smartcampus.maintenance.entity.enums.TicketCategory;
 import com.smartcampus.maintenance.entity.enums.TicketStatus;
 import com.smartcampus.maintenance.entity.enums.UrgencyLevel;
@@ -130,16 +131,17 @@ public class TicketService {
         Ticket saved = ticketRepository.save(ticket);
         addLog(saved, null, TicketStatus.SUBMITTED, actor, "Ticket submitted");
 
-        boolean autoAssigned = tryAutoAssign(saved, actor);
-        if (!autoAssigned) {
+        AutoAssignDecision autoAssignDecision = tryAutoAssign(saved, actor);
+        if (!autoAssignDecision.assigned()) {
             TicketStatus previous = saved.getStatus();
+            markForAssignmentReview(saved, autoAssignDecision.reviewReason());
             saved.setStatus(TicketStatus.APPROVED);
             saved = ticketRepository.save(saved);
             addLog(saved, previous, TicketStatus.APPROVED, actor,
-                    "Auto-assignment unavailable. Ticket requires admin validation.");
+                    autoAssignDecision.adminLogNote());
             notifyAdmins(
-                    "Ticket #" + saved.getId() + " requires admin validation",
-                    "No available crew capacity for \"" + saved.getTitle() + "\". Please validate and assign manually.",
+                    "Ticket #" + saved.getId() + " requires assignment review",
+                    autoAssignDecision.adminNotificationMessage(saved),
                     NotificationType.ASSIGNMENT,
                     ticketLink(saved));
         }
@@ -208,6 +210,7 @@ public class TicketService {
             Long buildingId,
             UrgencyLevel urgency,
             Long assigneeId,
+            Boolean reviewRequired,
             String search) {
         requireRole(actor, Role.ADMIN);
         Specification<Ticket> specification = Specification.allOf(
@@ -217,6 +220,7 @@ public class TicketService {
                 TicketSpecifications.buildingEquals(buildingId),
                 TicketSpecifications.urgencyEquals(urgency),
                 TicketSpecifications.assigneeEquals(assigneeId),
+                TicketSpecifications.assignmentReviewRequiredEquals(reviewRequired),
                 TicketSpecifications.searchLike(search));
         return ticketRepository.findAll(specification, Sort.by(Sort.Direction.DESC, "createdAt")).stream()
                 .map(this::toResponse)
@@ -289,6 +293,8 @@ public class TicketService {
         TicketStatus oldStatus = ticket.getStatus();
         ticket.setAssignedTo(assignee);
         ticket.setStatus(TicketStatus.ASSIGNED);
+        ticket.setAssignmentReviewRequired(false);
+        ticket.setAssignmentReviewReason(null);
         Ticket saved = ticketRepository.save(ticket);
         addLog(saved, oldStatus, TicketStatus.ASSIGNED, actor, safeNote(request.note(), "Ticket assigned"));
         notificationDispatchService.notifyUser(
@@ -604,12 +610,24 @@ public class TicketService {
         notificationDispatchService.notifyUsers(userRepository.findByRole(Role.ADMIN), title, message, type, linkUrl);
     }
 
-    private boolean tryAutoAssign(Ticket ticket, User actor) {
+    private AutoAssignDecision tryAutoAssign(Ticket ticket, User actor) {
+        List<TicketAssignmentRecommendationResponse> recommendations = autoAssignmentService.recommendAssignees(ticket, 1);
+        if (recommendations.isEmpty()) {
+            return new AutoAssignDecision(false, TicketAssignmentReviewReason.NO_SPECIALIST_MATCH);
+        }
+
+        TicketAssignmentRecommendationResponse topRecommendation = recommendations.getFirst();
+        if (!topRecommendation.specializationMatch()) {
+            return new AutoAssignDecision(false, TicketAssignmentReviewReason.NO_SPECIALIST_MATCH);
+        }
+
         return autoAssignmentService.findBestAssigneeWithinCapacity(ticket, MAX_AUTO_ASSIGN_ACTIVE_TICKETS)
                 .map(assignee -> {
                     TicketStatus oldStatus = ticket.getStatus();
                     ticket.setAssignedTo(assignee);
                     ticket.setStatus(TicketStatus.ASSIGNED);
+                    ticket.setAssignmentReviewRequired(false);
+                    ticket.setAssignmentReviewReason(null);
                     Ticket saved = ticketRepository.save(ticket);
                     addLog(saved, oldStatus, TicketStatus.ASSIGNED, actor, "Auto-assigned by system");
                     notificationDispatchService.notifyUser(
@@ -624,9 +642,31 @@ public class TicketService {
                             "Your ticket \"" + saved.getTitle() + "\" was assigned to maintenance automatically.",
                             NotificationType.TICKET_UPDATE,
                             ticketLink(saved));
-                    return true;
+                    return new AutoAssignDecision(true, null);
                 })
-                .orElse(false);
+                .orElseGet(() -> new AutoAssignDecision(false, TicketAssignmentReviewReason.CAPACITY_REACHED));
+    }
+
+    private void markForAssignmentReview(Ticket ticket, TicketAssignmentReviewReason reason) {
+        ticket.setAssignedTo(null);
+        ticket.setAssignmentReviewRequired(true);
+        ticket.setAssignmentReviewReason(reason);
+    }
+
+    private record AutoAssignDecision(boolean assigned, TicketAssignmentReviewReason reviewReason) {
+        private String adminLogNote() {
+            if (reviewReason == TicketAssignmentReviewReason.NO_SPECIALIST_MATCH) {
+                return "No specialist matched this ticket. Admin review is required before assignment.";
+            }
+            return "Auto-assignment unavailable because all matching specialists are at capacity. Admin review is required.";
+        }
+
+        private String adminNotificationMessage(Ticket ticket) {
+            if (reviewReason == TicketAssignmentReviewReason.NO_SPECIALIST_MATCH) {
+                return "No technician specialization matched \"" + ticket.getTitle() + "\". Review and assign manually.";
+            }
+            return "Matching specialists are at capacity for \"" + ticket.getTitle() + "\". Review and assign manually.";
+        }
     }
 
     private void notifyTicketStakeholders(Ticket ticket, User actor, String title, String message) {

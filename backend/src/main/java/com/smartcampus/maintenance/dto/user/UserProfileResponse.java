@@ -1,6 +1,7 @@
 package com.smartcampus.maintenance.dto.user;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record UserProfileResponse(
         Long id,
@@ -8,5 +9,6 @@ public record UserProfileResponse(
         String email,
         String fullName,
         String role,
-        LocalDateTime createdAt) {
+        LocalDateTime createdAt,
+        List<String> specialties) {
 }

@@ -8,6 +8,8 @@ public record TicketResponse(
         String description,
         String category,
         String serviceDomainKey,
+        boolean assignmentReviewRequired,
+        String assignmentReviewReason,
         TicketRequestTypeResponse requestType,
         TicketBuildingResponse building,
         String location,

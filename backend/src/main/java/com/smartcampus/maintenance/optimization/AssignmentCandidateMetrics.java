@@ -1,5 +1,7 @@
 package com.smartcampus.maintenance.optimization;
 
+import java.util.List;
+
 public record AssignmentCandidateMetrics(
         Long userId,
         String username,
@@ -7,5 +9,7 @@ public record AssignmentCandidateMetrics(
         int activeOpenTickets,
         int sameDomainResolvedTickets,
         int sameBuildingResolvedTickets,
-        int recentResolvedTickets) {
+        int recentResolvedTickets,
+        boolean specializationMatch,
+        List<String> specialties) {
 }

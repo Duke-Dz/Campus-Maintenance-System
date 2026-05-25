@@ -1,21 +1,6 @@
-# CampusFix Maintenance System
+# CampusFix — Campus Maintenance System
 
-CampusFix is a role-based campus maintenance platform for students, maintenance staff, and administrators.
-
-## Start Here
-
-1. Read `documentation/guides/setup-guide.md` for first-time setup.
-2. Use `backend/README.md` and `frontend/README.md` for service-specific details.
-3. Use `database/README.md` for schema + seed data setup.
-
-## Project Structure
-
-- `backend/` Spring Boot API (Java 21, Maven)
-- `frontend/` React + Vite web app (Node 18+)
-- `database/` MySQL schema and seed scripts
-- `documentation/` setup, testing, deployment, and architecture docs
-- `devops/` Docker and Kubernetes manifests
-- `uploads/` runtime upload storage
+A role-based campus maintenance platform for students, maintenance staff, and administrators.
 
 ## Prerequisites
 
@@ -24,117 +9,109 @@ CampusFix is a role-based campus maintenance platform for students, maintenance 
 - Node.js 18+
 - MySQL 8.0+
 
-## Quick Start (Local)
+---
+
+## Running Locally
 
 ### 1. Database
 
-From project root:
+Run the Flyway migrations automatically on first backend startup — no manual SQL import needed.
+
+If you prefer to pre-create the database manually:
 
 ```bash
-mysql -u root -p < database/schemas/schema.sql
-mysql -u root -p < database/seed_data.sql
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS Campus_Fix CHARACTER SET utf8mb4;"
 ```
-
-This creates and uses database `Campus_Fix`.
 
 ### 2. Backend
 
-```bash
+```powershell
 cd backend
-cp .env.example .env
-# Windows PowerShell: copy .env.example .env
-# Edit .env values (DB, admin, SMTP)
-mvn spring-boot:run
+copy .env.example .env
 ```
 
-Backend URL: `http://localhost:8080`
+Edit `.env` and set at minimum:
+
+```
+DB_URL=jdbc:mysql://localhost:3306/Campus_Fix
+DB_USERNAME=root
+DB_PASSWORD=yourpassword
+APP_SEED_BOOTSTRAP_ADMIN=true
+APP_ADMIN_USERNAME=admin
+APP_ADMIN_EMAIL=admin@campus.local
+APP_ADMIN_PASSWORD=YourStrongPassword123!
+APP_EMAIL_ENABLED=false
+```
+
+Start the backend:
+
+```powershell
+mvn spring-boot:run -DskipTests
+```
+
+Backend runs at: `http://localhost:8080`
+
+> **Tip:** Use the `fast` profile during development to speed up startup:
+> ```powershell
+> mvn spring-boot:run -DskipTests "-Dspring-boot.run.profiles=fast"
+> ```
 
 ### 3. Frontend
 
 Open a second terminal:
 
-```bash
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-Frontend URL: `http://localhost:5173`
+Frontend runs at: `http://localhost:5173`
 
-## Default Seed Accounts
+---
 
-`database/seed_data.sql` inserts these demo users (password: `password`):
+## Default Admin Account
 
-- `admin_seed` (ADMIN)
-- `maintenance_seed` (MAINTENANCE)
-- `student_seed` (STUDENT)
+Configured via `backend/.env` — see `APP_ADMIN_*` variables above. The admin account is created automatically on first startup when `APP_SEED_BOOTSTRAP_ADMIN=true`.
 
-Note: The backend can also bootstrap an admin user from `backend/.env` values.
+---
 
-## Email and Password Recovery
+## Email (Optional)
 
-- Email verification code is required after registration.
-- Forgot password sends a reset link.
-- Successful reset sends a confirmation email.
-- Configure SMTP in `backend/.env`.
-- Recommended production provider: Resend via SMTP with a verified custom sender domain.
+Email is disabled by default (`APP_EMAIL_ENABLED=false`). To enable for local testing, configure SMTP in `.env`:
 
-If SMTP is not configured, set `APP_EMAIL_ENABLED=false` for local testing.
+```
+APP_EMAIL_ENABLED=true
+MAIL_HOST=smtp.example.com
+MAIL_USERNAME=your-user
+MAIL_PASSWORD=your-password
+APP_EMAIL_FROM=no-reply@yourdomain.com
+```
+
+---
 
 ## Docker (Optional)
 
-```bash
+```powershell
 copy backend/.env.example backend/.env
-# set strong secrets before starting
+# Edit backend/.env with strong secrets
 docker compose up --build
 ```
 
 Services:
 
-- MySQL: `localhost:3306`
-- Backend: `localhost:8080`
-- Frontend: `localhost:3000`
+| Service  | URL                    |
+|----------|------------------------|
+| Backend  | http://localhost:8080  |
+| Frontend | http://localhost:3000  |
+| MySQL    | localhost:3306         |
 
-For production-style deployments:
+---
 
-- Set `SPRING_PROFILES_ACTIVE=prod`
-- Replace all placeholder secrets
-- Set `APP_CORS_ALLOWED_ORIGINS` and `FRONTEND_BASE_URL` to real public hosts
-- Mount persistent storage for uploads
+## Project Structure
 
-## Documentation Index
-
-- `documentation/README.md`
-- `documentation/guides/setup-guide.md`
-- `documentation/guides/testing-guide.md`
-- `documentation/guides/troubleshooting.md`
-- `documentation/guides/deployment-guide.md`
-- `documentation/guides/admin-credentials-setup.md`
-- `documentation/guides/email-production-checklist.md`
-
-## Verification Commands
-
-```bash
-# backend
-cd backend
-mvn -q -DskipTests compile
-mvn -q test
-
-# frontend
-cd ../frontend
-npm run lint
-npm run build
 ```
-
-## Fast Local Backend Startup (Dev)
-
-Use the `fast` Spring profile while developing to reduce startup overhead:
-
-```bash
-cd backend
-mvn -q -DskipTests spring-boot:run "-Dspring-boot.run.profiles=fast"
+backend/    Spring Boot API (Java 21, Maven)
+frontend/   React + Vite web app (Node 18+)
+uploads/    Runtime file upload storage
 ```
-
-Notes:
-- This profile sets lazy initialization and disables JPA auto schema update.
-- Make sure your database schema is already up to date before using it.

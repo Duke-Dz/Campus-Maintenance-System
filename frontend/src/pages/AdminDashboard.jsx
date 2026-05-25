@@ -43,6 +43,7 @@ import { userService } from "../services/userService";
 import { exportToCSV, exportToPDF } from "../services/exportService";
 import { STATUSES, URGENCY_LEVELS } from "../utils/constants";
 import { formatDate, titleCase } from "../utils/helpers";
+import { formatSpecialtyLabel } from "../utils/technicianSpecialties.js";
 import {
   getTicketBuildingName,
   getTicketLocationSummary,
@@ -97,6 +98,7 @@ export const AdminDashboard = () => {
     buildingId: "",
     urgency: "",
     assignee: "",
+    reviewRequired: "",
   });
   const [dateRange, setDateRange] = useState({ from: null, to: null });
   const [reportOpen, setReportOpen] = useState(false);
@@ -301,6 +303,10 @@ export const AdminDashboard = () => {
       return withinFrom && withinTo && withinSearch;
     }).map((item) => item.ticket);
   }, [dateRange.from, dateRange.to, deferredTableSearch, ticketSearchIndex]);
+  const specialistReviewTickets = useMemo(
+    () => tickets.filter((ticket) => ticket.assignmentReviewRequired),
+    [tickets]
+  );
 
   const criticalOpen = useMemo(
     () => allTicketsForTrend.filter((ticket) => !["RESOLVED", "CLOSED", "REJECTED"].includes(ticket.status) && ticket.urgency === "CRITICAL").length,
@@ -500,6 +506,7 @@ export const AdminDashboard = () => {
     filters.buildingId,
     filters.urgency,
     filters.assignee,
+    filters.reviewRequired,
     tableSearch.trim(),
   ].filter(Boolean).length;
   const reportScopeDetail = (
@@ -556,6 +563,64 @@ export const AdminDashboard = () => {
       </section>
 
       {analyticsLoading ? <SkeletonLoader variant="stat" count={4} /> : <AdminStatCards items={statCards} />}
+
+      <MotionCardSurface
+        as="section"
+        cardId="admin-specialist-review-queue"
+        sectionId="specialist-review"
+        className="motion-section dashboard-panel interactive-surface"
+        trackSection
+      >
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Specialist review queue</h3>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+              Tickets waiting for admin assignment because CampusFix could not safely auto-match a specialist.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFilters((current) => ({ ...current, reviewRequired: "true" }))}
+            className="pill-badge bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+          >
+            {specialistReviewTickets.length} in queue
+          </button>
+        </div>
+        {specialistReviewTickets.length === 0 ? (
+          <p className="rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">
+            No tickets currently need specialist review.
+          </p>
+        ) : (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {specialistReviewTickets.slice(0, 6).map((ticket) => (
+              <button
+                key={ticket.id}
+                type="button"
+                onClick={() => openTicket(ticket.id)}
+                className="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-4 text-left transition hover:border-amber-400 hover:bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 dark:hover:border-amber-700"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">#{ticket.id} {ticket.title}</p>
+                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                      {getTicketServiceDomainLabel(ticket)} | {getTicketRequestTypeLabel(ticket)}
+                    </p>
+                  </div>
+                  <UrgencyBadge urgency={ticket.urgency} />
+                </div>
+                <p className="mt-3 text-xs text-amber-800 dark:text-amber-200">
+                  {ticket.assignmentReviewReason === "NO_SPECIALIST_MATCH"
+                    ? "No technician specialization matched this request."
+                    : "Matching specialists are currently at capacity."}
+                </p>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  {getTicketLocationSummary(ticket)}
+                </p>
+              </button>
+            ))}
+          </div>
+        )}
+      </MotionCardSurface>
 
       {!analyticsLoading && (
         <div className="motion-grid grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-[1.3fr_0.8fr_0.8fr]">
@@ -731,10 +796,15 @@ export const AdminDashboard = () => {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700 dark:text-emerald-300">Assignment recommendations</p>
-                          <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-200/80">Ranked by current workload, similar work history, building familiarity, and recent throughput.</p>
+                          <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-200/80">Ranked by specialization match, workload, similar work history, building familiarity, and recent throughput.</p>
                         </div>
                         {recommendationsLoading && <span className="text-xs text-emerald-700 dark:text-emerald-300">Loading...</span>}
                       </div>
+                      {selectedTicket.ticket.assignmentReviewRequired && (
+                        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/90 px-3 py-3 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                          This ticket is in the specialist review queue because auto-assignment could not find a safe specialist match.
+                        </div>
+                      )}
                       {!recommendationsLoading && assignmentRecommendations.length > 0 && (
                         <div className="mt-3 grid gap-2">
                           {assignmentRecommendations.map((recommendation, index) => (
@@ -758,6 +828,13 @@ export const AdminDashboard = () => {
                                   Score {recommendation.score}
                                 </span>
                               </div>
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {(recommendation.specialties || []).map((specialty) => (
+                                  <span key={specialty} className={`pill-badge ${recommendation.specializationMatch ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
+                                    {formatSpecialtyLabel(specialty)}
+                                  </span>
+                                ))}
+                              </div>
                               <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">
                                 {recommendation.reasons.join(" ")}
                               </p>
@@ -776,7 +853,7 @@ export const AdminDashboard = () => {
                           onChange={(e) => setAssignForm((p) => ({ ...p, assigneeId: e.target.value }))}
                           className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
                           <option value="">Select staff...</option>
-                          {maintenanceUsers.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
+                          {maintenanceUsers.map((u) => <option key={u.id} value={u.id}>{u.fullName}{u.specialties?.length ? ` - ${u.specialties.map(formatSpecialtyLabel).join(", ")}` : ""}</option>)}
                         </select>
                       </div>
                       <div>

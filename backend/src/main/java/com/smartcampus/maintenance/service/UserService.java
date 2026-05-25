@@ -13,6 +13,7 @@ import com.smartcampus.maintenance.entity.StaffInvite;
 import com.smartcampus.maintenance.entity.User;
 import com.smartcampus.maintenance.entity.enums.NotificationType;
 import com.smartcampus.maintenance.entity.enums.Role;
+import com.smartcampus.maintenance.entity.enums.TechnicianSpecialty;
 import com.smartcampus.maintenance.exception.ConflictException;
 import com.smartcampus.maintenance.exception.ForbiddenException;
 import com.smartcampus.maintenance.mapper.UserMapper;
@@ -21,7 +22,10 @@ import com.smartcampus.maintenance.repository.StaffInviteRepository;
 import com.smartcampus.maintenance.repository.TicketRepository;
 import com.smartcampus.maintenance.repository.UserRepository;
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -109,6 +113,7 @@ public class UserService {
 
         String email = request.email().trim().toLowerCase();
         String fullName = request.fullName().trim();
+        Set<TechnicianSpecialty> specialties = normalizeSpecialties(request.specialties());
 
         if (isEmailUnavailable(email)) {
             throw new ConflictException("Email is already registered or has a pending invitation.");
@@ -121,6 +126,7 @@ public class UserService {
         invite.setUsername("pending_" + tokenHashService.generateUrlToken(8).toLowerCase());
         invite.setEmail(email);
         invite.setFullName(fullName);
+        invite.setSpecialties(specialties);
         invite.setInvitedBy(actor);
         invite.setExpiresAt(LocalDateTime.now().plusHours(staffInviteTtlHours));
         invite = staffInviteRepository.save(invite);
@@ -131,7 +137,8 @@ public class UserService {
                 invite.getId(),
                 invite.getEmail(),
                 invite.getFullName(),
-                invite.getExpiresAt());
+                invite.getExpiresAt(),
+                specialtyNames(invite.getSpecialties()));
     }
 
     @Transactional
@@ -227,6 +234,21 @@ public class UserService {
                 user.getEmail(),
                 user.getFullName(),
                 user.getRole().name(),
-                user.getCreatedAt());
+                user.getCreatedAt(),
+                UserMapper.specialties(user));
+    }
+
+    private Set<TechnicianSpecialty> normalizeSpecialties(Set<TechnicianSpecialty> specialties) {
+        if (specialties == null || specialties.isEmpty()) {
+            throw new ConflictException("At least one specialty is required for maintenance staff.");
+        }
+        return EnumSet.copyOf(specialties);
+    }
+
+    private List<String> specialtyNames(Set<TechnicianSpecialty> specialties) {
+        return specialties.stream()
+                .map(Enum::name)
+                .sorted(Comparator.naturalOrder())
+                .toList();
     }
 }

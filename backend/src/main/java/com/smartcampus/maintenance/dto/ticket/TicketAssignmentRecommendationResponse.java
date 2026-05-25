@@ -7,5 +7,7 @@ public record TicketAssignmentRecommendationResponse(
         String username,
         String fullName,
         double score,
+        boolean specializationMatch,
+        List<String> specialties,
         List<String> reasons) {
 }

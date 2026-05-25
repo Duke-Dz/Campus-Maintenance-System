@@ -53,6 +53,12 @@ public final class TicketSpecifications {
             : cb.equal(root.get("assignedTo").get("id"), assigneeId);
     }
 
+    public static Specification<Ticket> assignmentReviewRequiredEquals(Boolean assignmentReviewRequired) {
+        return (root, query, cb) -> assignmentReviewRequired == null
+                ? cb.conjunction()
+                : cb.equal(root.get("assignmentReviewRequired"), assignmentReviewRequired);
+    }
+
     public static Specification<Ticket> searchLike(String search) {
         return (root, query, cb) -> {
             if (!StringUtils.hasText(search)) {

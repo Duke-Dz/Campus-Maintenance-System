@@ -24,6 +24,8 @@ public final class TicketMapper {
                 ticket.getDescription(),
                 serviceDomainKey,
                 serviceDomainKey,
+                ticket.isAssignmentReviewRequired(),
+                ticket.getAssignmentReviewReason() == null ? null : ticket.getAssignmentReviewReason().name(),
                 toRequestTypeResponse(ticket.getRequestType()),
                 toBuildingResponse(ticket.getBuildingRecord(), ticket.getBuilding()),
                 ticket.getLocation(),

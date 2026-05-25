@@ -14,10 +14,9 @@ Use this folder as the main reference for onboarding, setup, testing, and deploy
 
 ## Sections
 
-- `guides/` practical runbooks for developers
+- `guides/` practical runbooks
 - `api/` API-level references
 - `architecture/` system-level design notes
-- `team/` ownership and planning templates
 
 ## Service READMEs
 

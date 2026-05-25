@@ -72,10 +72,11 @@ public class TicketController {
             @RequestParam(value = "buildingId", required = false) Long buildingId,
             @RequestParam(value = "urgency", required = false) UrgencyLevel urgency,
             @RequestParam(value = "assignee", required = false) Long assigneeId,
+            @RequestParam(value = "reviewRequired", required = false) Boolean reviewRequired,
             @RequestParam(value = "search", required = false) String search) {
         User actor = currentUserService.requireCurrentUser();
         return ticketService.getAllTickets(actor, status, serviceDomainKey, requestTypeId, buildingId, urgency,
-                assigneeId, search);
+                assigneeId, reviewRequired, search);
     }
 
     @GetMapping("/my")

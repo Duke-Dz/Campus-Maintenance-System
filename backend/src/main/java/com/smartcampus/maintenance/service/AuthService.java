@@ -591,6 +591,7 @@ public class AuthService {
         user.setEmail(invite.getEmail());
         user.setFullName(invite.getFullName());
         user.setRole(Role.MAINTENANCE);
+        user.setSpecialties(invite.getSpecialties());
         user.setEmailVerified(true);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         userRepository.save(user);

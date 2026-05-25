@@ -251,7 +251,8 @@ public class AccountCenterService {
                 actor.getEmail(),
                 actor.getFullName(),
                 actor.getRole().name(),
-                actor.getCreatedAt());
+                actor.getCreatedAt(),
+                UserMapper.specialties(actor));
     }
 
     private List<UserNotificationPreferenceResponse> toNotificationResponses(

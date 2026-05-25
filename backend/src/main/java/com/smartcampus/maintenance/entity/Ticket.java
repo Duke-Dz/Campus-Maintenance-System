@@ -1,6 +1,7 @@
 package com.smartcampus.maintenance.entity;
 
 import com.smartcampus.maintenance.entity.enums.TicketCategory;
+import com.smartcampus.maintenance.entity.enums.TicketAssignmentReviewReason;
 import com.smartcampus.maintenance.entity.enums.TicketStatus;
 import com.smartcampus.maintenance.entity.enums.UrgencyLevel;
 import jakarta.persistence.Column;
@@ -80,6 +81,13 @@ public class Ticket {
 
     @Column(name = "resolved_at")
     private LocalDateTime resolvedAt;
+
+    @Column(name = "assignment_review_required", nullable = false)
+    private boolean assignmentReviewRequired = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "assignment_review_reason", length = 40)
+    private TicketAssignmentReviewReason assignmentReviewReason;
 
     @PrePersist
     public void onCreate() {
@@ -233,5 +241,21 @@ public class Ticket {
 
     public void setAfterImagePath(String afterImagePath) {
         this.afterImagePath = afterImagePath;
+    }
+
+    public boolean isAssignmentReviewRequired() {
+        return assignmentReviewRequired;
+    }
+
+    public void setAssignmentReviewRequired(boolean assignmentReviewRequired) {
+        this.assignmentReviewRequired = assignmentReviewRequired;
+    }
+
+    public TicketAssignmentReviewReason getAssignmentReviewReason() {
+        return assignmentReviewReason;
+    }
+
+    public void setAssignmentReviewReason(TicketAssignmentReviewReason assignmentReviewReason) {
+        this.assignmentReviewReason = assignmentReviewReason;
     }
 }

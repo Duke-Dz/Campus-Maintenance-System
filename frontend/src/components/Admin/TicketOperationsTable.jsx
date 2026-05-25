@@ -132,6 +132,7 @@ export const TicketOperationsTable = ({
     filters.buildingId,
     filters.urgency,
     filters.assignee,
+    filters.reviewRequired,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -142,6 +143,7 @@ export const TicketOperationsTable = ({
       buildingId: "",
       urgency: "",
       assignee: "",
+      reviewRequired: "",
     });
     onSearchChange?.("");
   };
@@ -165,7 +167,7 @@ export const TicketOperationsTable = ({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
         <select
           value={filters.status}
           onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}
@@ -223,6 +225,15 @@ export const TicketOperationsTable = ({
         >
           <option value="">All Assignees</option>
           {maintenanceUsers.map((user) => <option key={user.id} value={user.id}>{user.fullName}</option>)}
+        </select>
+        <select
+          value={filters.reviewRequired}
+          onChange={(event) => setFilters((current) => ({ ...current, reviewRequired: event.target.value }))}
+          className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200"
+        >
+          <option value="">All Queues</option>
+          <option value="true">Needs specialist review</option>
+          <option value="false">Standard workflow</option>
         </select>
       </div>
     </div>

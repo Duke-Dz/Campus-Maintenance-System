@@ -9,6 +9,7 @@ import com.smartcampus.maintenance.entity.RequestType;
 import com.smartcampus.maintenance.entity.User;
 import com.smartcampus.maintenance.entity.enums.NotificationType;
 import com.smartcampus.maintenance.entity.enums.Role;
+import com.smartcampus.maintenance.entity.enums.TechnicianSpecialty;
 import com.smartcampus.maintenance.entity.enums.TicketCategory;
 import com.smartcampus.maintenance.entity.enums.TicketStatus;
 import com.smartcampus.maintenance.entity.enums.UrgencyLevel;
@@ -22,6 +23,7 @@ import com.smartcampus.maintenance.repository.NotificationRepository;
 import com.smartcampus.maintenance.util.ServiceDomainCatalog;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,6 +109,17 @@ public class DataSeeder {
                 Role.MAINTENANCE,
                 demoPassword
             );
+            maintenance1.setSpecialties(EnumSet.of(
+                    TechnicianSpecialty.PLUMBING,
+                    TechnicianSpecialty.ELECTRICAL,
+                    TechnicianSpecialty.GENERAL_MAINTENANCE));
+            maintenance2.setSpecialties(EnumSet.of(
+                    TechnicianSpecialty.NETWORK,
+                    TechnicianSpecialty.HVAC,
+                    TechnicianSpecialty.CARPENTRY,
+                    TechnicianSpecialty.SANITATION));
+            maintenance1 = userRepository.save(maintenance1);
+            maintenance2 = userRepository.save(maintenance2);
 
             Building library = ensureBuilding(buildingRepository, "Library", "LIB", 4, 0);
             Building engineeringHall = ensureBuilding(buildingRepository, "Engineering Hall", "ENG", 5, 1);

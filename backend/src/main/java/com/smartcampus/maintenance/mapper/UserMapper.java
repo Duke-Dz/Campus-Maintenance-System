@@ -4,6 +4,8 @@ import com.smartcampus.maintenance.dto.ticket.TicketUserInfoResponse;
 import com.smartcampus.maintenance.dto.user.UserSummaryResponse;
 import com.smartcampus.maintenance.dto.user.UserWithTicketCountResponse;
 import com.smartcampus.maintenance.entity.User;
+import java.util.Comparator;
+import java.util.List;
 
 public final class UserMapper {
 
@@ -24,7 +26,8 @@ public final class UserMapper {
             user.getEmail(),
             user.getFullName(),
             user.getRole().name(),
-            user.getCreatedAt()
+            user.getCreatedAt(),
+            specialties(user)
         );
     }
 
@@ -35,7 +38,15 @@ public final class UserMapper {
             user.getEmail(),
             user.getFullName(),
             user.getRole().name(),
-            ticketCount
+            ticketCount,
+            specialties(user)
         );
+    }
+
+    public static List<String> specialties(User user) {
+        return user.getSpecialties().stream()
+                .map(Enum::name)
+                .sorted(Comparator.naturalOrder())
+                .toList();
     }
 }

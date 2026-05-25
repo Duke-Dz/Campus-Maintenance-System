@@ -8,6 +8,8 @@ import { AnimatePresence, motion as Motion } from "framer-motion";
 import { AuthPasswordField } from "../components/Auth/AuthPasswordField.jsx";
 import { OtpCodeField } from "../components/Auth/OtpCodeField.jsx";
 import { AuthShell } from "../components/Auth/AuthShell.jsx";
+import { TurnstileWidget } from "../components/Auth/TurnstileWidget.jsx";
+import { turnstileEnabled } from "../components/Auth/turnstileConfig.js";
 import { useAuth } from "../hooks/useAuth";
 import { authService } from "../services/authService";
 import { ROLES } from "../utils/constants";
@@ -15,6 +17,7 @@ import { ROLES } from "../utils/constants";
 const loginSchema = z.object({
   username: z.string().trim().min(3, "Enter your username."),
   password: z.string().min(1, "Enter your password."),
+  captchaToken: turnstileEnabled ? z.string().min(1, "Complete the verification challenge.") : z.string().optional(),
 });
 
 const destination = (role) => {
@@ -45,12 +48,14 @@ export const LoginPage = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       username: "",
       password: "",
+      captchaToken: "",
     },
   });
 
@@ -61,6 +66,7 @@ export const LoginPage = () => {
       const session = await login({
         username: values.username.trim(),
         password: values.password,
+        captchaToken: values.captchaToken || "",
       });
       if (session?.mfaRequired) {
         setMfaChallengeId(session.mfaChallengeId);
@@ -72,6 +78,7 @@ export const LoginPage = () => {
       navigate(nextPath, { replace: true });
     } catch (error) {
       setSubmitError(error.message);
+      setValue("captchaToken", "", { shouldValidate: false });
     }
   };
 
@@ -204,6 +211,14 @@ export const LoginPage = () => {
               Forgot password?
             </Link>
           </div>
+
+          {turnstileEnabled ? (
+            <div>
+              <p className="mb-3 text-sm font-medium text-slate-700 dark:text-slate-200">Verification</p>
+              <TurnstileWidget onVerify={(token) => setValue("captchaToken", token || "", { shouldValidate: true })} />
+              {errors.captchaToken ? <p className="mt-2 text-sm font-medium text-rose-600 dark:text-rose-300">{errors.captchaToken.message}</p> : null}
+            </div>
+          ) : null}
 
           <AnimatePresence mode="wait">
             {submitError ? (
