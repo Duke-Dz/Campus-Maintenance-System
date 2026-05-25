@@ -35,6 +35,15 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: env.VITE_DEV_PROXY_TARGET || 'http://127.0.0.1:8080',
           changeOrigin: true,
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              // Avoid backend CORS rejections when the browser hits the Vite dev
+              // server from 127.0.0.1/localhost and the backend only allows a
+              // different local origin set. The browser is same-origin to Vite,
+              // so forwarding Origin is unnecessary here.
+              proxyReq.removeHeader('origin');
+            });
+          },
         },
       },
     },
