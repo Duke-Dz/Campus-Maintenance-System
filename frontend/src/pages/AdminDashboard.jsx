@@ -562,7 +562,7 @@ export const AdminDashboard = () => {
         </p>
       </section>
 
-      {analyticsLoading ? <SkeletonLoader variant="stat" count={4} /> : <AdminStatCards items={statCards} />}
+      {analyticsLoading ? <SkeletonLoader variant="stat" count={4} className="admin-dashboard-stat-grid" /> : <AdminStatCards items={statCards} />}
 
       <MotionCardSurface
         as="section"

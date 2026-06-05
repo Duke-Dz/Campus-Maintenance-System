@@ -638,7 +638,11 @@ export const StudentDashboard = () => {
         </div>
       </DashboardHero>
 
-      {loading ? <SkeletonLoader variant="stat" count={4} /> : <DashboardStatGrid items={statCards} />}
+      {loading ? (
+        <SkeletonLoader variant="stat" count={4} className="dashboard-summary-stat-grid" />
+      ) : (
+        <DashboardStatGrid items={statCards} className="dashboard-summary-stat-grid" />
+      )}
 
       {showForm && (
         <MotionCardSurface

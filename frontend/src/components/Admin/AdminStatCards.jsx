@@ -64,7 +64,7 @@ const StatDetail = ({ item }) => (
 
 export const AdminStatCards = ({ items = [] }) => {
   return (
-    <div className="dashboard-stat-grid">
+    <div className="dashboard-stat-grid admin-dashboard-stat-grid">
       {items.map((item, index) => (
         <StatCard key={item.motionId || item.label || index} {...item} />
       ))}

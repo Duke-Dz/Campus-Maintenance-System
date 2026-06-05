@@ -146,6 +146,9 @@ export const AdminConfigurationSection = ({
     sortOrder: supportCategories.length,
   });
   const [savingKey, setSavingKey] = useState("");
+  const [savedBuildingIds, setSavedBuildingIds] = useState(() => new Set());
+  const [savedBuildingCodes, setSavedBuildingCodes] = useState(() => new Set());
+  const [showSavedBuildings, setShowSavedBuildings] = useState(false);
 
   useEffect(() => {
     setCreateBuildingForm((current) => ({ ...current, sortOrder: buildings.length }));
@@ -169,11 +172,23 @@ export const AdminConfigurationSection = ({
     })),
     [requestTypes, serviceDomains]
   );
+  const visibleBuildings = useMemo(
+    () => showSavedBuildings
+      ? buildings
+      : buildings.filter((building) => (
+        !savedBuildingIds.has(building.id)
+        && !savedBuildingCodes.has(String(building.code || "").trim().toUpperCase())
+      )),
+    [buildings, savedBuildingCodes, savedBuildingIds, showSavedBuildings]
+  );
+  const hiddenSavedBuildingCount = buildings.length - visibleBuildings.length;
 
   const saveBuilding = async (id, form) => {
     setSavingKey(`building-${id}`);
     try {
       await adminConfigService.updateBuilding(id, form);
+      setSavedBuildingIds((current) => new Set(current).add(id));
+      setSavedBuildingCodes((current) => new Set(current).add(String(form.code || "").trim().toUpperCase()));
       toast.success("Building updated.");
       await onRefresh();
     } catch (err) {
@@ -186,7 +201,11 @@ export const AdminConfigurationSection = ({
   const createBuilding = async () => {
     setSavingKey("create-building");
     try {
-      await adminConfigService.createBuilding(createBuildingForm);
+      const createdBuilding = await adminConfigService.createBuilding(createBuildingForm);
+      if (createdBuilding?.id) {
+        setSavedBuildingIds((current) => new Set(current).add(createdBuilding.id));
+      }
+      setSavedBuildingCodes((current) => new Set(current).add(String(createBuildingForm.code || "").trim().toUpperCase()));
       toast.success("Building created.");
       setCreateBuildingForm({ name: "", code: "", floors: 1, sortOrder: buildings.length + 1 });
       await onRefresh();
@@ -305,8 +324,23 @@ export const AdminConfigurationSection = ({
             </div>
           </div>
 
+          {hiddenSavedBuildingCount > 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-200">
+              <span>
+                {hiddenSavedBuildingCount} saved {hiddenSavedBuildingCount === 1 ? "building is" : "buildings are"} hidden from this editor.
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowSavedBuildings((current) => !current)}
+                className="font-semibold text-campus-700 hover:text-campus-800 dark:text-campus-300 dark:hover:text-campus-200"
+              >
+                {showSavedBuildings ? "Hide saved buildings" : "Show saved buildings"}
+              </button>
+            </div>
+          ) : null}
+
           <div className="space-y-3">
-            {buildings.map((building) => (
+            {visibleBuildings.map((building) => (
               <EditableBuildingRow
                 key={`${building.id}-${building.name}-${building.code}-${building.floors}-${building.sortOrder}-${building.active}`}
                 building={building}
@@ -314,6 +348,11 @@ export const AdminConfigurationSection = ({
                 saving={savingKey === `building-${building.id}`}
               />
             ))}
+            {visibleBuildings.length === 0 ? (
+              <p className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900/55 dark:text-slate-300">
+                No unsaved building rows are visible. Use "Show saved buildings" if you need to edit one again.
+              </p>
+            ) : null}
           </div>
         </div>
       )}

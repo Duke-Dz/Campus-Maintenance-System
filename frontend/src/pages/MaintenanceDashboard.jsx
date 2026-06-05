@@ -495,7 +495,11 @@ export const MaintenanceDashboard = () => {
         </p>
       </section>
 
-      {loading ? <SkeletonLoader variant="stat" count={4} /> : <DashboardStatGrid items={statCards} />}
+      {loading ? (
+        <SkeletonLoader variant="stat" count={4} className="dashboard-summary-stat-grid" />
+      ) : (
+        <DashboardStatGrid items={statCards} className="dashboard-summary-stat-grid" />
+      )}
 
       {loading && <SkeletonLoader variant="card" count={3} />}
       {!loading && error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{error}</p>}

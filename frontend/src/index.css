@@ -3316,6 +3316,21 @@ details[open] .faq-answer {
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   }
 
+  .dashboard-shell .admin-dashboard-stat-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  .dashboard-shell .dashboard-summary-stat-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  @media (min-width: 640px) {
+    .dashboard-shell .admin-dashboard-stat-grid,
+    .dashboard-shell .dashboard-summary-stat-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
   .dashboard-shell .dashboard-toolbar,
   .dashboard-shell .dashboard-segment-control,
   .dashboard-shell .dashboard-list-item,
@@ -3541,6 +3556,14 @@ details[open] .faq-answer {
     .dashboard-shell .dashboard-stat-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
       gap: 0.65rem !important;
+    }
+
+    .dashboard-shell .admin-dashboard-stat-grid {
+      grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    }
+
+    .dashboard-shell .dashboard-summary-stat-grid {
+      grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
     }
 
     .dashboard-shell .dashboard-stat-card {
