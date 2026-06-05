@@ -93,6 +93,8 @@ export const AcceptInvitePage = () => {
         description="Ask an administrator to issue a new staff invitation."
         taskIcon={KeyRound}
         layout="single"
+        showHeaderBrand
+        headerBrandSubtitle="Campus Maintenance System"
         documentTitle="Invitation invalid"
         footer={(
           <div className="text-sm text-slate-600 dark:text-slate-300">
@@ -130,6 +132,8 @@ export const AcceptInvitePage = () => {
       description="Finish activating your staff account with a username and password."
       aside={inviteAside}
       taskIcon={KeyRound}
+      showHeaderBrand
+      headerBrandSubtitle="Campus Maintenance System"
       documentTitle="Create your staff credentials"
       footer={(
         <div className="flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">

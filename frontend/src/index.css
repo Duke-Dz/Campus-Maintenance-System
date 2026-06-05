@@ -3531,3 +3531,153 @@ details[open] .faq-answer {
     }
   }
 }
+
+/* ================================================================== */
+/* Mobile responsiveness fixes                                         */
+/* ================================================================== */
+@layer components {
+  /* ── Stat grid: 2 columns on small phones ── */
+  @media (max-width: 480px) {
+    .dashboard-shell .dashboard-stat-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 0.65rem !important;
+    }
+
+    .dashboard-shell .dashboard-stat-card {
+      min-height: 120px;
+    }
+
+    .dashboard-shell .dashboard-stat-icon {
+      height: 2.2rem;
+      width: 2.2rem;
+      border-radius: 0.65rem;
+    }
+
+    .dashboard-shell .dashboard-stat-value {
+      font-size: clamp(1.35rem, 5vw, 1.7rem);
+    }
+
+    .dashboard-shell .dashboard-stat-helper {
+      font-size: 0.72rem;
+    }
+
+    .dashboard-shell .dashboard-stat-label {
+      font-size: 0.62rem;
+    }
+  }
+
+  /* ── Dashboard hero: tighter on small screens ── */
+  @media (max-width: 480px) {
+    .dashboard-hero {
+      padding: 1rem !important;
+      border-radius: 1.15rem !important;
+    }
+
+    .dashboard-hero-title {
+      font-size: clamp(1.15rem, 4.5vw, 1.4rem) !important;
+      line-height: 1.22 !important;
+    }
+
+    .dashboard-hero-subtitle {
+      font-size: 0.82rem !important;
+      line-height: 1.45 !important;
+    }
+
+    .dashboard-hero-metrics {
+      gap: 0.55rem;
+    }
+
+    .dashboard-hero-metric {
+      min-width: 0;
+      padding: 0.65rem 0.75rem;
+    }
+
+    .dashboard-hero-metric strong {
+      font-size: 0.92rem;
+    }
+
+    .dashboard-hero-metric-label {
+      font-size: 0.58rem;
+    }
+
+    .dashboard-avatar-wrap {
+      flex-shrink: 0;
+    }
+  }
+
+  /* ── TopBar: user menu constrained on mobile ── */
+  @media (max-width: 640px) {
+    .dashboard-user-menu {
+      right: -0.5rem !important;
+      width: min(14rem, calc(100vw - 2rem)) !important;
+    }
+
+    .command-topbar .flex-wrap {
+      gap: 0.35rem;
+    }
+  }
+
+  /* ── Auth pages: better mobile spacing ── */
+  @media (max-width: 480px) {
+    .auth-shell-brand {
+      margin-bottom: 0.65rem !important;
+    }
+
+    .auth-shell-heading {
+      font-size: clamp(1.55rem, 6vw, 1.95rem) !important;
+    }
+
+    .auth-single-card {
+      padding: 1.15rem 1.1rem !important;
+      border-radius: 1.15rem !important;
+    }
+
+    .auth-glass-card {
+      padding: 1.15rem 1.1rem !important;
+    }
+
+    .auth-immersive-bg > .relative {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+  }
+
+  /* ── Dashboard panel sections: proper mobile spacing ── */
+  @media (max-width: 480px) {
+    .dashboard-shell > .motion-section,
+    .dashboard-shell > .saas-card {
+      padding: 0.95rem !important;
+    }
+
+    .dashboard-panel {
+      padding: 0.95rem !important;
+    }
+
+    .dashboard-shell .dashboard-chart-card {
+      padding: 0.85rem 0.75rem 0.95rem !important;
+    }
+
+    .data-table-wrapper .dashboard-table-frame {
+      border-radius: 0.85rem;
+    }
+
+    /* Ensure ticket tracker grid stacks properly */
+    .dashboard-shell .grid.gap-3.sm\\:grid-cols-4,
+    .dashboard-shell .grid.gap-3.sm\\:grid-cols-3,
+    .dashboard-shell .grid.gap-3.sm\\:grid-cols-5 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+    }
+  }
+
+  /* ── Ensure no horizontal overflow on mobile ── */
+  @media (max-width: 640px) {
+    .dashboard-content-shell {
+      overflow-x: hidden;
+    }
+
+    .dashboard-shell {
+      overflow-x: hidden;
+    }
+  }
+}

@@ -69,6 +69,8 @@ export const ResetPasswordPage = () => {
         description="Request a new reset link to continue."
         taskIcon={KeyRound}
         layout="single"
+        showHeaderBrand
+        headerBrandSubtitle="Campus Maintenance System"
         documentTitle="Reset link invalid"
         footer={(
           <div className="text-sm text-slate-600 dark:text-slate-300">
@@ -92,6 +94,8 @@ export const ResetPasswordPage = () => {
       description="Set a new password to regain access to your account."
       taskIcon={KeyRound}
       documentTitle="Choose a new password"
+      showHeaderBrand
+      headerBrandSubtitle="Campus Maintenance System"
       brandTitle="Choose a new password"
       brandSubtitle="Set a strong password to keep your campus account secure. After reset, older sessions are revoked."
       brandIcon={KeyRound}

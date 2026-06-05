@@ -65,6 +65,8 @@ export const ForgotPasswordPage = () => {
       description="Enter your email and we'll send reset instructions if an account exists."
       taskIcon={Mail}
       documentTitle="Reset password"
+      showHeaderBrand
+      headerBrandSubtitle="Campus Maintenance System"
       brandTitle="Reset your password"
       brandSubtitle="We'll send reset instructions to your registered email address so you can regain access."
       brandIcon={Mail}

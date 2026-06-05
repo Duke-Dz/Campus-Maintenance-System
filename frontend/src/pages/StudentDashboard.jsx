@@ -437,6 +437,14 @@ export const StudentDashboard = () => {
 
   const submitTicket = async (event) => {
     event.preventDefault();
+    const normalizedTitle = form.title.trim();
+    const normalizedDescription = form.description.trim();
+    const normalizedLocation = form.location.trim();
+
+    if (!normalizedTitle || !normalizedDescription || !normalizedLocation) {
+      setSubmitError("Complete the required fields before submitting.");
+      return;
+    }
     if (!buildings.some((building) => String(building.id) === String(form.buildingId))) {
       setBuildingSelectionWarning("The selected building was archived or removed while this form was open. Choose another active building before submitting.");
       setSubmitError("Choose an active building before submitting.");
@@ -454,11 +462,11 @@ export const StudentDashboard = () => {
     setSubmitError("");
     try {
       await ticketService.createTicket({
-        title: form.title,
-        description: form.description,
+        title: normalizedTitle,
+        description: normalizedDescription,
         buildingId: Number(form.buildingId),
         requestTypeId: Number(form.requestTypeId),
-        location: form.location,
+        location: normalizedLocation,
         urgency: form.urgency,
       }, imageFile);
       setForm(createDefaultForm({
@@ -573,6 +581,7 @@ export const StudentDashboard = () => {
   }, [form.requestTypeId, form.serviceDomainKey, requestTypes, requestTypesQuery.isFetching, requestTypesQuery.isLoading]);
 
   const openComposer = useCallback(() => {
+    setSubmitError("");
     setShowForm(true);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => scrollToDashboardSection("report"));
@@ -651,14 +660,20 @@ export const StudentDashboard = () => {
             <form onSubmit={submitTicket} className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Title</label>
-                <input required value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" placeholder="Short summary of the issue" />
+                <input required value={form.title} onChange={(event) => {
+                  setSubmitError("");
+                  setForm((current) => ({ ...current, title: event.target.value }));
+                }} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" placeholder="Short summary of the issue" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Service domain</label>
                 <select
                   required
                   value={form.serviceDomainKey}
-                  onChange={(event) => setForm((current) => ({ ...current, serviceDomainKey: event.target.value, requestTypeId: "" }))}
+                  onChange={(event) => {
+                    setSubmitError("");
+                    setForm((current) => ({ ...current, serviceDomainKey: event.target.value, requestTypeId: "" }));
+                  }}
                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30"
                 >
                   <option value="" disabled>Select domain</option>
@@ -670,14 +685,20 @@ export const StudentDashboard = () => {
               </div>
               <div className="md:col-span-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Description</label>
-                <textarea required rows={4} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" placeholder="What happened and what should the team know before arriving?" />
+                <textarea required rows={4} value={form.description} onChange={(event) => {
+                  setSubmitError("");
+                  setForm((current) => ({ ...current, description: event.target.value }));
+                }} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" placeholder="What happened and what should the team know before arriving?" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Request type</label>
                 <select
                   required
                   value={form.requestTypeId}
-                  onChange={(event) => setForm((current) => ({ ...current, requestTypeId: event.target.value }))}
+                  onChange={(event) => {
+                    setSubmitError("");
+                    setForm((current) => ({ ...current, requestTypeId: event.target.value }));
+                  }}
                   disabled={!form.serviceDomainKey || requestTypeLoading || requestTypes.length === 0}
                   className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 disabled:cursor-not-allowed disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30 dark:disabled:bg-slate-800"
                 >
@@ -696,6 +717,7 @@ export const StudentDashboard = () => {
                   required
                   value={form.buildingId}
                   onChange={(event) => {
+                    setSubmitError("");
                     setBuildingSelectionWarning("");
                     setForm((current) => ({ ...current, buildingId: event.target.value }));
                   }}
@@ -712,11 +734,17 @@ export const StudentDashboard = () => {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Location details</label>
-                <input required value={form.location} onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" placeholder="Room, floor, wing, or nearby landmark" />
+                <input required value={form.location} onChange={(event) => {
+                  setSubmitError("");
+                  setForm((current) => ({ ...current, location: event.target.value }));
+                }} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30" placeholder="Room, floor, wing, or nearby landmark" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Urgency</label>
-                <select value={form.urgency} onChange={(event) => setForm((current) => ({ ...current, urgency: event.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30">
+                <select value={form.urgency} onChange={(event) => {
+                  setSubmitError("");
+                  setForm((current) => ({ ...current, urgency: event.target.value }));
+                }} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-campus-400 focus:ring-2 focus:ring-campus-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:ring-campus-900/30">
                   {URGENCY_LEVELS.map((urgency) => <option key={urgency} value={urgency}>{titleCase(urgency)}</option>)}
                 </select>
               </div>
@@ -729,12 +757,13 @@ export const StudentDashboard = () => {
                     event.target.value = "";
                     return;
                   }
+                  setSubmitError("");
                   setImageFile(file || null);
                 }} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-campus-50 file:px-3 file:py-1 file:font-medium file:text-campus-600 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200 dark:file:bg-slate-800 dark:file:text-campus-400" />
               </div>
               {submitError && <p className="md:col-span-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">{submitError}</p>}
               <div className="md:col-span-2 flex flex-wrap items-center gap-3">
-                <button disabled={submitLoading} className="btn-primary interactive-control w-full sm:w-auto">{submitLoading ? "Submitting..." : "Submit Request"}</button>
+                <button type="submit" disabled={submitLoading} className="btn-primary interactive-control w-full sm:w-auto">{submitLoading ? "Submitting..." : "Submit Request"}</button>
                 <button type="button" onClick={() => setShowForm(false)} className="btn-ghost interactive-control w-full sm:w-auto">Cancel</button>
               </div>
             </form>
@@ -948,6 +977,30 @@ export const StudentDashboard = () => {
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{selectedTicket.ticket.description}</p>
               <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">{getTicketRequestTypeLabel(selectedTicket.ticket)} | {getTicketLocationSummary(selectedTicket.ticket)}</p>
             </div>
+            {(selectedTicket.ticket.imageUrl || selectedTicket.ticket.afterImageUrl) && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {selectedTicket.ticket.imageUrl && (
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Before</p>
+                    <img
+                      src={selectedTicket.ticket.imageUrl}
+                      alt="Uploaded issue photo"
+                      className="w-full rounded-xl border border-gray-200 object-cover dark:border-slate-700"
+                    />
+                  </div>
+                )}
+                {selectedTicket.ticket.afterImageUrl && (
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">After</p>
+                    <img
+                      src={selectedTicket.ticket.afterImageUrl}
+                      alt="Uploaded completion photo"
+                      className="w-full rounded-xl border border-gray-200 object-cover dark:border-slate-700"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
             <div>
               <h4 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Status Timeline</h4>
               <TicketTimeline logs={selectedTicket.logs} />

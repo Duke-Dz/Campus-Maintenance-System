@@ -692,6 +692,30 @@ export const MaintenanceDashboard = () => {
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{selectedTicket.ticket.description}</p>
               <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">{getTicketRequestTypeLabel(selectedTicket.ticket)} | {getTicketLocationSummary(selectedTicket.ticket)}</p>
             </div>
+            {(selectedTicket.ticket.imageUrl || selectedTicket.ticket.afterImageUrl) && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {selectedTicket.ticket.imageUrl && (
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Before</p>
+                    <img
+                      src={selectedTicket.ticket.imageUrl}
+                      alt="Student uploaded damage photo"
+                      className="w-full rounded-xl border border-gray-200 object-cover dark:border-slate-700"
+                    />
+                  </div>
+                )}
+                {selectedTicket.ticket.afterImageUrl && (
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">After</p>
+                    <img
+                      src={selectedTicket.ticket.afterImageUrl}
+                      alt="Maintenance uploaded completion photo"
+                      className="w-full rounded-xl border border-gray-200 object-cover dark:border-slate-700"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
             <div>
               <h4 className="mb-3 text-sm font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">Timeline</h4>
               <TicketTimeline logs={selectedTicket.logs} />
