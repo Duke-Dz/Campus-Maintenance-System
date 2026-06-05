@@ -90,10 +90,13 @@ export const CampusFixLogo = ({
   const palette = sizeMap[size] || sizeMap.md;
   const logoMotion = motionClasses(motion);
   const authVariant = variant === "auth";
+  const containerClass = authVariant
+    ? "flex flex-col items-center justify-center gap-2 text-center sm:flex-row sm:gap-3 sm:text-left"
+    : `flex items-center gap-3 ${collapsed ? "justify-center" : ""}`;
 
   return (
     <div
-      className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}
+      className={containerClass}
       data-auth-logo={authVariant ? "true" : undefined}
       data-logo-motion={motion}
       data-logo-variant={variant}
@@ -125,7 +128,7 @@ export const CampusFixLogo = ({
       </div>
 
       {showWordmark ? (
-        <div>
+        <div className={authVariant ? "min-w-0" : undefined}>
           <p className={`${palette.wordmark} font-extrabold tracking-tight text-slate-950 dark:text-white`}>
             Campus<span className="text-campus-500">Fix</span>
           </p>
