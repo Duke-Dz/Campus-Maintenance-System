@@ -6,9 +6,9 @@ CampusFix is a role-based campus maintenance platform for students, maintenance 
 
 | Role | Light Mode | Dark Mode |
 | --- | --- | --- |
-| Admin dashboard: tracks ticket volume, SLA compliance, building pressure, users, staff, broadcasts, reports, and analytics. | ![CampusFix admin dashboard in light mode](<Screenshot 2026-06-05 164354.png>) | ![CampusFix admin dashboard in dark mode](<Screenshot 2026-06-05 164411.png>) |
-| Student dashboard: helps students submit issues, track active requests, review history, and monitor urgent or resolved items. | ![CampusFix student dashboard in light mode](<Screenshot 2026-06-05 165014.png>) | ![CampusFix student dashboard in dark mode](<Screenshot 2026-06-05 165024.png>) |
-| Maintenance dashboard: summarizes assigned work, in-progress tasks, overdue risk, and completed maintenance requests. | ![CampusFix maintenance dashboard in light mode](<Screenshot 2026-06-05 165110.png>) | ![CampusFix maintenance dashboard in dark mode](<Screenshot 2026-06-05 165122.png>) |
+| Admin dashboard: tracks ticket volume, SLA compliance, building pressure, users, staff, broadcasts, reports, and analytics. | ![CampusFix admin dashboard in light mode](documentation/assets/screenshots/admin-dashboard-light.png) | ![CampusFix admin dashboard in dark mode](documentation/assets/screenshots/admin-dashboard-dark.png) |
+| Student dashboard: helps students submit issues, track active requests, review history, and monitor urgent or resolved items. | ![CampusFix student dashboard in light mode](documentation/assets/screenshots/student-dashboard-light.png) | ![CampusFix student dashboard in dark mode](documentation/assets/screenshots/student-dashboard-dark.png) |
+| Maintenance dashboard: summarizes assigned work, in-progress tasks, overdue risk, and completed maintenance requests. | ![CampusFix maintenance dashboard in light mode](documentation/assets/screenshots/maintenance-dashboard-light.png) | ![CampusFix maintenance dashboard in dark mode](documentation/assets/screenshots/maintenance-dashboard-dark.png) |
 
 ## Core Features
 
