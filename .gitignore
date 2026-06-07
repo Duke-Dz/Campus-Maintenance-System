@@ -53,7 +53,6 @@ yarn-debug.log*
 # Local Screenshots
 # ==========================
 /Screenshot *.png
-/assets/screenshots/
 
 # ==========================
 # Local Documentation

@@ -4,11 +4,11 @@ CampusFix is a role-based campus maintenance platform for students, maintenance 
 
 ## Dashboards
 
-| Role | Brief Description |
+| Role | Light Mode |
 | --- | --- |
-| Admin | Tracks ticket volume, SLA compliance, building pressure, users, staff, broadcasts, reports, and analytics. |
-| Student | Helps students submit issues, track active requests, review history, and monitor urgent or resolved items. |
-| Maintenance | Summarizes assigned work, in-progress tasks, overdue risk, and completed maintenance requests. |
+| Admin dashboard: tracks ticket volume, SLA compliance, building pressure, users, staff, broadcasts, reports, and analytics. | ![CampusFix admin dashboard in light mode](assets/screenshots/admin-dashboard-light.png) |
+| Student dashboard: helps students submit issues, track active requests, review history, and monitor urgent or resolved items. | ![CampusFix student dashboard in light mode](assets/screenshots/student-dashboard-light.png) |
+| Maintenance dashboard: summarizes assigned work, in-progress tasks, overdue risk, and completed maintenance requests. | ![CampusFix maintenance dashboard in light mode](assets/screenshots/maintenance-dashboard-light.png) |
 
 ## Core Features
 
