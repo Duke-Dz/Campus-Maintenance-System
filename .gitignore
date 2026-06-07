@@ -55,6 +55,11 @@ yarn-debug.log*
 /Screenshot *.png
 
 # ==========================
+# Local Documentation
+# ==========================
+/documentation/
+
+# ==========================
 # IDE & OS
 # ==========================
 .vscode/
