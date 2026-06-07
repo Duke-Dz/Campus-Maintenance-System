@@ -1,6 +1,28 @@
-# CampusFix >> Campus Maintenance System
+# CampusFix
 
-A role-based campus maintenance platform for students, maintenance staff, and administrators.
+CampusFix is a role-based campus maintenance platform for students, maintenance staff, and administrators. It centralizes issue reporting, ticket tracking, work assignment, SLA visibility, and operational reporting in one responsive web application.
+
+## Dashboards
+
+| Role | Light Mode | Dark Mode |
+| --- | --- | --- |
+| Admin dashboard: tracks ticket volume, SLA compliance, building pressure, users, staff, broadcasts, reports, and analytics. | ![CampusFix admin dashboard in light mode](<Screenshot 2026-06-05 164354.png>) | ![CampusFix admin dashboard in dark mode](<Screenshot 2026-06-05 164411.png>) |
+| Student dashboard: helps students submit issues, track active requests, review history, and monitor urgent or resolved items. | ![CampusFix student dashboard in light mode](<Screenshot 2026-06-05 165014.png>) | ![CampusFix student dashboard in dark mode](<Screenshot 2026-06-05 165024.png>) |
+| Maintenance dashboard: summarizes assigned work, in-progress tasks, overdue risk, and completed maintenance requests. | ![CampusFix maintenance dashboard in light mode](<Screenshot 2026-06-05 165110.png>) | ![CampusFix maintenance dashboard in dark mode](<Screenshot 2026-06-05 165122.png>) |
+
+## Core Features
+
+- Role-based dashboards for students, technicians, and administrators
+- Ticket creation, assignment, status tracking, comments, ratings, and attachments
+- Admin tools for users, staff onboarding, broadcasts, reports, catalog configuration, and analytics
+- Maintenance queues for active work, completed requests, and shift-level summaries
+- Email, notification, audit, rate-limit, and deployment-ready configuration support
+
+## Tech Stack
+
+- Backend: Java 21, Spring Boot, Maven, MySQL, Flyway
+- Frontend: React, Vite, Tailwind CSS
+- DevOps: Docker Compose, production Dockerfiles, Kubernetes manifests
 
 ## Prerequisites
 
@@ -9,13 +31,11 @@ A role-based campus maintenance platform for students, maintenance staff, and ad
 - Node.js 18+
 - MySQL 8.0+
 
----
-
 ## Running Locally
 
 ### 1. Database
 
-Run the Flyway migrations automatically on first backend startup — no manual SQL import needed.
+Run the Flyway migrations automatically on first backend startup. No manual SQL import is required.
 
 If you prefer to pre-create the database manually:
 
@@ -32,7 +52,7 @@ copy .env.example .env
 
 Edit `.env` and set at minimum:
 
-```
+```env
 DB_URL=jdbc:mysql://localhost:3306/Campus_Fix
 DB_USERNAME=root
 DB_PASSWORD=yourpassword
@@ -49,12 +69,13 @@ Start the backend:
 mvn spring-boot:run -DskipTests
 ```
 
-Backend runs at: `http://localhost:8080`
+Backend runs at `http://localhost:8080`.
 
-> **Tip:** Use the `fast` profile during development to speed up startup:
-> ```powershell
-> mvn spring-boot:run -DskipTests "-Dspring-boot.run.profiles=fast"
-> ```
+Tip: use the `fast` profile during development to speed up startup:
+
+```powershell
+mvn spring-boot:run -DskipTests "-Dspring-boot.run.profiles=fast"
+```
 
 ### 3. Frontend
 
@@ -66,21 +87,17 @@ npm install
 npm run dev
 ```
 
-Frontend runs at: `http://localhost:5173`
-
----
+Frontend runs at `http://localhost:5173`.
 
 ## Default Admin Account
 
-Configured via `backend/.env` — see `APP_ADMIN_*` variables above. The admin account is created automatically on first startup when `APP_SEED_BOOTSTRAP_ADMIN=true`.
+The default admin account is configured through `backend/.env`. See the `APP_ADMIN_*` variables above. The account is created automatically on first startup when `APP_SEED_BOOTSTRAP_ADMIN=true`.
 
----
+## Email
 
-## Email (Optional)
+Email is disabled by default with `APP_EMAIL_ENABLED=false`. To enable it for local testing, configure SMTP in `.env`:
 
-Email is disabled by default (`APP_EMAIL_ENABLED=false`). To enable for local testing, configure SMTP in `.env`:
-
-```
+```env
 APP_EMAIL_ENABLED=true
 MAIL_HOST=smtp.example.com
 MAIL_USERNAME=your-user
@@ -88,9 +105,7 @@ MAIL_PASSWORD=your-password
 APP_EMAIL_FROM=no-reply@yourdomain.com
 ```
 
----
-
-## Docker (Optional)
+## Docker
 
 ```powershell
 copy backend/.env.example backend/.env
@@ -98,20 +113,19 @@ copy backend/.env.example backend/.env
 docker compose up --build
 ```
 
-Services:
-
-| Service  | URL                    |
-|----------|------------------------|
-| Backend  | http://localhost:8080  |
-| Frontend | http://localhost:3000  |
-| MySQL    | localhost:3306         |
-
----
+| Service | URL |
+| --- | --- |
+| Backend | `http://localhost:8080` |
+| Frontend | `http://localhost:3000` |
+| MySQL | `localhost:3306` |
 
 ## Project Structure
 
-```
-backend/    Spring Boot API (Java 21, Maven)
-frontend/   React + Vite web app (Node 18+)
-uploads/    Runtime file upload storage
+```text
+backend/          Spring Boot API
+frontend/         React + Vite web app
+database/         Schema and seed data
+documentation/    Architecture, API, setup, testing, and deployment guides
+devops/           Docker and Kubernetes deployment assets
+uploads/          Runtime file upload storage
 ```
